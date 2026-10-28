@@ -465,7 +465,7 @@ public sealed class GrpcDashboardSource : IDashboardSource, IJobsSource, IHistor
             {
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 cts.CancelAfter(ApiConventions.ConnectTimeout);
-                await socket.ConnectAsync(new UnixDomainSocketEndPoint(ApiConventions.UnixSocketPath(pipeName)), cts.Token).ConfigureAwait(false);
+                await socket.ConnectAsync(new UnixDomainSocketEndPoint(ApiConventions.ClientSocketPath(pipeName)), cts.Token).ConfigureAwait(false);
                 return new NetworkStream(socket, ownsSocket: true);
             }
             catch

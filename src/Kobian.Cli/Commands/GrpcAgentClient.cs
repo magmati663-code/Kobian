@@ -34,13 +34,13 @@ public sealed class GrpcAgentClient : IAgentClient, IDisposable
     {
         if (!OperatingSystem.IsWindows())
         {
-            // dev/testy poza Windows: gniazdo Unix zamiast named pipe (ADR-0004)
+            // poza Windows: gniazdo Unix zamiast named pipe (usługa: /run/kobian/agent.sock, konsola: katalog tymczasowy — ADR-0004)
             var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
             try
             {
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 cts.CancelAfter(timeout);
-                await socket.ConnectAsync(new UnixDomainSocketEndPoint(ApiConventions.UnixSocketPath(pipeName)), cts.Token).ConfigureAwait(false);
+                await socket.ConnectAsync(new UnixDomainSocketEndPoint(ApiConventions.ClientSocketPath(pipeName)), cts.Token).ConfigureAwait(false);
                 return new NetworkStream(socket, ownsSocket: true);
             }
             catch

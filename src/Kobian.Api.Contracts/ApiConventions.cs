@@ -25,8 +25,27 @@ public static class ApiConventions
     public static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(5);
 
     /// <summary>
-    /// Ścieżka gniazda Unix zastępującego named pipe poza Windows (Kestrel obsługuje named pipes tylko w Windows) — wyłącznie dev/testy
-    /// (PROWIZORYCZNIE ADR-0004). Produkcja = Windows + named pipe.
+    /// Ścieżka gniazda Unix Agenta uruchomionego w konsoli (dev/testy, gniazdo tylko dla bieżącego użytkownika — PROWIZORYCZNIE ADR-0004).
+    /// Usługa Linux/macOS używa <see cref="SystemSocketPath"/>.
     /// </summary>
     public static string UnixSocketPath(string pipeName) => Path.Combine(Path.GetTempPath(), pipeName + ".sock");
+
+    /// <summary>Zmienna środowiskowa z jawną ścieżką gniazda Agenta (klient i usługa Linux/macOS).</summary>
+    public const string SocketVariable = "KOBIAN_SOCKET";
+
+    /// <summary>Gniazdo usługi Linux (systemd RuntimeDirectory=kobian) / macOS (launchd).</summary>
+    public static string SystemSocketPath => OperatingSystem.IsMacOS() ? "/var/run/kobian/agent.sock" : "/run/kobian/agent.sock";
+
+    /// <summary>
+    /// Gniazdo, z którym łączy się klient (CLI, UI) poza Windows: <c>KOBIAN_SOCKET</c>, potem Agent konsolowy bieżącego użytkownika (jeśli jego gniazdo istnieje),
+    /// potem usługa systemowa; gdy nic nie istnieje — ścieżka konsolowa (komunikat „usługa niedostępna” jak dotąd).
+    /// </summary>
+    public static string ClientSocketPath(string pipeName)
+    {
+        var env = Environment.GetEnvironmentVariable(SocketVariable);
+        if (!string.IsNullOrWhiteSpace(env)) return env.Trim();
+        var dev = UnixSocketPath(pipeName);
+        if (Path.Exists(dev) || pipeName != DefaultPipeName) return dev;
+        return Path.Exists(SystemSocketPath) ? SystemSocketPath : dev;
+    }
 }

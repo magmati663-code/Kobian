@@ -187,6 +187,7 @@ public sealed class CatalogRestoreService : IDisposable
         var lastReport = TimeSpan.Zero;
         var executor = new RestoreExecutor(reader)
         {
+            InheritTargetOwner = true, // Linux/macOS (usługa jako root): pliki Operatora w jego folderze należą do niego
             Journal = journal,
             Progress = (files, bytes) =>
             {

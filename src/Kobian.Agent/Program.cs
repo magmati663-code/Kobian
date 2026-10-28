@@ -11,9 +11,11 @@ if (AgentInstallPlan.Mode(args) is { } installMode)
     return AgentInstallCommand.Run(installMode, Console.Out);
 
 // BL-72 (it. 91): tryb usługi Windows (SCM) albo konsola; ścieżki z AgentPaths (usługa: domyślnie %ProgramData%\Kobian\catalog.db — PROWIZORYCZNIE Qb41).
-var runningAsService = AgentServiceRuntime.IsWindowsService();
-var (paths, pathError) = AgentPaths.Resolve(Environment.GetEnvironmentVariable, runningAsService,
-    OperatingSystem.IsWindows() ? Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) : null);
+// Linux/macOS: KOBIAN_SERVICE=1 (jednostka systemd / launchd) — /var/lib/kobian, /Library/Application Support/Kobian; gniazdo /run/kobian/agent.sock.
+var unixService = AgentServiceRuntime.IsUnixService();
+var runningAsService = AgentServiceRuntime.IsWindowsService() || unixService;
+var (dataRoot, appDir) = AgentPaths.ServiceDataRoot();
+var (paths, pathError) = AgentPaths.Resolve(Environment.GetEnvironmentVariable, runningAsService, dataRoot, appDir);
 if (paths is null)
 {
     await Console.Error.WriteLineAsync(pathError).ConfigureAwait(false);
@@ -154,7 +156,12 @@ Kobian.Agent.Notifications.AlertService? alertService = alertRules is not null &
         SecurityUpdateAvailable = runtimeCode is not null,
     }
     : null;
-var app = AgentHost.Create(new AgentHostOptions(ApiConventions.DefaultPipeName) { WindowsService = runningAsService, RestoreTargets = RestoreTargets(runningAsService) }, new CatalogAgentBackend(catalog, version, jobs, init, restore, new ScheduleService(catalog, writer),
+var app = AgentHost.Create(new AgentHostOptions(ApiConventions.DefaultPipeName)
+{
+    WindowsService = runningAsService && !unixService,
+    RestoreTargets = RestoreTargets(runningAsService),
+    UnixServiceSocket = unixService ? (Environment.GetEnvironmentVariable(ApiConventions.SocketVariable) is { Length: > 0 } s ? s : ApiConventions.SystemSocketPath) : null,
+}, new CatalogAgentBackend(catalog, version, jobs, init, restore, new ScheduleService(catalog, writer),
     check, TimeProvider.System, probe, jobValidator,
     retention, new CatalogPruneService(catalog, providers, TimeProvider.System, writer, CatalogJobService.HostIdFor(Environment.MachineName)) { Hold = hold }, hold)
 {
@@ -214,7 +221,8 @@ static IRestoreTargetAuthorizer RestoreTargets(bool service)
 #if KOBIAN_WINDOWS
     if (service && OperatingSystem.IsWindows()) return new NamedPipeRestoreTargetAuthorizer();
 #endif
-    _ = service;
+    // Usługa Linux/macOS (root): Operator odtwarza tylko do folderu, w którym sam może tworzyć pliki (bity POSIX, ścieżka bez dowiązań).
+    if (service && !OperatingSystem.IsWindows()) return new UnixRestoreTargetAuthorizer(UnixPeerCredentials.Read, SystemUnixAccounts.Instance);
     return SameUserRestoreTargets.Instance;
 }
 
@@ -224,7 +232,9 @@ static ICallerRoleResolver CallerRoles(bool service)
 #if KOBIAN_WINDOWS
     if (service) return new TokenCallerResolver(new NamedPipeIdentityReader(), AgentRoleMap.ForLocalMachine());
 #endif
-    // W usłudze rola pochodzi wyłącznie z tokenu klienta (powyżej, Windows); bez implementacji tokenu usługa dostaje najniższą rolę z uprawnieniami, nigdy zmienną środowiskową.
+    // Usługa Linux/macOS: rola z poświadczeń jądra (SO_PEERCRED / LOCAL_PEERCRED) — root i „kobian-admins” → Administrator, „kobian-operators” → Operator, reszta → Reader.
+    if (service && !OperatingSystem.IsWindows()) return new UnixPeerCallerResolver(UnixPeerCredentials.Read, new UnixRoleMap(SystemUnixAccounts.Instance));
+    // Usługa Windows bez kompilacji z tokenem (nie występuje w paczkach) — najniższa rola z uprawnieniami, nigdy zmienna środowiskowa.
     if (service) return new FixedRoleResolver(AgentRole.Operator);
     // Tryb konsoli (dev/testy; pipe/gniazdo tylko dla bieżącego użytkownika): KOBIAN_DEV_ROLE=Reader|Operator|Administrator pozwala przetestować metody wyższych ról
     // (eksport/import zadań, zatwierdzanie tożsamości serwerów). W usłudze zmienna jest ignorowana — rola pochodzi wyłącznie z tokenu klienta.

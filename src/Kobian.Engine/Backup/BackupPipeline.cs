@@ -222,16 +222,19 @@ public sealed class BackupPipeline
                     case SourceKind.Directory:
                         var sub = await DirectoryAsync(path, ct).ConfigureAwait(false);
                         _dirs++;
-                        entries.Add(new TreeEntry(c.Name, EntryKind.Directory, MtimeNs: c.MtimeNs, SubtreeId: sub));
+                        entries.Add(new TreeEntry(c.Name, EntryKind.Directory, MtimeNs: c.MtimeNs, SubtreeId: sub, UnixMode: c.UnixMode));
                         break;
                     case SourceKind.Symlink:
                         entries.Add(new TreeEntry(c.Name, EntryKind.Symlink, MtimeNs: c.MtimeNs, LinkTarget: c.LinkTarget));
+                        break;
+                    case SourceKind.Special:
+                        Skipped.Add(path); // FIFO/gniazdo/urządzenie: pominięte z ostrzeżeniem, kopia idzie dalej
                         break;
                     default:
                         var f = await FileAsync(path, ct).ConfigureAwait(false);
                         if (f is null) { Skipped.Add(path); break; }
                         _files++;
-                        entries.Add(new TreeEntry(c.Name, EntryKind.File, f.Value.Size, c.MtimeNs, Chunks: f.Value.Chunks, FileSha256: f.Value.Sha));
+                        entries.Add(new TreeEntry(c.Name, EntryKind.File, f.Value.Size, c.MtimeNs, Chunks: f.Value.Chunks, FileSha256: f.Value.Sha, UnixMode: c.UnixMode));
                         break;
                 }
             }

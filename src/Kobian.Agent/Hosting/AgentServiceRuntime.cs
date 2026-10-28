@@ -9,6 +9,16 @@ public static class AgentServiceRuntime
     /// <summary>Identyfikator zdarzenia Event Log dla błędu startu (KB-7007, konfiguracja, tryb awaryjny).</summary>
     public const int StartupFailureEventId = 7007;
 
+    /// <summary>Zmienna ustawiana przez jednostkę systemd / plik launchd: <c>KOBIAN_SERVICE=1</c> = tryb usługi Linux/macOS.</summary>
+    public const string UnixServiceVariable = "KOBIAN_SERVICE";
+
+    /// <summary>
+    /// Usługa Linux/macOS (systemd, launchd): ścieżki systemowe, gniazdo /run/kobian/agent.sock, role z poświadczeń jądra.
+    /// Zmienna nie podnosi uprawnień nikomu — w tym trybie role są węższe niż w konsoli (KOBIAN_DEV_ROLE ignorowane).
+    /// </summary>
+    public static bool IsUnixService(Func<string, string?>? env = null) =>
+        !OperatingSystem.IsWindows() && (env ?? Environment.GetEnvironmentVariable)(UnixServiceVariable) == "1";
+
     public static bool IsWindowsService()
     {
 #if KOBIAN_WINDOWS

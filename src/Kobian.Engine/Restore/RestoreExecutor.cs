@@ -28,6 +28,12 @@ public sealed class RestoreExecutor(RepoReader reader)
 {
     private readonly RepoReader _reader = reader ?? throw new ArgumentNullException(nameof(reader));
 
+    /// <summary>
+    /// Linux/macOS, proces jako root (usługa): odtworzone pliki i katalogi dostają właściciela folderu docelowego, jeśli nie jest nim root —
+    /// Operator odtwarzający do swojego folderu dostaje SWOJE pliki (bez tego byłyby własnością roota i nie mógłby ich zmieniać).
+    /// </summary>
+    public bool InheritTargetOwner { get; init; }
+
     public Task<RestoreResult> RestoreAsync(SnapshotObject snapshot, string targetRoot, string? pathFilter, CancellationToken ct) =>
         RestoreAsync(snapshot, targetRoot, pathFilter, null, ct);
 
@@ -51,6 +57,7 @@ public sealed class RestoreExecutor(RepoReader reader)
         ArgumentNullException.ThrowIfNull(targetRoot);
         var root = RestoreTarget.OpenRoot(targetRoot);
         var st = new State(root, pathFilter) { Exact = exact is null ? null : new ExactPathSelection(exact) };
+        if (InheritTargetOwner && UnixFileStat.IsRoot() && UnixFileStat.TryLStat(root) is { Type: UnixFileType.Directory, Uid: not 0 } owner) st.Owner = (owner.Uid, owner.Gid);
         try
         {
             await DirAsync(snapshot.RootTreeId, "", root, st, ct).ConfigureAwait(false);
@@ -82,6 +89,33 @@ public sealed class RestoreExecutor(RepoReader reader)
 
         public List<RestoreIssue> Issues { get; } = [];
 
+        /// <summary>Właściciel nadawany odtworzonym elementom (<see cref="InheritTargetOwner"/>); null = bez zmian.</summary>
+        public (uint Uid, uint Gid)? Owner { get; set; }
+
+        public void Own(string path)
+        {
+            if (Owner is { } o) UnixFileStat.TryLChown(path, o.Uid, o.Gid);
+        }
+
+        /// <summary>Katalog nadrzędny pliku (filtr mógł go pominąć): brakujące poziomy pod korzeniem tworzone po kolei, każdy z właścicielem.</summary>
+        public void EnsureDirectory(string dir)
+        {
+            if (Directory.Exists(dir)) return;
+            if (Owner is null)
+            {
+                Directory.CreateDirectory(dir);
+                return;
+            }
+            var missing = new Stack<string>();
+            for (var d = dir; !Directory.Exists(d) && d.Length > Root.Length; d = Path.GetDirectoryName(d)!) missing.Push(d);
+            while (missing.Count > 0)
+            {
+                var d = missing.Pop();
+                Directory.CreateDirectory(d);
+                Own(d);
+            }
+        }
+
         public long Files { get; set; }
 
         public long Bytes { get; set; }
@@ -112,17 +146,20 @@ public sealed class RestoreExecutor(RepoReader reader)
                     {
                         var covered = st.Covered(childRel);
                         if (!covered && !st.OnPath(childRel)) continue; // poza wyborem — bez odczytu drzewa
-                        if (covered) Directory.CreateDirectory(target);
+                        if (covered && !Directory.Exists(target)) { Directory.CreateDirectory(target); st.Own(target); }
                         await SubDirAsync(e.SubtreeId, childRel, target, st, ct).ConfigureAwait(false);
+                        if (covered) ApplyUnixMode(target, e.UnixMode);
                         break;
                     }
-                    if (st.Filter is null || DirectoryCouldMatch(st.Filter, childRel)) Directory.CreateDirectory(target);
+                    var created = st.Filter is null || DirectoryCouldMatch(st.Filter, childRel);
+                    if (created && !Directory.Exists(target)) { Directory.CreateDirectory(target); st.Own(target); }
                     await SubDirAsync(e.SubtreeId, childRel, target, st, ct).ConfigureAwait(false);
+                    if (created) ApplyUnixMode(target, e.UnixMode); // po dzieciach: katalog 0555 z kopii nie może blokować zapisu jego zawartości
                     break;
                 case EntryKind.File:
                     if (st.Exact is not null && !st.Covered(childRel)) continue;
                     if (st.Filter is not null && !FileSystemName.MatchesSimpleExpression(st.Filter, childRel, ignoreCase: true)) continue;
-                    Directory.CreateDirectory(dir);
+                    st.EnsureDirectory(dir);
                     await FileAsync(e, childRel, target, st, ct).ConfigureAwait(false);
                     break;
                 default:
@@ -255,6 +292,8 @@ public sealed class RestoreExecutor(RepoReader reader)
             st.Issues.Add(new RestoreIssue(KbCode.RestoreHashMismatch, rel));
             return;
         }
+        ApplyUnixMode(partial, e.UnixMode);
+        st.Own(partial);
         if (e.MtimeNs is { } mt) File.SetLastWriteTimeUtc(partial, DateTime.UnixEpoch.AddTicks(mt / 100));
         try
         {
@@ -272,6 +311,27 @@ public sealed class RestoreExecutor(RepoReader reader)
         st.Bytes += written;
         Progress?.Invoke(st.Files, st.Bytes);
     }
+
+    /// <summary>
+    /// Uprawnienia POSIX z kopii (Linux/macOS). Bity setuid/setgid są ZAWSZE zdejmowane: Agent działa jako root, a odtwarzanie do folderu użytkownika
+    /// nie może tworzyć programów uruchamianych z cudzymi uprawnieniami. Kopia z Windows (brak klucza 16) — domyślne uprawnienia systemu.
+    /// </summary>
+    internal static void ApplyUnixMode(string path, uint? mode)
+    {
+        if (mode is not { } m || OperatingSystem.IsWindows()) return;
+        try
+        {
+            if (new FileInfo(path) is { LinkTarget: not null }) return;
+            File.SetUnixFileMode(path, (UnixFileMode)(m & SafeModeMask));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // uprawnienia to metadane drugorzędne — treść pliku jest już odtworzona i zweryfikowana
+        }
+    }
+
+    /// <summary>rwx dla właściciela/grupy/innych + sticky (01000); bez setuid (04000) i setgid (02000).</summary>
+    internal const uint SafeModeMask = 0x3FF;
 
     private static void DeletePartial(string partial)
     {

@@ -14,6 +14,12 @@ public sealed record AgentHostOptions(string PipeName, int MinModifyingRevision 
 
     /// <summary>SEC-6.3 (it. 101): kontrola folderu docelowego odtwarzania tokenem klienta; null = tryb konsoli (ten sam użytkownik).</summary>
     public IRestoreTargetAuthorizer? RestoreTargets { get; init; }
+
+    /// <summary>
+    /// Usługa Linux/macOS: ścieżka gniazda systemowego (null = gniazdo konsolowe w katalogu tymczasowym, 0600). Gniazdo usługi ma tryb 0666 —
+    /// jak ACL pipe „Authenticated Users” w Windows: łączyć może każdy lokalny użytkownik, a rolę wyznaczają poświadczenia jądra (<see cref="UnixRoleMap"/>).
+    /// </summary>
+    public string? UnixServiceSocket { get; init; }
 }
 
 /// <summary>
@@ -45,7 +51,10 @@ public static class AgentHost
             if (OperatingSystem.IsWindows()) k.ListenNamedPipe(options.PipeName, l => l.Protocols = HttpProtocols.Http2);
             else
             {
-                var socketPath = ApiConventions.UnixSocketPath(options.PipeName);
+                var socketPath = options.UnixServiceSocket ?? ApiConventions.UnixSocketPath(options.PipeName);
+                if (options.UnixServiceSocket is not null && Path.GetDirectoryName(socketPath) is { Length: > 0 } dir && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead | UnixFileMode.GroupExecute
+                        | UnixFileMode.OtherRead | UnixFileMode.OtherExecute); // 0755 (systemd tworzy go sam: RuntimeDirectory=kobian)
                 UnixSocketCleanup.RemoveIfStale(socketPath); // po awarii zostaje martwe gniazdo i blokuje start
                 k.ListenUnixSocket(socketPath, l => l.Protocols = HttpProtocols.Http2); // dev/testy, ADR-0004
             }
@@ -78,10 +87,14 @@ public static class AgentHost
         var app = builder.Build();
         if (!OperatingSystem.IsWindows())
         {
-            var socket = ApiConventions.UnixSocketPath(options.PipeName);
+            var socket = options.UnixServiceSocket ?? ApiConventions.UnixSocketPath(options.PipeName);
+            var shared = options.UnixServiceSocket is not null;
             app.Lifetime.ApplicationStarted.Register(() =>
             {
-                if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(socket, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+                if (OperatingSystem.IsWindows()) return;
+                File.SetUnixFileMode(socket, shared
+                    ? UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.GroupWrite | UnixFileMode.OtherRead | UnixFileMode.OtherWrite
+                    : UnixFileMode.UserRead | UnixFileMode.UserWrite);
             });
         }
         app.MapGrpcService<AgentGrpcService>();

@@ -1,3 +1,5 @@
+using Kobian.Domain;
+
 namespace Kobian.Engine.Backup;
 
 public enum SourceKind
@@ -5,10 +7,13 @@ public enum SourceKind
     File = 0,
     Directory = 1,
     Symlink = 2,
+
+    /// <summary>FIFO, gniazdo, urządzenie (Linux/macOS) — nie jest kopiowane: otwarcie FIFO blokuje się, urządzenie daje strumień bez końca.</summary>
+    Special = 3,
 }
 
 /// <summary>Element źródła: nazwa (jeden segment), rodzaj, rozmiar, mtime w ns od epoki, cel dowiązania (nie podążamy — D3.6).</summary>
-public sealed record SourceNode(string Name, SourceKind Kind, long Size, long MtimeNs, string? LinkTarget = null);
+public sealed record SourceNode(string Name, SourceKind Kind, long Size, long MtimeNs, string? LinkTarget = null, uint? UnixMode = null);
 
 /// <summary>Port źródła plików (platform-neutralny). Adapter Windows (VSS, uchwyty, ADS, ACL) — BL-23, poza tym portem.</summary>
 public interface ISourceTree
@@ -39,15 +44,20 @@ public sealed class FileSystemSource : ISourceTree
     public IEnumerable<SourceNode> List(string relativeDir)
     {
         var dir = new DirectoryInfo(Full(relativeDir));
+        var unix = !OperatingSystem.IsWindows();
         foreach (var fsi in dir.EnumerateFileSystemInfos("*", new EnumerationOptions { RecurseSubdirectories = false, IgnoreInaccessible = false, AttributesToSkip = 0, ReturnSpecialDirectories = false }))
         {
             var mtime = (fsi.LastWriteTimeUtc - DateTime.UnixEpoch).Ticks * 100;
+            // Linux/macOS: typ wpisu i uprawnienia z lstat (System.IO traktuje FIFO/gniazda/urządzenia jak zwykłe pliki).
+            var st = unix ? UnixFileStat.TryLStat(fsi.FullName) : null;
             if (fsi.LinkTarget is not null)
                 yield return new SourceNode(fsi.Name, SourceKind.Symlink, 0, mtime, fsi.LinkTarget);
             else if (fsi is DirectoryInfo)
-                yield return new SourceNode(fsi.Name, SourceKind.Directory, 0, mtime);
+                yield return new SourceNode(fsi.Name, SourceKind.Directory, 0, mtime, UnixMode: st?.Mode);
+            else if (st is { Type: UnixFileType.Fifo or UnixFileType.Socket or UnixFileType.CharDevice or UnixFileType.BlockDevice })
+                yield return new SourceNode(fsi.Name, SourceKind.Special, 0, mtime);
             else
-                yield return new SourceNode(fsi.Name, SourceKind.File, ((FileInfo)fsi).Length, mtime);
+                yield return new SourceNode(fsi.Name, SourceKind.File, ((FileInfo)fsi).Length, mtime, UnixMode: st?.Mode);
         }
     }
 

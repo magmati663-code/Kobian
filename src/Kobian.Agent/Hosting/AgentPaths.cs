@@ -24,7 +24,7 @@ public sealed record AgentPaths(string Catalog, string StateDir, string SecretsD
     /// Zawsze: odmowa ścieżek UNC / urządzeń (\\host\…, \\?\…) — SQLite na udziale sieciowym grozi uszkodzeniem katalogu (D2.3), a stan Agenta jest lokalny (D8.9).
     /// </summary>
     /// <returns>Ścieżki albo komunikat błędu (bez danych z wartości zmiennych poza nazwą zmiennej).</returns>
-    public static (AgentPaths? Paths, string? Error) Resolve(Func<string, string?> env, bool runningAsService, string? programData)
+    public static (AgentPaths? Paths, string? Error) Resolve(Func<string, string?> env, bool runningAsService, string? programData, string appDirName = "Kobian")
     {
         ArgumentNullException.ThrowIfNull(env);
         var catalog = Clean(env(CatalogVariable));
@@ -33,7 +33,7 @@ public sealed record AgentPaths(string Catalog, string StateDir, string SecretsD
             if (!runningAsService) return (null, $"{CatalogVariable} is not set (path to catalog.db).");
             var root = Clean(programData);
             if (root is null) return (null, $"{CatalogVariable} is not set and ProgramData is unavailable.");
-            catalog = Path.Combine(root, "Kobian", "catalog.db");
+            catalog = Path.Combine(root, appDirName, "catalog.db");
         }
 
         var (c, e1) = Normalize(catalog, CatalogVariable, runningAsService);
@@ -49,6 +49,14 @@ public sealed record AgentPaths(string Catalog, string StateDir, string SecretsD
         var (k, e3) = secretsRaw is null ? (Path.Combine(s, "secrets"), null) : Normalize(secretsRaw, SecretsVariable, runningAsService);
         if (k is null) return (null, e3);
         return (new AgentPaths(c, s, k), null);
+    }
+
+    /// <summary>Katalog bazowy danych usługi: Windows %ProgramData%, Linux /var/lib (→ /var/lib/kobian), macOS /Library/Application Support (→ …/Kobian).</summary>
+    public static (string? Root, string AppDir) ServiceDataRoot()
+    {
+        if (OperatingSystem.IsWindows()) return (Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Kobian");
+        if (OperatingSystem.IsMacOS()) return ("/Library/Application Support", "Kobian");
+        return ("/var/lib", "kobian");
     }
 
     private static string? Clean(string? v) => string.IsNullOrWhiteSpace(v) ? null : v.Trim();

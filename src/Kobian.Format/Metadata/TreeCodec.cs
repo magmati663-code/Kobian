@@ -15,7 +15,10 @@ public enum EntryKind
 
 public sealed record AlternateDataStreamRef(string Name, IReadOnlyList<byte[]> Chunks, long Size);
 
-/// <summary>Wpis drzewa (R2.3.5) — klucze CBOR 1–15. Pola opcjonalne null = nieobecne w mapie.</summary>
+/// <summary>
+/// Wpis drzewa (R2.3.5) — klucze CBOR 1–16. Pola opcjonalne null = nieobecne w mapie.
+/// Klucz 16 (Linux/macOS): bity uprawnień POSIX (≤ 07777) — kopie z Windows go nie mają, więc ich drzewa (i identyfikatory) się nie zmieniają.
+/// </summary>
 public sealed record TreeEntry(
     string Name,
     EntryKind Kind,
@@ -31,7 +34,8 @@ public sealed record TreeEntry(
     byte[]? SecurityDescriptorRef = null,
     IReadOnlyList<AlternateDataStreamRef>? Ads = null,
     IReadOnlyList<(long Offset, long Length)>? Sparse = null,
-    byte[]? FileSha256 = null);
+    byte[]? FileSha256 = null,
+    uint? UnixMode = null);
 
 /// <summary>
 /// Kanoniczne kodowanie drzewa (D3.8): mapa {1: [entry…]}, wpisy posortowane bajtowo po UTF-8 nazwy, bez duplikatów,
@@ -42,6 +46,9 @@ public static class TreeCodec
 {
     public const int MaxEntries = 1_000_000;
     public const int MaxNameBytes = 1024;
+
+    /// <summary>Największa wartość klucza 16 (bity rwx + setuid/setgid/sticky).</summary>
+    public const uint MaxUnixMode = 0xFFF;
 
     public static byte[] Encode(IReadOnlyList<TreeEntry> entries)
     {
@@ -173,6 +180,7 @@ public static class TreeCodec
             w.WriteEndArray();
         }));
         if (e.FileSha256 is { } h) fields.Add((15, () => w.WriteByteString(Require(h, 32))));
+        if (e.UnixMode is { } um) fields.Add((16, () => w.WriteUInt32(um <= MaxUnixMode ? um : throw Malformed("Unix mode out of range."))));
         w.WriteStartMap(fields.Count);
         foreach (var (k, write) in fields)
         {
@@ -185,7 +193,7 @@ public static class TreeCodec
     private static TreeEntry ReadEntry(CborReader r)
     {
         var count = r.ReadStartMap() ?? throw Malformed("Indefinite map.");
-        if (count is < 3 or > 15) throw Malformed("Entry field count.");
+        if (count is < 3 or > 16) throw Malformed("Entry field count.");
         string? name = null;
         var kind = (EntryKind)(-1);
         long size = -1;
@@ -194,6 +202,7 @@ public static class TreeCodec
         byte[]? fid = null, sub = null, sd = null, sha = null;
         IReadOnlyList<byte[]>? chunks = null;
         string? link = null;
+        uint? unixMode = null;
         IReadOnlyList<AlternateDataStreamRef>? ads = null;
         IReadOnlyList<(long, long)>? sparse = null;
         for (var i = 0; i < count; i++)
@@ -243,13 +252,17 @@ public static class TreeCodec
                     sparse = sl;
                     break;
                 case 15: sha = Require(r.ReadByteString(), 32); break;
+                case 16:
+                    unixMode = r.ReadUInt32();
+                    if (unixMode > MaxUnixMode) throw Malformed("Unix mode out of range.");
+                    break;
                 default: throw Malformed("Unknown entry key.");
             }
         }
         r.ReadEndMap();
         if (name is null || (int)kind < 0 || size < 0) throw Malformed("Missing required entry fields.");
         ValidateName(name);
-        return new TreeEntry(name, kind, size, mt, ct, bt, attrs, fid, chunks, sub, link, sd, ads, sparse, sha);
+        return new TreeEntry(name, kind, size, mt, ct, bt, attrs, fid, chunks, sub, link, sd, ads, sparse, sha, unixMode);
     }
 
     private static void WriteIds(CborWriter w, IReadOnlyList<byte[]> ids)
