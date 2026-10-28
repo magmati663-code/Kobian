@@ -30,7 +30,11 @@ public sealed class RepoReader(IStorageSession session, RepoKeys keys) : IDispos
     /// <summary>Budżet pamięci podręcznej packów (bajty packów w pamięci); ostatnio użyty pack jest trzymany nawet ponad budżet.</summary>
     public const long PackCacheBudgetBytes = 256L * 1024 * 1024;
 
-    private sealed record CachedPack(string Path, long Size, PackReader Reader, AesGcmCipher Cipher);
+    private sealed record CachedPack(string Path, long Size, PackReader Reader, AesGcmCipher Cipher)
+    {
+        /// <summary>Indeks chunkId → pozycja we stopce packa, budowany przy pierwszym wyszukiwaniu (wcześniej liniowy skan na KAŻDY blok: O(n²) dla packów z tysiącami małych bloków).</summary>
+        public Dictionary<string, int>? ByChunk { get; set; }
+    }
 
     public int KnownBlocks => _map.Count;
 
@@ -144,10 +148,24 @@ public sealed class RepoReader(IStorageSession session, RepoKeys keys) : IDispos
     public async Task<IReadOnlyList<TreeEntry>> ReadTreeAsync(byte[] treeId, CancellationToken ct) =>
         TreeCodec.Decode(await ReadBlockAsync(treeId, BlobType.Tree, ct).ConfigureAwait(false));
 
-    private static int FindEntry(PackReader reader, byte[] chunkId)
+    private int FindEntry(PackReader reader, byte[] chunkId)
     {
-        for (var i = 0; i < reader.Entries.Count; i++)
-            if (reader.Entries[i].ChunkId.AsSpan().SequenceEqual(chunkId)) return i;
+        var cached = _packs.FirstOrDefault(p => ReferenceEquals(p.Reader, reader));
+        if (cached is null)
+        {
+            for (var i = 0; i < reader.Entries.Count; i++)
+                if (reader.Entries[i].ChunkId.AsSpan().SequenceEqual(chunkId)) return i;
+        }
+        else
+        {
+            if (cached.ByChunk is null)
+            {
+                var map = new Dictionary<string, int>(reader.Entries.Count, StringComparer.Ordinal);
+                for (var i = 0; i < reader.Entries.Count; i++) map.TryAdd(Convert.ToHexString(reader.Entries[i].ChunkId), i); // pierwszy wpis wygrywa, jak w skanie liniowym
+                cached.ByChunk = map;
+            }
+            if (cached.ByChunk.TryGetValue(Convert.ToHexString(chunkId), out var found)) return found;
+        }
         throw new KobianException(KbCode.ReferenceIntegrityFailed, ErrorClass.Integrity, "Block missing from pack trailer.");
     }
 
