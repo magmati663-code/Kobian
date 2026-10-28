@@ -146,6 +146,7 @@ public sealed class BackupPipeline
         private byte[]? _packId;
         private AesGcmCipher? _packCipher;
         private long _files, _dirs, _raw, _new;
+        private byte[]? _fileBuf;
 
         public RunState(BackupPipeline p, BackupRequest req)
         {
@@ -222,7 +223,9 @@ public sealed class BackupPipeline
         private async Task<(long Size, List<byte[]> Chunks, byte[] Sha)?> FileAsync(string rel, CancellationToken ct)
         {
             var chunks = new List<byte[]>();
-            var buf = new byte[ChunkSize];
+            // Jeden bufor odczytu na uruchomienie (pliki są przetwarzane po kolei; blok jest kopiowany przez ToArray zanim bufor posłuży następnemu plikowi).
+            // Wcześniej każdy plik alokował 4 MiB na stercie dużych obiektów — przy 50 tys. małych plików ~200 GB alokacji do wyzerowania (CPU, RSS ~900 MB).
+            var buf = _fileBuf ??= new byte[ChunkSize];
             long size = 0;
             using var h = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
             Stream s;

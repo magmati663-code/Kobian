@@ -75,6 +75,29 @@ public sealed class BackupPipelineTests : IDisposable
         Assert.False(Directory.EnumerateFiles(Repo, "*.tmp-*", SearchOption.AllDirectories).Any());
     }
 
+    /// <summary>
+    /// Regresja wydajności (smoke 50 tys. małych plików: backup 44 s → 6 s po naprawie): każdy plik alokował własny bufor 4 MiB (sterta dużych obiektów, zerowanie),
+    /// więc alokacje rosły z liczbą plików, nie z ich rozmiarem. 400 małych plików ma alokować rzędy dziesiątek MB, nie ~1,6 GB.
+    /// </summary>
+    [Fact, Trait("BL", "BL-22"), Trait("Category", "Perf-regression")]
+    public async Task Many_small_files_do_not_allocate_a_read_buffer_per_file()
+    {
+        for (var d = 0; d < 4; d++)
+        {
+            Directory.CreateDirectory(Path.Combine(Src, "d" + d));
+            for (var i = 0; i < 100; i++) File.WriteAllBytes(Path.Combine(Src, "d" + d, "f" + i + ".dat"), RandomNumberGenerator.GetBytes(100 + i));
+        }
+        await using var s = await Open();
+        var p = new BackupPipeline(_keys, new VerifiedUploader(s));
+        var before = GC.GetTotalAllocatedBytes(precise: true);
+        var r = await p.RunAsync(new BackupRequest(new FileSystemSource(Src), "job-small", _host, PackTargetSize: 1024 * 1024), _ct);
+        var allocated = GC.GetTotalAllocatedBytes(precise: true) - before;
+
+        Assert.Equal(BackupStatus.Succeeded, r.Status);
+        Assert.Equal(400, r.Stats.Files);
+        Assert.True(allocated < 400L * 1024 * 1024, $"Allocated {allocated / (1024 * 1024)} MiB for 400 small files (regression: per-file 4 MiB buffer).");
+    }
+
     [Fact, Trait("BL", "BL-22"), Trait("AC", "AC-08.1")]
     public async Task Incremental_without_changes_uploads_no_new_packs()
     {
