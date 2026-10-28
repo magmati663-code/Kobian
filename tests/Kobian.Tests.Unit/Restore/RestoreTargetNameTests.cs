@@ -38,6 +38,36 @@ public sealed class RestoreTargetNameTests
         Assert.False(RestoreTarget.TryChild(Root, Root, name, windowsNames: false, out _));
 
     [Fact, Trait("SEC", "D8.9")]
+    public void Volume_root_is_a_valid_restore_target()
+    {
+        // Path.TrimEndingDirectorySeparator nie obcina korzenia („D:\”, „/”) — wcześniej root + separator dawał „D:\\” i odrzucał każdą nazwę
+        var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.GetPathRoot(Path.GetTempPath())!));
+        Assert.True(RestoreTarget.TryChild(root, root, "odtworzone.txt", windowsNames: false, out var target));
+        Assert.Equal(Path.Combine(root, "odtworzone.txt"), target);
+        Assert.False(RestoreTarget.TryChild(root, root, "..", windowsNames: false, out _));
+        Assert.True(Kobian.Domain.PathBoundary.IsUnder(root, target));
+        Assert.False(Kobian.Domain.PathBoundary.IsUnder(root, root)); // sam korzeń nie jest „pod” sobą
+    }
+
+    [Fact, Trait("SEC", "D8.9")]
+    public void Source_rooted_at_a_volume_root_can_be_read()
+    {
+        var root = Path.GetPathRoot(Path.GetTempPath())!;
+        var file = Path.Combine(Path.GetTempPath(), "kobian-rootsrc-" + Guid.NewGuid().ToString("N"));
+        File.WriteAllText(file, "x");
+        try
+        {
+            var src = new Kobian.Engine.Backup.FileSystemSource(root);
+            using var s = src.OpenRead(Path.GetRelativePath(root, file));
+            Assert.Equal(1, s.Length);
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Fact, Trait("SEC", "D8.9")]
     public void Without_windows_rules_a_colon_is_a_legal_name_on_other_platforms()
     {
         if (OperatingSystem.IsWindows()) return; // na Windows „:” jest zawsze odrzucane przez system plików

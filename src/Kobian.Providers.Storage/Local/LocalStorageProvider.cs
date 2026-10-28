@@ -55,7 +55,7 @@ internal sealed class LocalStorageSession : StorageSessionBase
     internal string Resolve(string relative)
     {
         var full = Path.GetFullPath(Path.Join(_root, relative.Replace('/', Path.DirectorySeparatorChar)));
-        if (!full.StartsWith(_root + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+        if (!PathBoundary.IsUnder(_root, full))
             throw new StorageException(ErrorClass.Security, KbCode.InvalidObjectName, "Path escapes destination root.");
         // Każdy istniejący składnik między korzeniem a celem nie może być dowiązaniem (D8.9 — ta sama zasada dla celu).
         var current = _root;
@@ -105,13 +105,31 @@ internal sealed class LocalStorageSession : StorageSessionBase
         {
             throw LocalErrorMap.Map(ex);
         }
-        foreach (var f in files)
+        // Enumeracja jest leniwa: wyjątki (plik przeniesiony przez równoległy StagedRename, odłączony nośnik, brak uprawnień do podkatalogu) lecą z MoveNext,
+        // a nie z EnumerateFiles — kontrakt wymaga StorageException. Ręczny enumerator, bo yield nie może stać w try/catch.
+        using var en = files.GetEnumerator();
+        while (true)
         {
             ct.ThrowIfCancellationRequested();
-            var rel = Path.GetRelativePath(_root, f).Replace(Path.DirectorySeparatorChar, '/');
-            if (!StoragePath.IsValid(rel)) continue; // obce pliki (nie-repo) pomijane
-            var fi = new FileInfo(f);
-            yield return new StatResult(rel, fi.Length, fi.LastWriteTimeUtc, false);
+            StatResult? item = null;
+            try
+            {
+                if (!en.MoveNext()) break;
+                var f = en.Current;
+                var rel = Path.GetRelativePath(_root, f).Replace(Path.DirectorySeparatorChar, '/');
+                if (!StoragePath.IsValid(rel)) continue; // obce pliki (nie-repo) pomijane
+                var fi = new FileInfo(f);
+                item = new StatResult(rel, fi.Length, fi.LastWriteTimeUtc, false);
+            }
+            catch (FileNotFoundException)
+            {
+                continue; // zniknął między wyliczeniem a odczytem rozmiaru (np. tymczasowy plik po rename)
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                throw LocalErrorMap.Map(ex);
+            }
+            if (item is not null) yield return item;
         }
         await Task.CompletedTask.ConfigureAwait(false);
     }

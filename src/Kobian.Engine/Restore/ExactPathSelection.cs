@@ -82,7 +82,7 @@ public static class RestoreTarget
             TreeCodec.ValidateName(name);
             if (windowsNames && WindowsPathMapper.MapComponent(name).Outcome != MapOutcome.Accepted) return false;
             var full = Path.GetFullPath(Path.Join(dir, name));
-            if (!full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.Ordinal) || Path.GetFileName(full) != name) return false;
+            if (!PathBoundary.IsUnder(root, full) || Path.GetFileName(full) != name) return false;
             target = full;
             return true;
         }

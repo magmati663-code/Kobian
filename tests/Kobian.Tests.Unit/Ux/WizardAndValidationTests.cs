@@ -94,6 +94,10 @@ public sealed class JobValidatorTests
     [InlineData(@"C:\Dane|C:\Dane\Faktury")]
     [InlineData(@"C:\dane\|c:\DANE")]
     [InlineData(@"D:\x\y|D:\X")]
+    [InlineData(@"C:\Data|C:\Data\..\Data\sub")] // „..” w ścieżce nie ukrywa nakładania
+    [InlineData(@"C:\Data\.|C:\Data\sub")]
+    [InlineData(@"\\?\C:\Data|C:\Data\sub")] // prefiks długich ścieżek Windows
+    [InlineData(@"\\srv\share|\\?\UNC\srv\share\dir")]
     public void Overlapping_sources_are_rejected(string sources)
     {
         var issues = JobValidator.ValidateSources(sources.Split('|'));
@@ -103,6 +107,10 @@ public sealed class JobValidatorTests
     [Fact]
     public void Sibling_with_common_prefix_is_not_overlap() =>
         Assert.Empty(JobValidator.ValidateSources([@"C:\Dane", @"C:\Dane2"]));
+
+    [Fact]
+    public void Dot_dot_that_leaves_the_folder_is_not_overlap() =>
+        Assert.Empty(JobValidator.ValidateSources([@"C:\Dane", @"C:\Dane\..\Dane2"]));
 
     [Theory, Trait("SEC", "SEC-6.5")]
     [InlineData("short1!")]

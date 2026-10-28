@@ -58,7 +58,7 @@ public sealed class FileSystemSource : ISourceTree
     {
         if (rel.Length == 0) return _root;
         var full = Path.GetFullPath(Path.Join(_root, rel));
-        if (!full.StartsWith(_root + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+        if (!Kobian.Domain.PathBoundary.IsUnder(_root, full))
             throw new UnauthorizedAccessException("Path escapes source root.");
         return full;
     }

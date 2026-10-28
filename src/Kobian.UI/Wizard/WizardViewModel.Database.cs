@@ -179,9 +179,9 @@ public sealed partial class WizardViewModel
             var usable = Databases.Where(d => d.CanBackup).ToList();
             if (usable.Count == 1) SelectedDatabase = usable[0]; // jedna baza do wyboru — bez dodatkowego kliknięcia
         }
-        catch (IOException)
+        catch (Exception ex) when (Kobian.UI.Services.UiFailure.IsServiceFailure(ex))
         {
-            if (version == _discoveryVersion) ShowText($"{Strings.Get("Offline.Headline")} ({AgentOffline})"); // jak SCR-02 (R2.6.4)
+            if (version == _discoveryVersion) ShowText(ex is IOException ? $"{Strings.Get("Offline.Headline")} ({AgentOffline})" : KbText.Full(Kobian.UI.Services.UiFailure.CodeOf(ex))); // jak SCR-02 (R2.6.4)
         }
         finally
         {
@@ -247,9 +247,9 @@ public sealed partial class WizardViewModel
             else if (r.KbCode is not null) Show([new StepIssue("database", r.KbCode)]);
             else PendingCertificate = r;
         }
-        catch (IOException)
+        catch (Exception ex) when (Kobian.UI.Services.UiFailure.IsServiceFailure(ex))
         {
-            if (version == _certificateVersion) ShowText($"{Strings.Get("Offline.Headline")} ({AgentOffline})");
+            if (version == _certificateVersion) ShowText(ex is IOException ? $"{Strings.Get("Offline.Headline")} ({AgentOffline})" : KbText.Full(Kobian.UI.Services.UiFailure.CodeOf(ex)));
         }
         finally
         {
@@ -286,9 +286,9 @@ public sealed partial class WizardViewModel
                 if (r?.KbCode == CertificateChangedCode) PendingCertificate = null; // odcisk nieaktualny — pobierz i porównaj ponownie
             }
         }
-        catch (IOException)
+        catch (Exception ex) when (Kobian.UI.Services.UiFailure.IsServiceFailure(ex))
         {
-            if (version == _certificateVersion) ShowText($"{Strings.Get("Offline.Headline")} ({AgentOffline})");
+            if (version == _certificateVersion) ShowText(ex is IOException ? $"{Strings.Get("Offline.Headline")} ({AgentOffline})" : KbText.Full(Kobian.UI.Services.UiFailure.CodeOf(ex)));
         }
         finally
         {

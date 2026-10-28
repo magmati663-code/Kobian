@@ -27,6 +27,16 @@ public interface IDashboardSource
 
     Task RunJobAsync(string jobId, CancellationToken ct);
 
+    /// <summary>
+    /// Uruchomienie z wynikiem: kod KB przy odmowie usługi (zadanie wyłączone, brak uprawnień…), null przy przyjęciu. Domyślnie opakowuje <see cref="RunJobAsync"/> (źródła bez wyniku).
+    /// Adapter gRPC odrzucał wynik RunOutcome (Task&lt;RunOutcome&gt; rzutowany na Task) — odmowa Agenta znikała bez śladu, a pulpit się nie odświeżał.
+    /// </summary>
+    async Task<string?> StartJobAsync(string jobId, CancellationToken ct)
+    {
+        await RunJobAsync(jobId, ct).ConfigureAwait(false);
+        return null;
+    }
+
     /// <summary>BL-45: potwierdzenie alertu (Operator). Zwraca kod KB przy odmowie, null przy powodzeniu. Domyślnie: usługa bez tej metody (KB-7012).</summary>
     Task<string?> AcknowledgeAlertAsync(string alertId, CancellationToken ct) => Task.FromResult<string?>(Kobian.Domain.KbCode.OperationNotAvailable);
 
@@ -262,7 +272,10 @@ public sealed partial class DashboardViewModel : ObservableObject, Shell.IRefres
 
     [RelayCommand(CanExecute = nameof(CanRun))]
     private Task RunJobAsync(JobTileViewModel? tile, CancellationToken ct) =>
-        tile is null ? Task.CompletedTask : _source.RunJobAsync(tile.Job.JobId, ct);
+        tile is null ? Task.CompletedTask : StartAsync(tile, ct);
+
+    private Task StartAsync(JobTileViewModel tile, CancellationToken ct) =>
+        ActOnAlert(() => _source.StartJobAsync(tile.Job.JobId, ct), string.Format(CultureInfo.CurrentCulture, Strings.Get("Jobs.Started"), tile.Job.Name), ct);
 
     /// <summary>Ekran docelowy akcji naprawczej (np. SCR-09 przy kluczu serwera) — nawigacja w powłoce; null = akcja wykonana na miejscu.</summary>
     public event EventHandler<JobTileViewModel>? NavigationRequested;
@@ -272,7 +285,7 @@ public sealed partial class DashboardViewModel : ObservableObject, Shell.IRefres
     private async Task ActAsync(JobTileViewModel? tile, CancellationToken ct)
     {
         if (tile is null) return;
-        if (tile.RunsJob) await _source.RunJobAsync(tile.Job.JobId, ct).ConfigureAwait(true);
+        if (tile.RunsJob) await StartAsync(tile, ct).ConfigureAwait(true);
         else NavigationRequested?.Invoke(this, tile);
     }
 
@@ -304,10 +317,18 @@ public sealed partial class DashboardViewModel : ObservableObject, Shell.IRefres
         }
         catch (Exception ex) when (ex is IOException or TimeoutException or InvalidOperationException)
         {
-            ConnectionLost = _loaded || ConnectionLost;
             AlertMessageIsError = true;
-            AlertMessage = $"{Strings.Get("Offline.Headline")} (KB-9001)";
-            OnPropertyChanged(nameof(ShowStaleBanner));
+            var code = Kobian.UI.Services.UiFailure.CodeOf(ex);
+            if (code == Kobian.UI.Services.UiFailure.Offline)
+            {
+                ConnectionLost = _loaded || ConnectionLost;
+                AlertMessage = $"{Strings.Get("Offline.Headline")} (KB-9001)";
+                OnPropertyChanged(nameof(ShowStaleBanner));
+            }
+            else
+            {
+                AlertMessage = $"{KbText.Message(code)} ({code})"; // odmowa roli/klient zbyt stary/błąd usługi — usługa działa, więc bez baneru „brak połączenia”
+            }
         }
     }
 

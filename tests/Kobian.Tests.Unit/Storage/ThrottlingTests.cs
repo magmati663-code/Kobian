@@ -19,6 +19,21 @@ public sealed class ThrottlingTests
         public void Advance(TimeSpan d) => _ticks += d.Ticks;
     }
 
+    [Fact]
+    public void Very_low_rate_still_lets_a_full_chunk_through_eventually()
+    {
+        // pojemność wiadra 2×limit < największa porcja (256 KiB) przy limicie < 128 KiB/s: wcześniej _tokens >= n nigdy nie zachodziło (wieczne czekanie)
+        var t = new ManualTime();
+        var bucket = new TokenBucket(1000, t);
+        for (var i = 0; i < 100_000; i++) // porcje czekania ≤ 100 ms, 256 KiB przy 1 kB/s = ~262 s
+        {
+            var wait = bucket.TryAcquire(TokenBucket.MaxChunk);
+            if (wait == TimeSpan.Zero) return;
+            t.Advance(wait);
+        }
+        Assert.Fail("A full chunk could never be acquired at a very low rate.");
+    }
+
     /// <summary>Symulacja zapisu „ile się da”: w każdym kroku 1 ms próbujemy wysłać porcję 64 KiB.</summary>
     private static double MeasureRate(long rate, TimeSpan duration, int chunk = 64 * 1024, ManualTime? t = null, TokenBucket? bucket = null)
     {

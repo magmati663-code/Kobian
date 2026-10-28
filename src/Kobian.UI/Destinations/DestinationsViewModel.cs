@@ -170,9 +170,9 @@ public sealed partial class DestinationsViewModel(IDestinationsSource source) : 
         {
             Apply(card, new DestinationCheck("KB-9001", null, null, false));
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
-            Apply(card, new DestinationCheck("KB-7011", null, null, false));
+            Apply(card, new DestinationCheck(Kobian.UI.Services.UiFailure.CodeOf(ex), null, null, false));
         }
         finally
         {

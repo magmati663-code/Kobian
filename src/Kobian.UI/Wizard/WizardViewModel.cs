@@ -377,6 +377,12 @@ public sealed partial class WizardViewModel : ObservableObject
                     break;
             }
         }
+        catch (Exception ex) when (Kobian.UI.Services.UiFailure.IsServiceFailure(ex))
+        {
+            // Awaria usługi w trakcie kroku (zerwany pipe, przekroczony termin InitRepository 5 min, odmowa roli, starszy Agent): komunikat KB zamiast zamknięcia aplikacji.
+            // Po S4 usługa mogła już utworzyć repozytorium — kreator zostaje na tym kroku, a ponowienie jest idempotentne po stronie Agenta (KB-0105 istniejące repo).
+            ShowText(KbText.Full(Kobian.UI.Services.UiFailure.CodeOf(ex)));
+        }
         finally
         {
             IsBusy = false;

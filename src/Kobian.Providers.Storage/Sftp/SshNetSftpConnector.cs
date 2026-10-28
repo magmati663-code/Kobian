@@ -52,8 +52,17 @@ public sealed class SshNetSftpConnector(ISftpCredentialProvider credentials) : I
             if (cred.PrivateKey is { Length: > 0 } key)
             {
                 using var ms = new MemoryStream(key, writable: false);
-                using var pk = string.IsNullOrEmpty(cred.Passphrase) ? new PrivateKeyFile(ms) : new PrivateKeyFile(ms, cred.Passphrase);
-                methods.Add(new PrivateKeyAuthenticationMethod(cred.UserName, pk));
+                PrivateKeyFile pk;
+                try
+                {
+                    pk = string.IsNullOrEmpty(cred.Passphrase) ? new PrivateKeyFile(ms) : new PrivateKeyFile(ms, cred.Passphrase);
+                }
+                catch (Exception ex) when (ex is Renci.SshNet.Common.SshException or ArgumentException or InvalidOperationException or System.Security.Cryptography.CryptographicException)
+                {
+                    // zły klucz/hasło klucza to błąd konfiguracji (trwały), nie przejściowy — bez tego trafiał do „default → Transient” i był ponawiany
+                    throw new SftpProtocolException(SftpStatus.AuthRejected, "Private key could not be read.", ex);
+                }
+                using (pk) methods.Add(new PrivateKeyAuthenticationMethod(cred.UserName, pk));
             }
 
             if (!string.IsNullOrEmpty(cred.Password))

@@ -262,9 +262,9 @@ public sealed partial class RestoreViewModel : ObservableObject
             {
                 plan = new RestorePreview("KB-9001", 0, 0, 0, [], 0, null, null);
             }
-            catch (InvalidOperationException)
+            catch (InvalidOperationException ex)
             {
-                plan = new RestorePreview("KB-7011", 0, 0, 0, [], 0, null, null);
+                plan = new RestorePreview(Kobian.UI.Services.UiFailure.CodeOf(ex), 0, 0, 0, [], 0, null, null);
             }
             Stage = RestoreStage.Form;
             Plan = plan;
@@ -294,9 +294,9 @@ public sealed partial class RestoreViewModel : ObservableObject
         {
             Result = new RestoreRunResult(RestoreRunState.Failed, "KB-9001");
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
-            Result = new RestoreRunResult(RestoreRunState.Failed, "KB-7011");
+            Result = new RestoreRunResult(RestoreRunState.Failed, Kobian.UI.Services.UiFailure.CodeOf(ex));
         }
         Stage = RestoreStage.Done;
     }

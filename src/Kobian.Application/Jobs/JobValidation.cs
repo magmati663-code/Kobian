@@ -83,8 +83,30 @@ public static class JobValidator
         return issues;
     }
 
-    private static string Normalize(string p) =>
-        p.Replace('/', '\\').TrimEnd('\\').ToUpperInvariant() + "\\";
+    private static string Normalize(string p)
+    {
+        // „..”, „.” i prefiks \\?\ są sprowadzane do postaci kanonicznej — inaczej C:\Data i C:\Data\..\Data\sub nie były wykrywane jako nakładanie (KB-0102).
+        // Poza Windows GetFullPath działa na separatorach '/', więc najpierw ujednolicamy do '\\' tylko dla postaci Windows.
+        var s = p.Replace('/', '\\');
+        if (s.StartsWith(@"\\?\UNC\", StringComparison.OrdinalIgnoreCase)) s = @"\\" + s[8..];
+        else if (s.StartsWith(@"\\?\", StringComparison.Ordinal)) s = s[4..];
+        s = CanonicalSegments(s);
+        return s.TrimEnd('\\').ToUpperInvariant() + "\\";
+    }
+
+    /// <summary>Usuwa segmenty „.” i rozwiązuje „..” (bez dostępu do systemu plików; działa też dla ścieżek Windows sprawdzanych na Linuksie).</summary>
+    private static string CanonicalSegments(string s)
+    {
+        var unc = s.StartsWith(@"\\", StringComparison.Ordinal);
+        var parts = new List<string>();
+        foreach (var seg in s.Split('\\', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (seg == ".") continue;
+            if (seg == ".." && parts.Count > 1) parts.RemoveAt(parts.Count - 1);
+            else if (seg != "..") parts.Add(seg);
+        }
+        return (unc ? @"\\" : "") + string.Join('\\', parts);
+    }
 
     private static bool IsAncestor(string parent, string child) =>
         child.Length > parent.Length && child.StartsWith(parent, StringComparison.Ordinal);

@@ -32,7 +32,8 @@ public sealed class TokenBucket
         }
     }
 
-    private double Burst => _rate is { } r ? 2.0 * r : double.PositiveInfinity;
+    /// <summary>Pojemność nie może być mniejsza niż największa porcja (<see cref="MaxChunk"/>) — inaczej przy niskim limicie <c>_tokens &gt;= n</c> nigdy nie zachodzi i pobranie czeka w nieskończoność.</summary>
+    private double Burst => _rate is { } r ? Math.Max(2.0 * r, MaxChunk) : double.PositiveInfinity;
 
     /// <summary>Zmiana limitu (OnMinuteTick, profil czasowy). Zawartość przycinana do nowej pojemności, bez resetu.</summary>
     public void SetRate(long? bytesPerSecond)
@@ -79,7 +80,7 @@ public sealed class TokenBucket
     {
         var now = _time.GetTimestamp();
         if (_rate is { } r)
-            _tokens = Math.Min(2.0 * r, _tokens + (_time.GetElapsedTime(_last, now).TotalSeconds * r));
+            _tokens = Math.Min(Burst, _tokens + (_time.GetElapsedTime(_last, now).TotalSeconds * r));
         _last = now;
     }
 }

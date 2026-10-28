@@ -99,9 +99,9 @@ public sealed partial class DbRestoreViewModel : ObservableObject
         {
             Result = new DbRestoreResult(RestoreRunState.Failed, "KB-9001", null);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
-            Result = new DbRestoreResult(RestoreRunState.Failed, "KB-7011", null);
+            Result = new DbRestoreResult(RestoreRunState.Failed, Kobian.UI.Services.UiFailure.CodeOf(ex), null);
         }
         Stage = RestoreStage.Done;
     }
