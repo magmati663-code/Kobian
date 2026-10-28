@@ -43,7 +43,12 @@ public static class AgentHost
         builder.WebHost.UseKestrel(k =>
         {
             if (OperatingSystem.IsWindows()) k.ListenNamedPipe(options.PipeName, l => l.Protocols = HttpProtocols.Http2);
-            else k.ListenUnixSocket(ApiConventions.UnixSocketPath(options.PipeName), l => l.Protocols = HttpProtocols.Http2); // dev/testy, ADR-0004
+            else
+            {
+                var socketPath = ApiConventions.UnixSocketPath(options.PipeName);
+                UnixSocketCleanup.RemoveIfStale(socketPath); // po awarii zostaje martwe gniazdo i blokuje start
+                k.ListenUnixSocket(socketPath, l => l.Protocols = HttpProtocols.Http2); // dev/testy, ADR-0004
+            }
             k.AddServerHeader = false;
         });
 #if KOBIAN_WINDOWS
