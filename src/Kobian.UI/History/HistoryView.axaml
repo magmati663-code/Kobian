@@ -1,0 +1,113 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:h="using:Kobian.UI.History" xmlns:c="using:Kobian.UI.Controls" xmlns:l="using:Kobian.UI.Localization"
+             x:Class="Kobian.UI.History.HistoryView" x:DataType="h:HistoryViewModel">
+  <!-- SCR-10 Historia (R2.6.1): kopie od najnowszej, grupy dni, filtr zadania, „Odtwórz” → SCR-06. Kolory z tokenów; AutomationId „SCR-10.*”. -->
+  <UserControl.Styles>
+    <!-- Separator tylko między wierszami (ostatni bez linii — nie przecina zaokrąglonych rogów karty). -->
+    <Style Selector="Border.code.empty"><Setter Property="IsVisible" Value="False" /></Style>
+    <Style Selector="ContentPresenter:nth-last-child(1) > Border.histrow"><Setter Property="BorderThickness" Value="0" /></Style>
+    <!-- Wąsko: liczba plików i ID chowane (zostają w nazwie dostępnej wiersza). -->
+    <ContainerQuery Name="history" Query="max-width:760">
+      <Style Selector=":is(Control).histmeta"><Setter Property="IsVisible" Value="False" /></Style>
+    </ContainerQuery>
+  </UserControl.Styles>
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="40,32" Spacing="20" MaxWidth="1100" HorizontalAlignment="Stretch" Container.Name="history" Container.Sizing="Width">
+
+      <Border IsVisible="{Binding ShowStaleBanner}" Background="{DynamicResource Kb.Brush.AtRisk.Bg}" CornerRadius="{StaticResource Kb.Radius.Control}" Padding="16,10"
+              AutomationProperties.AutomationId="SCR-10.ConnectionBanner" AutomationProperties.LiveSetting="Assertive">
+        <TextBlock Text="{l:T Connection.Lost}" Foreground="{DynamicResource Kb.Brush.AtRisk.Text}" FontWeight="SemiBold" TextWrapping="Wrap" />
+      </Border>
+
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="display" Text="{Binding Title}" AutomationProperties.AutomationId="SCR-10.Title" />
+          <TextBlock Classes="muted" Text="{Binding Summary}" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <ComboBox ItemsSource="{Binding JobOptions}" SelectedItem="{Binding SelectedJob}" MinWidth="200" IsVisible="{Binding !IsOffline}"
+                    AutomationProperties.AutomationId="SCR-10.JobFilter" AutomationProperties.Name="{l:T History.JobFilter}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate DataType="h:HistoryJobOption"><TextBlock Text="{Binding Text}" /></DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <Button Classes="secondary" Command="{Binding RefreshCommand}" AutomationProperties.AutomationId="SCR-10.Refresh" AutomationProperties.Name="{l:T Action.Refresh}"
+                  ToolTip.Tip="{l:T Action.Refresh}">
+            <PathIcon Data="{StaticResource Kb.Icon.Refresh}" Width="14" Height="14" />
+          </Button>
+        </StackPanel>
+      </Grid>
+
+      <Border Classes="card" IsVisible="{Binding IsOffline}" Padding="28" AutomationProperties.AutomationId="SCR-10.Offline">
+        <StackPanel Spacing="10">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <c:ProtectionBadge Classes="large" State="AtRisk" Text="{l:T Offline.Badge}" />
+            <Border Classes="code" VerticalAlignment="Center"><TextBlock Text="{Binding OfflineCode}" /></Border>
+          </StackPanel>
+          <TextBlock Classes="title" Text="{l:T Offline.Headline}" />
+          <Button Classes="primary" HorizontalAlignment="Left" Content="{l:T Offline.Retry}" Command="{Binding RefreshCommand}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" IsVisible="{Binding IsEmpty}" Padding="28" AutomationProperties.AutomationId="SCR-10.Empty">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="title" Text="{l:T History.Empty}" />
+          <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{l:T History.EmptyHint}" />
+        </StackPanel>
+      </Border>
+
+      <ItemsControl ItemsSource="{Binding Days}" IsVisible="{Binding HasRows}" Grid.IsSharedSizeScope="True" AutomationProperties.AutomationId="SCR-10.Days">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate><StackPanel Spacing="20" /></ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="h:HistoryDayGroup">
+            <StackPanel Spacing="8">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Classes="title" FontSize="15" Text="{Binding Header}" />
+                <TextBlock Classes="muted" Text="{Binding CountText}" VerticalAlignment="Center" />
+              </StackPanel>
+              <Border Classes="card" Padding="0">
+                <ItemsControl ItemsSource="{Binding Rows}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="h:HistoryRowViewModel">
+                      <Border Classes="histrow" AutomationProperties.Name="{Binding AccessibleName}">
+                        <!-- Kolumny Auto współdzielone między wierszami wszystkich dni (Grid.IsSharedSizeScope na liście) — równe kolumny. -->
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="64" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="184" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Files" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Size" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Id" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="Act" />
+                          </Grid.ColumnDefinitions>
+                          <TextBlock Classes="body" FontWeight="SemiBold" Text="{Binding Time}" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="1" Classes="body" Text="{Binding Job}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" VerticalAlignment="Center" Margin="0,0,16,0" />
+                          <Border Grid.Column="2" Classes="pill" Classes.full="{Binding IsFull}" Classes.failed="{Binding IsFailed}" Classes.warning="{Binding IsWarning}" VerticalAlignment="Center" HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding ModeText}" />
+                          </Border>
+                          <TextBlock Grid.Column="3" Classes="muted histmeta" Text="{Binding FilesText}" TextWrapping="NoWrap" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,16,0" />
+                          <TextBlock Grid.Column="4" Classes="muted" Text="{Binding SizeText}" TextWrapping="NoWrap" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,16,0" />
+                          <!-- ID kopii chowane wąsko (histmeta); kod KB uruchomienia zostaje — to jedyna informacja „dlaczego”. Klasy zamiast IsVisible: wartość lokalna przesłoniłaby styl ContainerQuery. -->
+                          <Border Grid.Column="5" Classes="code" Classes.histmeta="{Binding CanRestore}" Classes.empty="{Binding !HasCode}" VerticalAlignment="Center" Margin="0,0,16,0">
+                            <TextBlock Text="{Binding ShortId}" />
+                          </Border>
+                          <Button Grid.Column="6" Classes="secondary" Content="{l:T History.Restore}" CommandParameter="{Binding}" IsVisible="{Binding CanRestore}"
+                                  Command="{Binding $parent[UserControl].((h:HistoryViewModel)DataContext).RestoreCommand}" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </Border>
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <TextBlock Classes="muted" IsVisible="{Binding Truncated}" Text="{l:T History.Truncated}" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

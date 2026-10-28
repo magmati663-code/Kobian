@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Dostawcy magazynu: Local, SMB, FTP/FTPS, SFTP (D4.6). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Kobian.Providers.Storage</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kobian.Tests.Unit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FluentFTP" />
+    <PackageReference Include="SSH.NET" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Kobian.Application\Kobian.Application.csproj" />
+    <ProjectReference Include="..\Kobian.Domain\Kobian.Domain.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,9 @@
+# ADR-0033 — Szkielet MSI: WiX poza solucją, custom action w Agencie (D10.2, D2.12, 2.6) — PROWIZORYCZNIE Qb50
+
+- Data: 2026-10-17, iteracja 100 (prowadzi rola 10; 2, 11, 14). Status: przyjęte prowizorycznie (Qb50).
+- Kontekst: S2 = B (MSI per-machine z usługą). D10.2: WiX Toolset; Q37 (opłata OSMF WiX v6+) bez odpowiedzi; pętla działa w Linuksie (S4 = C) — MSI nie da się tu zbudować ani przetestować. D2.12/2.6 wymagają custom action: grupy, ACL %ProgramData%\Kobian, VssAccessControl, prawa LSA.
+- Decyzja: (1) `installer/Package.wxs` + `Kobian.Installer.wixproj` (WixToolset.Sdk 7.0.0) POZA Kobian.sln — pętla nie pobiera WiX; zgodność z `AgentServiceProfile` pilnuje test XML; (2) natywne elementy MSI dla usługi (ServiceInstall, ServiceConfig z RequiredPrivilege i ServiceSid, ServiceConfigFailureActions) zamiast `sc.exe`; (3) custom action = `Kobian.Agent.exe --provision|--unprovision` (deferred, Impersonate=no, bez skryptów, jeden stały argument), kroki z `AgentInstallPlan` przez port `IInstallProvisioner` (Application) i adapter `WindowsInstallProvisioner` (Platform.Windows: NetLocalGroupAdd, DirectorySecurity, rejestr 64-bit, LsaAdd/RemoveAccountRights); (4) odinstalowanie usuwa tylko VssAccessControl i prawa LSA — dane i grupy zostają.
+- PROWIZORYCZNIE: nazwy grup po angielsku niezależnie od języka systemu; podkatalogi danych z jawnym (powtórzonym) ACL; instalacja bez UI (domyślne okna WiX), bez CONFIG= i winget.
+- Konsekwencje: zmiana profilu usługi wymaga zmiany Package.wxs (test czerwony do czasu); pierwsza kompilacja WiX może wymagać poprawek schematu (W-42 — „niezweryfikowane kompilatorem WiX”).
+- Alternatywy: CA w C# (WixToolset.Dtf — kolejny pakiet, ładowany do msiexec); `sc.exe`/`icacls` z CA (powłoka/składanie poleceń — zakazane SEC); inny generator MSI bez OSMF (do oceny przy Q37).
+- Koszt zmiany zdania: mały–średni (plan i adapter są niezależne od WiX).

@@ -1,0 +1,7 @@
+bin/
+obj/
+.toolchain/
+_to_delete/
+*.tgz
+*.user
+.vs/

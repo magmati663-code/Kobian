@@ -1,0 +1,5 @@
+<Project>
+  <!-- Bezpieczeństwo/prywatność budowy: Avalonia.BuildServices wysyła anonimową telemetrię przy kompilacji (cel AvaloniaStats).
+       Nadpisujemy cel pustym — niezależnie od zmiennej AVALONIA_TELEMETRY_OPTOUT (ustawianej też w tools/ci.sh). Zakaz ruchu sieciowego z kompilacji (SEC: supply-chain). -->
+  <Target Name="AvaloniaStats" />
+</Project>

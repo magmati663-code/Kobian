@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Źródła: Files, MsSql (+ 1.1: MySql, PostgreSql, Sqlite). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Kobian.Providers.Sources</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Erp\Profiles\*.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kobian.Tests.Unit" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Adapter IMsSqlSession (BL-40 cz. 2); plan „Zależności — audyt”: Przyjęte (5.2), re-audyt it. 71 -->
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Kobian.Application\Kobian.Application.csproj" />
+    <ProjectReference Include="..\Kobian.Domain\Kobian.Domain.csproj" />
+  </ItemGroup>
+</Project>

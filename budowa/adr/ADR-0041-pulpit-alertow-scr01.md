@@ -1,0 +1,5 @@
+# ADR-0041 — Lista alertów na pulpicie SCR-01 (BL-45/BL-82, Qb106)
+Status: PROWIZORYCZNIE (it. 131). Powiązane: D9.7, D9.8, R2.9.6, SEC-9.6, 6.7, KB-6120/7011/7012.
+Decyzja: `GetStatus.alerts` mapowane na `DashboardData.Alerts` (`DashboardAlert`); wiersz = waga słownie + tytuł reguły z zasobów po kodzie (`Alert.A01…A17`; nieznany kod = „Alert Axx”, nigdy pusty wiersz) + podmiot + stan + czas + kod KB. Akcje: „Potwierdź” (rola Operator, tylko alert open/notified) i „Wycisz na 4 h” (Administrator). UI nie wysyła wywołania, którego rola nie ma; autoryzację i tak egzekwuje Agent (D2.9). Po powodzeniu pulpit przeładowuje dane z usługi (nie zgaduje stanu lokalnie). Alert bez `alert_id` (stary Agent) jest pomijany — nie da się go potwierdzić, więc nie pokazujemy martwych przycisków.
+Alternatywy: okno szczegółów alertu z wyborem czasu wyciszenia (więcej UI — odłożone); osobny ekran alertów (rozprasza pulpit 6.3).
+Konsekwencje: stały czas wyciszenia 4 h (`DashboardViewModel.DefaultSilenceMinutes`; Agent skraca do 24 h dla alertów bezpieczeństwa — i tak mieści się). Koszt zmiany zdania: niski (jedna stała + okno wyboru).

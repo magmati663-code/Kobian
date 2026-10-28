@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:p="using:Kobian.UI.Progress" xmlns:c="using:Kobian.UI.Controls" xmlns:l="using:Kobian.UI.Localization"
+             x:Class="Kobian.UI.Progress.RunProgressView" x:DataType="p:RunProgressViewModel">
+  <!-- SCR-07 widok postępu uruchomienia (RD-79). AutomationId „SCR-07.Progress.*”. -->
+  <Border Classes="card" Padding="20" AutomationProperties.AutomationId="SCR-07.Progress.Panel">
+    <StackPanel Spacing="12">
+      <TextBlock Classes="title" Text="{Binding HeadlineText}" TextWrapping="Wrap" IsVisible="{Binding HeadlineText.Length}" AutomationProperties.AutomationId="SCR-07.Progress.Headline" />
+      <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding IsActive}" AutomationProperties.LiveSetting="Polite">
+        <ProgressBar IsIndeterminate="True" Width="160" VerticalAlignment="Center" />
+        <TextBlock Classes="body" Text="{Binding StateText}" VerticalAlignment="Center" TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-07.Progress.State" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsFinished}" AutomationProperties.LiveSetting="Assertive">
+        <c:ProtectionBadge State="Protected" Text="{l:T Progress.Badge.Ok}" IsVisible="{Binding IsSuccess}" />
+        <c:ProtectionBadge State="Warning" Text="{l:T Progress.Badge.Warning}" IsVisible="{Binding IsWarning}" />
+        <c:ProtectionBadge State="AtRisk" Text="{l:T Progress.Badge.Failed}" IsVisible="{Binding IsProblemBadge}" />
+        <TextBlock Classes="body" Text="{Binding StateText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+      </StackPanel>
+      <TextBlock Classes="muted" Text="{Binding CountersText}" TextWrapping="Wrap" IsVisible="{Binding CountersText.Length}" AutomationProperties.AutomationId="SCR-07.Progress.Counters" />
+      <Border Classes="notice" Classes.error="{Binding IsProblemBadge}" Classes.warning="{Binding IsWarning}" IsVisible="{Binding HasProblem}" AutomationProperties.AutomationId="SCR-07.Progress.Problem"><TextBlock Text="{Binding ProblemText}" TextWrapping="Wrap" /></Border>
+      <StackPanel Spacing="4" IsVisible="{Binding ShowStop}">
+        <Button Classes="secondary" Content="{l:T Progress.StopWatching}" Command="{Binding StopWatchingCommand}" HorizontalAlignment="Left" AutomationProperties.AutomationId="SCR-07.Progress.Stop" />
+        <TextBlock Classes="muted" Text="{l:T Progress.StopNote}" TextWrapping="Wrap" />
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</UserControl>

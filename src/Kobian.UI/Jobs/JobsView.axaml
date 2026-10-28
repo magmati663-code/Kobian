@@ -1,0 +1,127 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:j="using:Kobian.UI.Jobs" xmlns:c="using:Kobian.UI.Controls" xmlns:l="using:Kobian.UI.Localization"
+             x:Class="Kobian.UI.Jobs.JobsView" x:DataType="j:JobsViewModel">
+  <!-- SCR-02 Zadania (R2.6.1): nagłówek + segmenty filtra + wiersze zadań. Kolory wyłącznie z tokenów; AutomationId „SCR-02.*”. -->
+  <UserControl.Styles>
+    <!-- Wąsko (≤ 860 px treści): metadane i akcje pod nazwą zamiast w kolumnach. -->
+    <!-- Położenie kolumn wyłącznie w stylach: wartość lokalna atrybutu wygrywa ze stylem/ContainerQuery (pułapka z it. 57). -->
+    <Style Selector="StackPanel.rowmeta"><Setter Property="Grid.Column" Value="1" /><Setter Property="Margin" Value="0,0,24,0" /><Setter Property="Width" Value="210" /></Style>
+    <!-- Stała szerokość kolumny akcji: wiersze bez „Wstrzymaj” nie przesuwają kolumny harmonogramu. -->
+    <Style Selector="StackPanel.rowactions"><Setter Property="Grid.Column" Value="2" /><Setter Property="MinWidth" Value="230" /><Setter Property="HorizontalAlignment" Value="Right" /></Style>
+    <ContainerQuery Name="jobs" Query="max-width:860">
+      <Style Selector="StackPanel.rowmeta"><Setter Property="Grid.Column" Value="0" /><Setter Property="Grid.Row" Value="1" /><Setter Property="Margin" Value="0,12,0,0" /><Setter Property="Width" Value="NaN" /><Setter Property="Orientation" Value="Horizontal" /><Setter Property="Spacing" Value="40" /></Style>
+      <Style Selector="StackPanel.rowactions"><Setter Property="Grid.Column" Value="0" /><Setter Property="Grid.Row" Value="2" /><Setter Property="Margin" Value="0,12,0,0" /><Setter Property="HorizontalAlignment" Value="Left" /><Setter Property="MinWidth" Value="0" /></Style>
+    </ContainerQuery>
+  </UserControl.Styles>
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="40,32" Spacing="20" MaxWidth="1100" HorizontalAlignment="Stretch" Container.Name="jobs" Container.Sizing="Width">
+
+      <Border IsVisible="{Binding ShowStaleBanner}" Background="{DynamicResource Kb.Brush.AtRisk.Bg}" CornerRadius="{StaticResource Kb.Radius.Control}" Padding="16,10"
+              AutomationProperties.AutomationId="SCR-02.ConnectionBanner" AutomationProperties.LiveSetting="Assertive">
+        <TextBlock Text="{l:T Connection.Lost}" Foreground="{DynamicResource Kb.Brush.AtRisk.Text}" FontWeight="SemiBold" TextWrapping="Wrap" />
+      </Border>
+
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="display" Text="{Binding Title}" AutomationProperties.AutomationId="SCR-02.Title" />
+          <TextBlock Classes="muted" Text="{l:T Jobs.Subtitle}" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <Button Classes="secondary" Command="{Binding RefreshCommand}" AutomationProperties.AutomationId="SCR-02.Refresh" AutomationProperties.Name="{l:T Action.Refresh}"
+                  ToolTip.Tip="{l:T Action.Refresh}">
+            <PathIcon Data="{StaticResource Kb.Icon.Refresh}" Width="14" Height="14" />
+          </Button>
+          <Button Classes="primary" Content="{l:T Nav.NewJob}" Command="{Binding NewJobCommand}" AutomationProperties.AutomationId="SCR-02.NewJob" />
+        </StackPanel>
+      </Grid>
+
+      <!-- Komunikat ostatniej akcji (KB + akcja albo potwierdzenie) -->
+      <Border IsVisible="{Binding HasNotice}" Classes="notice" Classes.error="{Binding NoticeIsError}" AutomationProperties.AutomationId="SCR-02.Notice"
+              AutomationProperties.LiveSetting="Polite">
+        <TextBlock Text="{Binding Notice}" TextWrapping="Wrap" FontWeight="Medium" />
+      </Border>
+
+      <!-- Bez usługi i bez danych -->
+      <Border Classes="card" IsVisible="{Binding IsOffline}" Padding="28" AutomationProperties.AutomationId="SCR-02.Offline">
+        <StackPanel Spacing="10">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <c:ProtectionBadge Classes="large" State="AtRisk" Text="{l:T Offline.Badge}" />
+            <Border Classes="code" VerticalAlignment="Center"><TextBlock Text="{Binding OfflineCode}" /></Border>
+          </StackPanel>
+          <TextBlock Classes="title" Text="{l:T Offline.Headline}" />
+          <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{l:T Offline.Detail}" />
+          <Button Classes="primary" HorizontalAlignment="Left" Content="{l:T Offline.Retry}" Command="{Binding RefreshCommand}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Brak zadań -->
+      <Border Classes="card" IsVisible="{Binding IsEmpty}" Padding="28" AutomationProperties.AutomationId="SCR-02.Empty">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="title" Text="{l:T Hero.Empty}" />
+          <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{l:T Hero.EmptyHint}" />
+        </StackPanel>
+      </Border>
+
+      <ListBox Classes="segmented" ItemsSource="{Binding Filters}" SelectedItem="{Binding SelectedFilter}" IsVisible="{Binding !IsOffline}"
+               AutomationProperties.AutomationId="SCR-02.Filter" AutomationProperties.Name="{l:T Jobs.FilterName}">
+        <ListBox.ItemsPanel>
+          <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate>
+        </ListBox.ItemsPanel>
+        <ListBox.ItemTemplate>
+          <DataTemplate DataType="j:JobsFilterOption">
+            <TextBlock Text="{Binding Label}" AutomationProperties.AutomationId="{Binding AutomationId}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <TextBlock Classes="muted" IsVisible="{Binding FilterEmpty}" Text="{l:T Jobs.FilterEmpty}" AutomationProperties.AutomationId="SCR-02.FilterEmpty" />
+
+      <ItemsControl ItemsSource="{Binding Rows}" IsVisible="{Binding HasRows}" AutomationProperties.AutomationId="SCR-02.Jobs">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate><StackPanel Spacing="12" /></ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="j:JobRowViewModel">
+            <Border Classes="card" Padding="20,18" AutomationProperties.AutomationId="{Binding AutomationId}" AutomationProperties.Name="{Binding AccessibleName}">
+              <Grid Classes="jobrow" ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto,Auto">
+                <!-- Nazwa, stan, przyczyna -->
+                <StackPanel Spacing="6" Margin="0,0,24,0">
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <c:ProtectionBadge State="{Binding State}" />
+                    <Border Classes="pill" IsVisible="{Binding HasActivity}" VerticalAlignment="Center" AutomationProperties.AutomationId="SCR-02.Activity">
+                      <TextBlock Text="{Binding ActivityText}" />
+                    </Border>
+                    <Border Classes="code" IsVisible="{Binding Code, Converter={x:Static ObjectConverters.IsNotNull}}" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Code}" />
+                    </Border>
+                  </StackPanel>
+                  <TextBlock Classes="title" FontSize="16" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{Binding Detail}" />
+                </StackPanel>
+                <!-- Harmonogram i ostatnia kopia -->
+                <StackPanel Classes="rowmeta" Spacing="10" VerticalAlignment="Center">
+                  <StackPanel Spacing="2">
+                    <TextBlock Classes="label" Text="{l:T Jobs.Schedule}" />
+                    <TextBlock Classes="body" Text="{Binding ScheduleText}" />
+                  </StackPanel>
+                  <StackPanel Spacing="2">
+                    <TextBlock Classes="label" Text="{l:T Job.LastSuccess}" />
+                    <TextBlock Classes="body" Text="{Binding LastCopy}" />
+                  </StackPanel>
+                </StackPanel>
+                <!-- Akcje (od roli Operator — 6.7) -->
+                <StackPanel Classes="rowactions" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <Button Classes="secondary" Content="{l:T Action.RunNow}" CommandParameter="{Binding}"
+                          Command="{Binding $parent[UserControl].((j:JobsViewModel)DataContext).RunCommand}"
+                          ToolTip.Tip="{Binding $parent[UserControl].((j:JobsViewModel)DataContext).RunHint}" />
+                  <Button Classes="secondary" Content="{Binding ToggleText}" IsVisible="{Binding HasSchedule}" CommandParameter="{Binding}"
+                          Command="{Binding $parent[UserControl].((j:JobsViewModel)DataContext).ToggleScheduleCommand}" />
+                </StackPanel>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

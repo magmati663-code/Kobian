@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Action.Disabled" xml:space="preserve"><value>Resume job</value></data>
+  <data name="Action.HostKeyMismatch" xml:space="preserve"><value>Verify server</value></data>
+  <data name="Action.LastRunFailed" xml:space="preserve"><value>Show cause</value></data>
+  <data name="Action.LastRunWarning" xml:space="preserve"><value>Show skipped files</value></data>
+  <data name="Action.LowSpace" xml:space="preserve"><value>Manage space</value></data>
+  <data name="Action.NeverSucceeded" xml:space="preserve"><value>Back up now</value></data>
+  <data name="Action.NewJob" xml:space="preserve"><value>Create your first job</value></data>
+  <data name="Action.NotDeleteProtected" xml:space="preserve"><value>How to secure the destination</value></data>
+  <data name="Action.NotVerified" xml:space="preserve"><value>Verify now</value></data>
+  <data name="Action.Ok" xml:space="preserve"><value>Back up now</value></data>
+  <data name="Action.Overdue" xml:space="preserve"><value>Back up now</value></data>
+  <data name="Action.Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Action.RepositoryDamaged" xml:space="preserve"><value>Check repository</value></data>
+  <data name="ReadOnly.Title" xml:space="preserve"><value>View-only mode: you can see backup status, but you cannot run or change jobs.</value></data>
+  <data name="ReadOnly.Elevate" xml:space="preserve"><value>Your account is an administrator, but Kobian is running without elevated rights. Close the app and start it again with “Run as administrator”.</value></data>
+  <data name="ReadOnly.AskOperator" xml:space="preserve"><value>To run backups, ask the computer’s administrator to add your account to the “Kobian Operators” group.</value></data>
+  <data name="Action.RequiresOperator" xml:space="preserve"><value>Requires the Kobian Operator role</value></data>
+  <data name="Action.RunNow" xml:space="preserve"><value>Run now</value></data>
+  <data name="Action.V3Overdue" xml:space="preserve"><value>Check data now</value></data>
+  <data name="App.Tagline" xml:space="preserve"><value>Backups</value></data>
+  <data name="App.Title" xml:space="preserve"><value>Kobian Backup</value></data>
+  <data name="Retention.Held" xml:space="preserve"><value>Cleanup of old backups is paused — a large system clock jump was detected. New backups run as usual.</value></data>
+  <data name="Retention.Held.Admin" xml:space="preserve"><value>Check the computer date and time, then confirm resuming with:</value></data>
+  <data name="Retention.Held.Other" xml:space="preserve"><value>Ask an administrator to check the clock and confirm resuming cleanup.</value></data>
+  <data name="Connection.Lost" xml:space="preserve"><value>No connection to the Kobian service. Data may be out of date.</value></data>
+  <data name="Dashboard.Destinations" xml:space="preserve"><value>Destination space</value></data>
+  <data name="Dashboard.Jobs" xml:space="preserve"><value>Backup jobs</value></data>
+  <data name="Dashboard.UpdatedAt" xml:space="preserve"><value>Status as of {0}</value></data>
+  <data name="Hero.AtRisk" xml:space="preserve"><value>Some data is not protected</value></data>
+  <data name="Hero.Empty" xml:space="preserve"><value>You have no backup jobs yet</value></data>
+  <data name="Hero.EmptyHint" xml:space="preserve"><value>The wizard takes about 5 minutes and ends with a test restore of one file.</value></data>
+  <data name="Hero.Paused" xml:space="preserve"><value>Backups are paused</value></data>
+  <data name="Hero.Protected" xml:space="preserve"><value>Your data is protected</value></data>
+  <data name="Hero.Summary" xml:space="preserve"><value>{0} of {1} jobs protected</value></data>
+  <data name="Hero.Warning" xml:space="preserve"><value>Backups run, but need attention</value></data>
+  <data name="Job.Destination" xml:space="preserve"><value>Destination</value></data>
+  <data name="Job.LastCopy" xml:space="preserve"><value>Last backup</value></data>
+  <data name="Job.Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Nav.ComingSoon" xml:space="preserve"><value>This screen arrives in a later version.</value></data>
+  <data name="Nav.Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Nav.Destinations" xml:space="preserve"><value>Destinations</value></data>
+  <data name="Nav.History" xml:space="preserve"><value>History</value></data>
+  <data name="Nav.Jobs" xml:space="preserve"><value>Jobs</value></data>
+  <data name="Nav.Restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="Nav.Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Plural.Day.Few" xml:space="preserve"><value>{0} days</value></data>
+  <data name="Plural.Day.Many" xml:space="preserve"><value>{0} days</value></data>
+  <data name="Plural.Day.One" xml:space="preserve"><value>{0} day</value></data>
+  <data name="Plural.File.Few" xml:space="preserve"><value>{0} files</value></data>
+  <data name="Plural.File.Many" xml:space="preserve"><value>{0} files</value></data>
+  <data name="Plural.File.One" xml:space="preserve"><value>{0} file</value></data>
+  <data name="Plural.Hour.Few" xml:space="preserve"><value>{0} hours</value></data>
+  <data name="Plural.Hour.Many" xml:space="preserve"><value>{0} hours</value></data>
+  <data name="Plural.Hour.One" xml:space="preserve"><value>{0} hour</value></data>
+  <data name="Reason.Disabled" xml:space="preserve"><value>Job disabled — no backups are made.</value></data>
+  <data name="Reason.HostKeyMismatch" xml:space="preserve"><value>The server presented a different key than remembered. Backups are held for safety.</value></data>
+  <data name="Reason.LastRunFailed" xml:space="preserve"><value>The last backup failed.</value></data>
+  <data name="Reason.LastRunWarning" xml:space="preserve"><value>Backup finished with warnings.</value></data>
+  <data name="Reason.LastRunWarningFiles" xml:space="preserve"><value>Backup finished with warnings: {0} skipped (locked).</value></data>
+  <data name="Reason.LowSpace" xml:space="preserve"><value>{0}% free space left on the destination.</value></data>
+  <data name="Reason.NeverSucceeded" xml:space="preserve"><value>No successful backup yet.</value></data>
+  <data name="Reason.NotDeleteProtected" xml:space="preserve"><value>The destination does not protect backups from deletion (e.g. ransomware).</value></data>
+  <data name="Reason.NotVerified" xml:space="preserve"><value>The last backup is not verified yet.</value></data>
+  <data name="Reason.Ok" xml:space="preserve"><value>Last backup: {0} · Next: {1}</value></data>
+  <data name="Reason.Overdue" xml:space="preserve"><value>No successful backup for {0}.</value></data>
+  <data name="Reason.RepositoryDamaged" xml:space="preserve"><value>The repository on the destination is damaged. The next backup will be full.</value></data>
+  <data name="Reason.V3Overdue" xml:space="preserve"><value>Periodic data check on the destination is overdue.</value></data>
+  <data name="Space.Free" xml:space="preserve"><value>{0}% free</value></data>
+  <data name="State.AtRisk" xml:space="preserve"><value>At risk</value></data>
+  <data name="State.Paused" xml:space="preserve"><value>Paused</value></data>
+  <data name="State.Protected" xml:space="preserve"><value>Protected</value></data>
+  <data name="State.Warning" xml:space="preserve"><value>Attention</value></data>
+  <data name="Time.Never" xml:space="preserve"><value>never</value></data>
+  <data name="Time.NotScheduled" xml:space="preserve"><value>manual</value></data>
+  <data name="Time.Today" xml:space="preserve"><value>today {0}</value></data>
+  <data name="Time.Tomorrow" xml:space="preserve"><value>tomorrow {0}</value></data>
+  <data name="Time.Yesterday" xml:space="preserve"><value>yesterday {0}</value></data>
+  <data name="Verify.NotVerified" xml:space="preserve"><value>Not verified</value></data>
+  <data name="Verify.Verified" xml:space="preserve"><value>Verified</value></data>
+  <data name="Job.LastSuccess" xml:space="preserve"><value>Last successful backup</value></data>
+  <data name="Reason.OkTile" xml:space="preserve"><value>Backups run on schedule and are verified.</value></data>
+  <data name="Space.FreeLow" xml:space="preserve"><value>only {0}% free</value></data>
+  <data name="Verify.Level" xml:space="preserve"><value>Verified (V{0})</value></data>
+  <data name="Offline.Headline" xml:space="preserve"><value>The Kobian service is not running</value></data>
+  <data name="Offline.Detail" xml:space="preserve"><value>No backups are made until the service is started.</value></data>
+  <data name="Offline.Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Offline.Badge" xml:space="preserve"><value>Disconnected</value></data>
+  <data name="Cron.Custom" xml:space="preserve"><value>custom schedule ({0})</value></data>
+  <data name="Cron.Hourly" xml:space="preserve"><value>every hour</value></data>
+  <data name="Cron.HourlyAt" xml:space="preserve"><value>every hour at :{0}</value></data>
+  <data name="Cron.Daily" xml:space="preserve"><value>daily at {0}</value></data>
+  <data name="Cron.Weekdays" xml:space="preserve"><value>weekdays at {0}</value></data>
+  <data name="Cron.Weekly" xml:space="preserve"><value>weekly: {0}, {1}</value></data>
+  <data name="Jobs.Pause" xml:space="preserve"><value>Pause</value></data>
+  <data name="Jobs.Resume" xml:space="preserve"><value>Resume</value></data>
+  <data name="Jobs.Activity.Queued" xml:space="preserve"><value>Queued</value></data>
+  <data name="Jobs.Activity.Running" xml:space="preserve"><value>Running</value></data>
+  <data name="Jobs.Started" xml:space="preserve"><value>Backup of “{0}” started.</value></data>
+  <data name="Jobs.Paused" xml:space="preserve"><value>Schedule of “{0}” paused — manual runs still work.</value></data>
+  <data name="Jobs.Resumed" xml:space="preserve"><value>Schedule of “{0}” resumed.</value></data>
+  <data name="Jobs.Manual" xml:space="preserve"><value>manual only</value></data>
+  <data name="Jobs.SchedulePaused" xml:space="preserve"><value>paused ({0})</value></data>
+  <data name="Jobs.Filter.All" xml:space="preserve"><value>All</value></data>
+  <data name="Jobs.Filter.Attention" xml:space="preserve"><value>Needs attention</value></data>
+  <data name="Jobs.Filter.Paused" xml:space="preserve"><value>Paused</value></data>
+  <data name="Jobs.FilterName" xml:space="preserve"><value>Job filter</value></data>
+  <data name="Jobs.FilterEmpty" xml:space="preserve"><value>No jobs in this view.</value></data>
+  <data name="Jobs.Subtitle" xml:space="preserve"><value>All backup jobs — state, schedule and last successful backup.</value></data>
+  <data name="Jobs.Schedule" xml:space="preserve"><value>Schedule</value></data>
+  <data name="Nav.NewJob" xml:space="preserve"><value>New job</value></data>
+  <data name="History.AllJobs" xml:space="preserve"><value>All jobs</value></data>
+  <data name="History.Mode.Full" xml:space="preserve"><value>full</value></data>
+  <data name="History.Mode.Incremental" xml:space="preserve"><value>incremental</value></data>
+  <data name="History.Today" xml:space="preserve"><value>Today</value></data>
+  <data name="History.Yesterday" xml:space="preserve"><value>Yesterday</value></data>
+  <data name="History.Summary" xml:space="preserve"><value>{0} · latest {1}</value></data>
+  <data name="History.JobFilter" xml:space="preserve"><value>Job</value></data>
+  <data name="History.Empty" xml:space="preserve"><value>No backups yet</value></data>
+  <data name="History.EmptyHint" xml:space="preserve"><value>The first backup will appear here after the job runs.</value></data>
+  <data name="History.Restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="History.Truncated" xml:space="preserve"><value>Showing the 500 most recent entries — pick a job to narrow the list.</value></data>
+  <data name="Plural.Copy.One" xml:space="preserve"><value>{0} backup</value></data>
+  <data name="Plural.Copy.Few" xml:space="preserve"><value>{0} backups</value></data>
+  <data name="Plural.Copy.Many" xml:space="preserve"><value>{0} backups</value></data>
+  <data name="Reason.SchedulePaused" xml:space="preserve"><value>Schedule paused — automatic backups are not running.</value></data>
+  <data name="Wizard.Step.1" xml:space="preserve"><value>What to protect</value></data>
+  <data name="Wizard.Step.2" xml:space="preserve"><value>Where</value></data>
+  <data name="Wizard.Step.3" xml:space="preserve"><value>When</value></data>
+  <data name="Wizard.Step.4" xml:space="preserve"><value>Security</value></data>
+  <data name="Wizard.Step.5" xml:space="preserve"><value>How long</value></data>
+  <data name="Wizard.Step.6" xml:space="preserve"><value>Summary</value></data>
+  <data name="Wizard.StepOf" xml:space="preserve"><value>Step {0} of {1}</value></data>
+  <data name="Wizard.Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Wizard.Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Wizard.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Wizard.Save" xml:space="preserve"><value>Save job</value></data>
+  <data name="Wizard.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Wizard.S1.Title" xml:space="preserve"><value>Choose folders to protect</value></data>
+  <data name="Wizard.S1.Hint" xml:space="preserve"><value>Add at least one folder. Subfolders of a selected folder are protected automatically.</value></data>
+  <data name="Wizard.S1.Watermark" xml:space="preserve"><value>Folder path, e.g. C:\Users\Anna\Documents</value></data>
+  <data name="Wizard.S1.Add" xml:space="preserve"><value>Add folder</value></data>
+  <data name="Wizard.S1.Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Wizard.S2.Title" xml:space="preserve"><value>Where to store backups</value></data>
+  <data name="Wizard.Dest.Local" xml:space="preserve"><value>Local or USB drive</value></data>
+  <data name="Wizard.Dest.Sftp" xml:space="preserve"><value>SFTP server</value></data>
+  <data name="Wizard.Dest.Smb" xml:space="preserve"><value>Network share (SMB)</value></data>
+  <data name="Wizard.S2.SmbCredential" xml:space="preserve"><value>Credential (entry name in the service secret store)</value></data>
+  <data name="Wizard.S2.SmbHint" xml:space="preserve"><value>Enter the folder as a UNC path, e.g. \\nas\backups\office. The share password is stored by an administrator in the service secret store — the wizard does not accept it.</value></data>
+  <data name="Wizard.S2.Host" xml:space="preserve"><value>Server</value></data>
+  <data name="Wizard.S2.Port" xml:space="preserve"><value>Port</value></data>
+  <data name="Wizard.S2.User" xml:space="preserve"><value>User</value></data>
+  <data name="Wizard.S2.Path" xml:space="preserve"><value>Destination folder</value></data>
+  <data name="Wizard.S2.PathWatermark" xml:space="preserve"><value>e.g. E:\KobianBackups</value></data>
+  <data name="Wizard.S2.Hint" xml:space="preserve"><value>Preferably a different drive than the protected data. After “Next” we check that the destination is reachable and writable.</value></data>
+  <data name="Wizard.Identity.Title" xml:space="preserve"><value>Confirm the server identity</value></data>
+  <data name="Wizard.Identity.Hint" xml:space="preserve"><value>This is the first connection to this server. Compare the key fingerprint with the one from the server administrator — approve only if they match.</value></data>
+  <data name="Wizard.Identity.Approve" xml:space="preserve"><value>Fingerprints match — approve</value></data>
+  <data name="Wizard.S3.Title" xml:space="preserve"><value>When to back up</value></data>
+  <data name="Wizard.Schedule.Daily" xml:space="preserve"><value>Daily</value></data>
+  <data name="Wizard.Schedule.Weekdays" xml:space="preserve"><value>Weekdays</value></data>
+  <data name="Wizard.Schedule.Hourly" xml:space="preserve"><value>Hourly</value></data>
+  <data name="Wizard.Schedule.Manual" xml:space="preserve"><value>Manual only</value></data>
+  <data name="Wizard.S3.Time" xml:space="preserve"><value>Time (HH:MM)</value></data>
+  <data name="Wizard.Schedule.ManualHint" xml:space="preserve"><value>Backup only when you click “Run now” — the dashboard will not warn about overdue backups.</value></data>
+  <data name="Wizard.Schedule.BadTime" xml:space="preserve"><value>Enter the time as HH:MM, e.g. 21:00.</value></data>
+  <data name="Wizard.S4.Title" xml:space="preserve"><value>Set the repository password</value></data>
+  <data name="Wizard.S4.Hint" xml:space="preserve"><value>Backups are encrypted. Without the password or the recovery key nobody — including support — can restore the data. At least 12 characters; a few words work best.</value></data>
+  <data name="Wizard.S4.Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Wizard.S4.Confirm" xml:space="preserve"><value>Repeat password</value></data>
+  <data name="Wizard.Security.Create" xml:space="preserve"><value>Create repository</value></data>
+  <data name="Wizard.Security.Mismatch" xml:space="preserve"><value>The passwords differ — type the same password in both fields.</value></data>
+  <data name="Wizard.Key.Title" xml:space="preserve"><value>Write down the recovery key</value></data>
+  <data name="Wizard.Key.Hint" xml:space="preserve"><value>It is the only way to recover data if the password is lost. Write it on paper and keep it away from the computer. To continue, type the two indicated groups.</value></data>
+  <data name="Wizard.Key.Group" xml:space="preserve"><value>Group {0}</value></data>
+  <data name="Wizard.Key.Confirm" xml:space="preserve"><value>I wrote it down — next</value></data>
+  <data name="Wizard.Key.Mismatch" xml:space="preserve"><value>The typed groups do not match the key. Check your copy and try again.</value></data>
+  <data name="Wizard.S5.Title" xml:space="preserve"><value>How long to keep backups</value></data>
+  <data name="Wizard.S5.Hint" xml:space="preserve"><value>Backups outside these rules are marked for removal during cleanup (preview first). Each rule keeps the newest backup of its period.</value></data>
+  <data name="Wizard.S5.Daily" xml:space="preserve"><value>Daily (days)</value></data>
+  <data name="Wizard.S5.Weekly" xml:space="preserve"><value>Weekly (weeks)</value></data>
+  <data name="Wizard.S5.Monthly" xml:space="preserve"><value>Monthly (months)</value></data>
+  <data name="Wizard.Retention.Summary" xml:space="preserve"><value>daily: {0}, weekly: {1}, monthly: {2}</value></data>
+  <data name="Wizard.S6.Title" xml:space="preserve"><value>Review and save</value></data>
+  <data name="Wizard.S6.Name" xml:space="preserve"><value>Job name</value></data>
+  <data name="Wizard.S6.Sources" xml:space="preserve"><value>Folders</value></data>
+  <data name="Wizard.S6.Destination" xml:space="preserve"><value>Destination</value></data>
+  <data name="Wizard.S6.Schedule" xml:space="preserve"><value>Schedule</value></data>
+  <data name="Wizard.S6.Retention" xml:space="preserve"><value>Retention</value></data>
+  <data name="Wizard.S6.RunNow" xml:space="preserve"><value>Run the first backup now</value></data>
+  <data name="Wizard.Final.Title" xml:space="preserve"><value>Job saved</value></data>
+  <data name="Wizard.Final.Running" xml:space="preserve"><value>First backup in progress…</value></data>
+  <data name="Wizard.Final.Protected" xml:space="preserve"><value>First backup completed and verified. Your data is protected.</value></data>
+  <data name="Wizard.Final.Saved" xml:space="preserve"><value>Job saved. The first backup will run on schedule.</value></data>
+  <data name="Wizard.Final.Failed" xml:space="preserve"><value>Job saved, but the first backup failed: {0}</value></data>
+  <data name="History.Run.Failed" xml:space="preserve"><value>failed</value></data>
+  <data name="History.Run.Warning" xml:space="preserve"><value>with warnings</value></data>
+  <data name="History.Run.Skipped" xml:space="preserve"><value>skipped</value></data>
+  <data name="History.Run.Missed" xml:space="preserve"><value>missed</value></data>
+  <data name="History.Run.Interrupted" xml:space="preserve"><value>interrupted</value></data>
+  <data name="History.Run.Cancelled" xml:space="preserve"><value>cancelled</value></data>
+  <data name="History.Run.Running" xml:space="preserve"><value>running</value></data>
+  <data name="History.Run.Queued" xml:space="preserve"><value>queued</value></data>
+  <data name="History.Run.Other" xml:space="preserve"><value>run</value></data>
+  <data name="History.Kind.Restore" xml:space="preserve"><value>restore</value></data>
+  <data name="History.Kind.Check" xml:space="preserve"><value>verification</value></data>
+  <data name="History.FailedCount" xml:space="preserve"><value>failed: {0}</value></data>
+  <data name="History.Kind.Restore.Failed" xml:space="preserve"><value>restore failed</value></data>
+  <data name="History.Kind.Restore.Warning" xml:space="preserve"><value>restore with warnings</value></data>
+  <data name="History.Kind.Check.Failed" xml:space="preserve"><value>verification failed</value></data>
+  <data name="History.Kind.Check.Warning" xml:space="preserve"><value>verification with warnings</value></data>
+  <data name="History.Kind.Forget" xml:space="preserve"><value>retention cleanup</value></data>
+  <data name="History.Kind.Forget.Failed" xml:space="preserve"><value>cleanup failed</value></data>
+  <data name="History.Kind.Forget.Warning" xml:space="preserve"><value>cleanup with warnings</value></data>
+  <data name="History.Kind.Prune" xml:space="preserve"><value>space reclaim</value></data>
+  <data name="History.Kind.Prune.Failed" xml:space="preserve"><value>space reclaim failed</value></data>
+  <data name="History.Kind.Prune.Warning" xml:space="preserve"><value>space reclaim with warnings</value></data>
+  <data name="Wizard.Retention.Preview" xml:space="preserve"><value>Once settled: about {0}, the oldest from {1} ago</value></data>
+  <data name="Wizard.Retention.Age.Months" xml:space="preserve"><value>about {0} months</value></data>
+  <data name="Wizard.Retention.Age.Weeks" xml:space="preserve"><value>about {0} weeks</value></data>
+  <data name="Wizard.Retention.Age.Days" xml:space="preserve"><value>{0} days</value></data>
+  <data name="Wizard.Source.Files" xml:space="preserve"><value>Files and folders</value></data>
+  <data name="Wizard.Source.Database" xml:space="preserve"><value>SQL Server database</value></data>
+  <data name="Wizard.Db.Title" xml:space="preserve"><value>Choose the database to protect</value></data>
+  <data name="Wizard.Db.Hint" xml:space="preserve"><value>The Agent connects to the server and only reads the list of databases. The copy is made with BACKUP WITH CHECKSUM — the database keeps working meanwhile.</value></data>
+  <data name="Wizard.Db.Server" xml:space="preserve"><value>SQL server</value></data>
+  <data name="Wizard.Db.ServerWatermark" xml:space="preserve"><value>e.g. SERVER\SQLEXPRESS or server,1433</value></data>
+  <data name="Wizard.Db.Auth" xml:space="preserve"><value>Sign-in</value></data>
+  <data name="Wizard.Db.Auth.Windows" xml:space="preserve"><value>Service account (Windows)</value></data>
+  <data name="Wizard.Db.Auth.Sql" xml:space="preserve"><value>SQL login</value></data>
+  <data name="Wizard.Db.Credential" xml:space="preserve"><value>Name of the SQL credential in the Agent</value></data>
+  <data name="Wizard.Db.CredentialHint" xml:space="preserve"><value>The Agent stores the login and password (secrets folder) — the wizard never sees them.</value></data>
+  <data name="Wizard.Db.Certificate" xml:space="preserve"><value>Approved server certificate (.cer file, optional)</value></data>
+  <data name="Wizard.Db.Discover" xml:space="preserve"><value>Show databases</value></data>
+  <data name="Wizard.Db.Discovering" xml:space="preserve"><value>Reading the database list…</value></data>
+  <data name="Wizard.Db.ServerVersion" xml:space="preserve"><value>SQL Server {0} (version {1})</value></data>
+  <data name="Wizard.Db.Express" xml:space="preserve"><value>Express edition</value></data>
+  <data name="Wizard.Db.Empty" xml:space="preserve"><value>no user databases to protect</value></data>
+  <data name="Wizard.Db.Truncated" xml:space="preserve"><value>showing the first 500 databases</value></data>
+  <data name="Wizard.Db.Recovery" xml:space="preserve"><value>recovery model {0}</value></data>
+  <data name="Wizard.Db.NoBackupRight" xml:space="preserve"><value>no permission to back up</value></data>
+  <data name="Wizard.Db.SelectFirst" xml:space="preserve"><value>Choose a database from the list — click “Show databases” first.</value></data>
+  <data name="Wizard.Db.ShowScript" xml:space="preserve"><value>Show permission script</value></data>
+  <data name="Wizard.Db.HideScript" xml:space="preserve"><value>Hide permission script</value></data>
+  <data name="Wizard.Db.ScriptHint" xml:space="preserve"><value>Give this script to the SQL Server administrator: it grants the Kobian service account only the right to make backups.</value></data>
+  <data name="Wizard.Db.SourceText" xml:space="preserve"><value>Database {0} on server {1}</value></data>
+  <data name="Wizard.Db.FetchCertificate" xml:space="preserve"><value>Get server certificate</value></data>
+  <data name="Wizard.Db.Fetching" xml:space="preserve"><value>Reading the certificate…</value></data>
+  <data name="Wizard.Db.CertTitle" xml:space="preserve"><value>Check the SQL Server certificate</value></data>
+  <data name="Wizard.Db.CertHint" xml:space="preserve"><value>Compare the SHA-256 fingerprint with the SQL Server administrator (SQL Server Configuration Manager → Protocols → Certificate). Approve only if it matches — the Agent will remember this certificate and reject any other.</value></data>
+  <data name="Wizard.Db.CertDetails" xml:space="preserve"><value>{0} · issued by {1} · valid until {2}</value></data>
+  <data name="Wizard.Db.CertSelfIssued" xml:space="preserve"><value>self-signed certificate</value></data>
+  <data name="Wizard.Db.CertTrusted" xml:space="preserve"><value>trusted by the system — approval optional</value></data>
+  <data name="Wizard.Db.CertApprove" xml:space="preserve"><value>Approve fingerprint</value></data>
+  <data name="Wizard.Db.CertReject" xml:space="preserve"><value>Reject</value></data>
+  <data name="Wizard.Db.CertApproved" xml:space="preserve"><value>Certificate approved: {0}</value></data>
+  <data name="Browse.Title" xml:space="preserve"><value>Browse backups</value></data>
+  <data name="Browse.Snapshots" xml:space="preserve"><value>Backups</value></data>
+  <data name="Browse.Kind.Folder" xml:space="preserve"><value>folder</value></data>
+  <data name="Browse.Kind.File" xml:space="preserve"><value>file</value></data>
+  <data name="Browse.Kind.Link" xml:space="preserve"><value>link (not restored)</value></data>
+  <data name="Browse.RestoreAll" xml:space="preserve"><value>Restore the whole backup…</value></data>
+  <data name="Browse.RestoreFolder" xml:space="preserve"><value>Restore this folder…</value></data>
+  <data name="Browse.RestoreItem" xml:space="preserve"><value>Restore…</value></data>
+  <data name="Browse.Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Browse.Up" xml:space="preserve"><value>Up</value></data>
+  <data name="Browse.RootCrumb" xml:space="preserve"><value>Backup from {0}</value></data>
+  <data name="Browse.Empty" xml:space="preserve"><value>No backups to browse</value></data>
+  <data name="Browse.EmptyHint" xml:space="preserve"><value>After the first backup you can browse and restore its contents here.</value></data>
+  <data name="Browse.FolderEmpty" xml:space="preserve"><value>This backup folder is empty.</value></data>
+  <data name="Browse.Truncated" xml:space="preserve"><value>Showing the first 5,000 entries — restore the folder to get all files.</value></data>
+  <data name="Browse.Col.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Browse.Col.Size" xml:space="preserve"><value>Size</value></data>
+  <data name="Browse.Col.Modified" xml:space="preserve"><value>Modified</value></data>
+  <data name="Plural.Folder.One" xml:space="preserve"><value>{0} folder</value></data>
+  <data name="Plural.Folder.Few" xml:space="preserve"><value>{0} folders</value></data>
+  <data name="Plural.Folder.Many" xml:space="preserve"><value>{0} folders</value></data>
+  <data name="Restore.Title" xml:space="preserve"><value>Restore files</value></data>
+  <data name="Restore.SnapshotLine" xml:space="preserve"><value>Backup from {0} · {1} · {2}</value></data>
+  <data name="Restore.WhatAll" xml:space="preserve"><value>Whole backup</value></data>
+  <data name="Restore.WhatFolder" xml:space="preserve"><value>Folder: {0}</value></data>
+  <data name="Restore.WhatFile" xml:space="preserve"><value>File: {0}</value></data>
+  <data name="Restore.Source" xml:space="preserve"><value>What to restore</value></data>
+  <data name="Restore.TargetLabel" xml:space="preserve"><value>Target folder</value></data>
+  <data name="Restore.TargetHint" xml:space="preserve"><value>An existing folder on the computer running the Kobian service, e.g. D:\Restored. The path inside the backup is kept.</value></data>
+  <data name="Restore.TargetInvalid" xml:space="preserve"><value>Enter the full path of an existing folder (e.g. D:\Restored).</value></data>
+  <data name="Restore.Preview" xml:space="preserve"><value>Files will go to: {0}</value></data>
+  <data name="Restore.NoOverwrite" xml:space="preserve"><value>Existing files are never overwritten — they are skipped and listed in the result. Links are not restored.</value></data>
+  <data name="Restore.Plan.Summary" xml:space="preserve"><value>To restore: {0}</value></data>
+  <data name="Restore.Plan.Free" xml:space="preserve"><value>{0} free</value></data>
+  <data name="Restore.Plan.Conflicts" xml:space="preserve"><value>Skipped — already in the destination folder and never overwritten: {0}</value></data>
+  <data name="Restore.Plan.More" xml:space="preserve"><value>…and {0} more</value></data>
+  <data name="Restore.StartAnyway" xml:space="preserve"><value>Restore anyway</value></data>
+  <data name="Restore.Planning" xml:space="preserve"><value>Checking the backup and the destination folder…</value></data>
+  <data name="Restore.Plan.Resumable" xml:space="preserve"><value>From an interrupted attempt: {0} already restored — will be skipped without conflict.</value></data>
+  <data name="Restore.RunningPlan" xml:space="preserve"><value>Restoring: {0} ({1})… Every file is verified with a checksum.</value></data>
+  <data name="Restore.Start" xml:space="preserve"><value>Restore</value></data>
+  <data name="Restore.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Restore.Running" xml:space="preserve"><value>Restoring… Every file is checked against its checksum.</value></data>
+  <data name="Restore.Done.Ok" xml:space="preserve"><value>Restored — all files match the backup.</value></data>
+  <data name="Restore.Done.Warning" xml:space="preserve"><value>Restored with remarks.</value></data>
+  <data name="Restore.Done.Failed" xml:space="preserve"><value>The restore failed.</value></data>
+  <data name="Restore.Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Restore.Close" xml:space="preserve"><value>Done</value></data>
+  <data name="Restore.ShowHistory" xml:space="preserve"><value>Show in history</value></data>
+  <data name="Restore.PickFolder" xml:space="preserve"><value>Browse…</value></data>
+  <data name="Restore.Badge.Ok" xml:space="preserve"><value>restored</value></data>
+  <data name="Restore.Badge.Warning" xml:space="preserve"><value>remarks</value></data>
+  <data name="Restore.Badge.Failed" xml:space="preserve"><value>error</value></data>
+  <data name="Settings.Appearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="Settings.Theme" xml:space="preserve"><value>Theme</value></data>
+  <data name="Settings.Theme.system" xml:space="preserve"><value>Use system setting</value></data>
+  <data name="Settings.Theme.light" xml:space="preserve"><value>Light</value></data>
+  <data name="Settings.Theme.dark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Settings.Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Settings.Lang.system" xml:space="preserve"><value>Use system setting</value></data>
+  <data name="Settings.Lang.pl" xml:space="preserve"><value>Polski</value></data>
+  <data name="Settings.Lang.en" xml:space="preserve"><value>English</value></data>
+  <data name="Settings.RestartNeeded" xml:space="preserve"><value>The new language appears after restarting the application.</value></data>
+  <data name="Settings.Service" xml:space="preserve"><value>Kobian service</value></data>
+  <data name="Settings.Version" xml:space="preserve"><value>Service version</value></data>
+  <data name="Settings.YourRole" xml:space="preserve"><value>Your role</value></data>
+  <data name="Settings.Role.Viewer" xml:space="preserve"><value>Viewer</value></data>
+  <data name="Settings.Role.Operator" xml:space="preserve"><value>Operator</value></data>
+  <data name="Settings.Role.Admin" xml:space="preserve"><value>Administrator</value></data>
+  <data name="Settings.Runtime" xml:space="preserve"><value>.NET patches</value></data>
+  <data name="Settings.RuntimeOk" xml:space="preserve"><value>up to date (at least 10.0.13)</value></data>
+  <data name="Settings.Audit" xml:space="preserve"><value>Audit log</value></data>
+  <data name="Settings.AuditHint" xml:space="preserve"><value>Checks that no recorded operation was changed (SHA-256 hash chain).</value></data>
+  <data name="Settings.AnchorLine" xml:space="preserve"><value>Latest audit anchor ({0}):</value></data>
+  <data name="Settings.AnchorName" xml:space="preserve"><value>Audit log anchor</value></data>
+  <data name="Settings.AnchorHint" xml:space="preserve"><value>Store it off the server (e.g. in a ticket). Later: kobian audit verify --anchor &lt;anchor&gt; detects a rewritten or truncated log.</value></data>
+  <data name="Settings.AuditVerify" xml:space="preserve"><value>Verify log</value></data>
+  <data name="Settings.AuditOk" xml:space="preserve"><value>Log intact — {0}.</value></data>
+  <data name="Settings.AuditBroken" xml:space="preserve"><value>Log changed outside the application from entry {0}.</value></data>
+  <data name="Settings.Offline" xml:space="preserve"><value>No connection to the service — only this computer's settings are shown.</value></data>
+  <data name="Settings.LocalNote" xml:space="preserve"><value>Appearance and language apply only to your account on this computer.</value></data>
+  <data name="Plural.Entry.One" xml:space="preserve"><value>{0} entry</value></data>
+  <data name="Plural.Entry.Few" xml:space="preserve"><value>{0} entries</value></data>
+  <data name="Plural.Entry.Many" xml:space="preserve"><value>{0} entries</value></data>
+  <data name="Runtime.Unpatched" xml:space="preserve"><value>The service runs on an unpatched .NET — backups work, but install the .NET 10 update.</value></data>
+  <data name="Settings.RuntimeBad" xml:space="preserve"><value>unpatched: {0} ({1}) — install the .NET 10 update and restart the service</value></data>
+  <data name="Dest.Scheme.local" xml:space="preserve"><value>Local disk / USB</value></data>
+  <data name="Dest.Scheme.sftp" xml:space="preserve"><value>SFTP server</value></data>
+  <data name="Dest.Scheme.smb" xml:space="preserve"><value>Network share (SMB)</value></data>
+  <data name="Dest.Scheme.ftp" xml:space="preserve"><value>FTP server</value></data>
+  <data name="Dest.Scheme.ftps" xml:space="preserve"><value>FTPS server</value></data>
+  <data name="Dest.Scheme.other" xml:space="preserve"><value>Other</value></data>
+  <data name="Dest.UsedBy" xml:space="preserve"><value>Used by: {0}</value></data>
+  <data name="Dest.Unreadable" xml:space="preserve"><value>Could not read job definitions: {0} — check them in the job list.</value></data>
+  <data name="Dest.Check" xml:space="preserve"><value>Check space</value></data>
+  <data name="Dest.Space" xml:space="preserve"><value>Free {0} of {1} ({2}%)</value></data>
+  <data name="Dest.SpaceUnknown" xml:space="preserve"><value>Connection works — the destination does not report free space.</value></data>
+  <data name="Dest.Empty" xml:space="preserve"><value>No backup destinations</value></data>
+  <data name="Dest.EmptyHint" xml:space="preserve"><value>A destination appears here after you create the first job.</value></data>
+  <data name="Dest.Note" xml:space="preserve"><value>Destinations come from jobs. Adding and editing destinations and credentials — in a later version.</value></data>
+  <data name="Dest.LowSpace" xml:space="preserve"><value>low on space</value></data>
+  <data name="DbRestore.Title" xml:space="preserve"><value>Restore database</value></data>
+  <data name="DbRestore.TargetLabel" xml:space="preserve"><value>New database name</value></data>
+  <data name="DbRestore.TargetPlaceholder" xml:space="preserve"><value>empty = dated name, e.g. Firma_restore_20261014</value></data>
+  <data name="DbRestore.TargetHint" xml:space="preserve"><value>The database is created next to the existing ones on the same SQL Server. The production database is not changed.</value></data>
+  <data name="DbRestore.NameInvalid" xml:space="preserve"><value>Database name: up to 128 characters, no control characters.</value></data>
+  <data name="DbRestore.NoOverwrite" xml:space="preserve"><value>An existing database is never overwritten — if the name is taken, the restore stops with a message (KB-3501).</value></data>
+  <data name="DbRestore.Start" xml:space="preserve"><value>Restore as new database</value></data>
+  <data name="DbRestore.Running" xml:space="preserve"><value>Restoring the database… The backup file is checked with checksums.</value></data>
+  <data name="DbRestore.Done" xml:space="preserve"><value>Restored as new database: {0}</value></data>
+  <data name="Browse.RestoreDb" xml:space="preserve"><value>Restore as new database…</value></data>
+  <data name="History.Mode.Database" xml:space="preserve"><value>database backup</value></data>
+  <data name="Snapshot.Damage.Unrecoverable" xml:space="preserve"><value>cannot be restored</value></data>
+  <data name="Snapshot.Damage.Partial" xml:space="preserve"><value>damaged: {0}</value></data>
+  <data name="Browse.Damage.Unrecoverable" xml:space="preserve"><value>This backup cannot be restored (result of check with repair). Choose another backup from the list.</value></data>
+  <data name="Browse.Damage.Partial" xml:space="preserve"><value>This backup is partially damaged — cannot be restored: {0}. Other files and folders restore normally.</value></data>
+  <data name="Wizard.Dest.Ftps" xml:space="preserve"><value>FTPS server</value></data>
+  <data name="Wizard.Ftps.HostWatermark" xml:space="preserve"><value>e.g. nas.company.local or 192.168.1.20</value></data>
+  <data name="Wizard.Ftps.Mode" xml:space="preserve"><value>Connection encryption</value></data>
+  <data name="Wizard.Ftps.Mode.Explicit" xml:space="preserve"><value>Standard (recommended) · port 21</value></data>
+  <data name="Wizard.Ftps.Mode.Implicit" xml:space="preserve"><value>Older NAS servers · port 990</value></data>
+  <data name="Wizard.Ftps.ModeHint" xml:space="preserve"><value>Both modes encrypt the password and data. If unsure, keep “Standard”; choose port 990 only when the server manual or administrator says so.</value></data>
+  <data name="Wizard.Ftps.ModeShort.Explicit" xml:space="preserve"><value>Explicit TLS</value></data>
+  <data name="Wizard.Ftps.ModeShort.Implicit" xml:space="preserve"><value>Implicit TLS</value></data>
+  <data name="Wizard.Ftps.Credential" xml:space="preserve"><value>Credential (entry name in the service secret store)</value></data>
+  <data name="Wizard.Ftps.CredentialHint" xml:space="preserve"><value>The server login and password are stored by an administrator in the service secret store — the wizard does not accept them. An account without delete rights is recommended.</value></data>
+  <data name="Wizard.Ftps.PathWatermark" xml:space="preserve"><value>e.g. /backups/office</value></data>
+  <data name="Wizard.Ftps.PathHint" xml:space="preserve"><value>Folder on the server, starting with “/”. After “Next” we check the connection, the server certificate and write access.</value></data>
+  <data name="Wizard.Ftps.PlainFtp" xml:space="preserve"><value>Plain FTP without encryption is not available in the wizard — the password and data would travel in clear text. Use FTPS or SFTP.</value></data>
+  <data name="Wizard.Ftps.Summary" xml:space="preserve"><value>{0} · {1} · credential “{2}”</value></data>
+  <data name="Wizard.Ftps.Err.HostRequired" xml:space="preserve"><value>Enter the server name or address.</value></data>
+  <data name="Wizard.Ftps.Err.HostScheme" xml:space="preserve"><value>Enter just the server name, without “ftp://” or “ftps://”.</value></data>
+  <data name="Wizard.Ftps.Err.HostPath" xml:space="preserve"><value>Enter just the server name — put the folder below, in “Destination folder”.</value></data>
+  <data name="Wizard.Ftps.Err.HostUser" xml:space="preserve"><value>Enter just the server name, without a user and “@” — the login is in the credential.</value></data>
+  <data name="Wizard.Ftps.Err.HostPort" xml:space="preserve"><value>Enter just the server name — put the port in the “Port” field.</value></data>
+  <data name="Wizard.Ftps.Err.HostInvalid" xml:space="preserve"><value>The server name may contain only letters, digits, dots and hyphens (or an IP address).</value></data>
+  <data name="Wizard.Ftps.Err.Port" xml:space="preserve"><value>The port must be a number from 1 to 65535.</value></data>
+  <data name="Wizard.Ftps.Err.PathRequired" xml:space="preserve"><value>Enter the folder on the server, e.g. /backups/office.</value></data>
+  <data name="Wizard.Ftps.Err.PathAbsolute" xml:space="preserve"><value>The server folder must start with “/” and use “/” separators, e.g. /backups/office.</value></data>
+  <data name="Wizard.Ftps.Err.PathDotDot" xml:space="preserve"><value>The folder must not contain “..” (going up to a parent folder).</value></data>
+  <data name="Wizard.Ftps.Err.PathInvalid" xml:space="preserve"><value>The folder contains characters that are not allowed or is too long.</value></data>
+  <data name="Wizard.Ftps.Err.CredentialRequired" xml:space="preserve"><value>Enter the credential entry name from the service secret store.</value></data>
+  <data name="Wizard.Ftps.Err.CredentialInvalid" xml:space="preserve"><value>Entry name: letters, digits, “.”, “_”, “-” (up to 64 characters), no “..”.</value></data>
+  <data name="Wizard.Ftps.Identity.Hint" xml:space="preserve"><value>The system does not trust this server's certificate (e.g. a self-signed certificate or a connection by IP address). Compare the certificate key fingerprint with the one from the server administrator — approve only if they match. The approved fingerprint is saved in the job and survives certificate renewal with the same key.</value></data>
+  <data name="Wizard.Ftps.Identity.Fingerprint" xml:space="preserve"><value>Certificate key fingerprint (SHA-256 SPKI)</value></data>
+  <data name="Wizard.Ftps.Identity.AdminHint" xml:space="preserve"><value>The administrator can read the fingerprint on the server with the command from the “FTPS destination” guide. A different fingerprint = do not approve; go back and check the server address.</value></data>
+  <data name="Wizard.Identity.Server" xml:space="preserve"><value>Server: {0}</value></data>
+  <data name="Wizard.Identity.Presented" xml:space="preserve"><value>Fingerprint presented by the server: {0}</value></data>
+  <data name="Dest.Encrypted" xml:space="preserve"><value>Encrypted connection</value></data>
+  <data name="Dest.Ftps.Pin" xml:space="preserve"><value>pinned key {0}</value></data>
+  <data name="Dest.Ftps.SystemTrust" xml:space="preserve"><value>certificate trusted by the system</value></data>
+  <data name="Dest.Ftps.NoDetails" xml:space="preserve"><value>TLS encryption — mode and certificate fingerprint are stored in the job definition</value></data>
+  <data name="Dest.CheckUnavailable" xml:space="preserve"><value>Checking this destination from the list comes in a later service version (the list does not include the server address yet). The wizard and the first backup check the connection.</value></data>
+  <data name="Alert.A01" xml:space="preserve"><value>Job failed</value></data>
+  <data name="Alert.A02" xml:space="preserve"><value>Job finished with a warning</value></data>
+  <data name="Alert.A03" xml:space="preserve"><value>No successful backup for longer than the schedule allows</value></data>
+  <data name="Alert.A04" xml:space="preserve"><value>Verification found a damaged backup repository</value></data>
+  <data name="Alert.A05" xml:space="preserve"><value>Restore test failed</value></data>
+  <data name="Alert.A06" xml:space="preserve"><value>Backup destination is running out of space</value></data>
+  <data name="Alert.A07" xml:space="preserve"><value>A backup disappeared from the destination outside retention</value></data>
+  <data name="Alert.A08" xml:space="preserve"><value>Retention or schedule changed, or a backup was deleted</value></data>
+  <data name="Alert.A09" xml:space="preserve"><value>The destination server key or certificate changed</value></data>
+  <data name="Alert.A10" xml:space="preserve"><value>The destination does not protect against deletion</value></data>
+  <data name="Alert.A11" xml:space="preserve"><value>Ransomware-like anomaly detected</value></data>
+  <data name="Alert.A12" xml:space="preserve"><value>The Kobian service is not responding</value></data>
+  <data name="Alert.A13" xml:space="preserve"><value>A certificate or secret is about to expire</value></data>
+  <data name="Alert.A14" xml:space="preserve"><value>A security update is available</value></data>
+  <data name="Alert.A15" xml:space="preserve"><value>Failed step-up or repeated API denials</value></data>
+  <data name="Alert.A16" xml:space="preserve"><value>Operating system or SQL Server is out of vendor support</value></data>
+  <data name="Alert.A17" xml:space="preserve"><value>System clock jump — backup cleanup paused</value></data>
+  <data name="Alert.Unknown" xml:space="preserve"><value>Alert {0}</value></data>
+  <data name="Alert.Severity.Warning" xml:space="preserve"><value>Warning</value></data>
+  <data name="Alert.Severity.Critical" xml:space="preserve"><value>Critical</value></data>
+  <data name="Alert.Severity.Security" xml:space="preserve"><value>Security</value></data>
+  <data name="Alert.State.Open" xml:space="preserve"><value>New</value></data>
+  <data name="Alert.State.Notified" xml:space="preserve"><value>Notified</value></data>
+  <data name="Alert.State.Acknowledged" xml:space="preserve"><value>Acknowledged</value></data>
+  <data name="Alert.State.Silenced" xml:space="preserve"><value>Silenced</value></data>
+  <data name="Alert.Acknowledged" xml:space="preserve"><value>Alert acknowledged.</value></data>
+  <data name="Alert.Silenced" xml:space="preserve"><value>Alert silenced for {0}.</value></data>
+  <data name="Alert.Escalated" xml:space="preserve"><value>Escalated</value></data>
+  <data name="Dashboard.Alerts" xml:space="preserve"><value>Alerts</value></data>
+  <data name="Alert.Action.Ack" xml:space="preserve"><value>Acknowledge</value></data>
+  <data name="Alert.Action.Silence" xml:space="preserve"><value>Silence</value></data>
+  <data name="Alert.Silence.1h" xml:space="preserve"><value>1 h</value></data>
+  <data name="Alert.Silence.4h" xml:space="preserve"><value>4 h</value></data>
+  <data name="Alert.Silence.24h" xml:space="preserve"><value>24 h</value></data>
+  <data name="Alert.Silence.7d" xml:space="preserve"><value>7 days</value></data>
+  <data name="Alert.Silence.Duration" xml:space="preserve"><value>Silence duration</value></data>
+  <data name="Progress.Title" xml:space="preserve"><value>Run progress</value></data>
+  <data name="Progress.Connecting" xml:space="preserve"><value>Connecting to the service…</value></data>
+  <data name="Progress.Reconnecting" xml:space="preserve"><value>Lost the connection to the service — retrying {0} of {1}…</value></data>
+  <data name="Progress.Lost" xml:space="preserve"><value>Progress can no longer be read. The run may still be going on in the service — check History.</value></data>
+  <data name="Progress.Stopped" xml:space="preserve"><value>Stopped watching. The run continues in the service.</value></data>
+  <data name="Progress.StopWatching" xml:space="preserve"><value>Stop watching</value></data>
+  <data name="Progress.StopNote" xml:space="preserve"><value>This does not stop the run — the service finishes it in the background.</value></data>
+  <data name="Progress.Kind.backup" xml:space="preserve"><value>Backup</value></data>
+  <data name="Progress.Kind.restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="Progress.Kind.check" xml:space="preserve"><value>Verification</value></data>
+  <data name="Progress.Kind.forget" xml:space="preserve"><value>Retention</value></data>
+  <data name="Progress.Kind.other" xml:space="preserve"><value>Run</value></data>
+  <data name="Progress.State.Queued" xml:space="preserve"><value>Queued</value></data>
+  <data name="Progress.State.Running" xml:space="preserve"><value>In progress</value></data>
+  <data name="Progress.State.Succeeded" xml:space="preserve"><value>Finished</value></data>
+  <data name="Progress.State.Warning" xml:space="preserve"><value>Finished with warnings</value></data>
+  <data name="Progress.State.Failed" xml:space="preserve"><value>Finished with an error</value></data>
+  <data name="Progress.State.Skipped" xml:space="preserve"><value>Skipped</value></data>
+  <data name="Progress.State.Missed" xml:space="preserve"><value>Missed its schedule</value></data>
+  <data name="Progress.State.Interrupted" xml:space="preserve"><value>Interrupted</value></data>
+  <data name="Progress.State.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Progress.State.Unknown" xml:space="preserve"><value>Unknown state</value></data>
+  <data name="Progress.BytesRead" xml:space="preserve"><value>Read: {0}</value></data>
+  <data name="Progress.BytesUploaded" xml:space="preserve"><value>Sent to destination: {0}</value></data>
+  <data name="Progress.Files" xml:space="preserve"><value>Files: {0}</value></data>
+  <data name="Progress.Badge.Ok" xml:space="preserve"><value>finished</value></data>
+  <data name="Progress.Badge.Warning" xml:space="preserve"><value>warnings</value></data>
+  <data name="Progress.Badge.Failed" xml:space="preserve"><value>error</value></data>
+</root>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- kobian.exe — klient API (6.8). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>kobian</AssemblyName>
+    <RootNamespace>Kobian.Cli</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Grpc.Net.Client" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Kobian.Api.Contracts\Kobian.Api.Contracts.csproj" />
+    <ProjectReference Include="..\Kobian.Domain\Kobian.Domain.csproj" />
+  </ItemGroup>
+</Project>

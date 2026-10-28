@@ -1,0 +1,65 @@
+namespace Kobian.Engine.Backup;
+
+public enum SourceKind
+{
+    File = 0,
+    Directory = 1,
+    Symlink = 2,
+}
+
+/// <summary>Element źródła: nazwa (jeden segment), rodzaj, rozmiar, mtime w ns od epoki, cel dowiązania (nie podążamy — D3.6).</summary>
+public sealed record SourceNode(string Name, SourceKind Kind, long Size, long MtimeNs, string? LinkTarget = null);
+
+/// <summary>Port źródła plików (platform-neutralny). Adapter Windows (VSS, uchwyty, ADS, ACL) — BL-23, poza tym portem.</summary>
+public interface ISourceTree
+{
+    /// <summary>Etykieta źródła do snapshotu (klucz 16) — tylko wewnątrz zaszyfrowanego obiektu.</summary>
+    string DisplayRoot { get; }
+
+    /// <summary>Dzieci katalogu względnego ("" = korzeń). Błąd dostępu = <see cref="IOException"/> / <see cref="UnauthorizedAccessException"/>.</summary>
+    IEnumerable<SourceNode> List(string relativeDir);
+
+    Stream OpenRead(string relativePath);
+}
+
+/// <summary>Źródło z systemu plików (System.IO). Dowiązania zapisywane jako Symlink, nigdy nie są śledzone.</summary>
+public sealed class FileSystemSource : ISourceTree
+{
+    private readonly string _root;
+
+    public FileSystemSource(string root)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        _root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
+        if (!Directory.Exists(_root)) throw new DirectoryNotFoundException("Source root does not exist.");
+    }
+
+    public string DisplayRoot => _root;
+
+    public IEnumerable<SourceNode> List(string relativeDir)
+    {
+        var dir = new DirectoryInfo(Full(relativeDir));
+        foreach (var fsi in dir.EnumerateFileSystemInfos("*", new EnumerationOptions { RecurseSubdirectories = false, IgnoreInaccessible = false, AttributesToSkip = 0, ReturnSpecialDirectories = false }))
+        {
+            var mtime = (fsi.LastWriteTimeUtc - DateTime.UnixEpoch).Ticks * 100;
+            if (fsi.LinkTarget is not null)
+                yield return new SourceNode(fsi.Name, SourceKind.Symlink, 0, mtime, fsi.LinkTarget);
+            else if (fsi is DirectoryInfo)
+                yield return new SourceNode(fsi.Name, SourceKind.Directory, 0, mtime);
+            else
+                yield return new SourceNode(fsi.Name, SourceKind.File, ((FileInfo)fsi).Length, mtime);
+        }
+    }
+
+    public Stream OpenRead(string relativePath) =>
+        new FileStream(Full(relativePath), new FileStreamOptions { Mode = FileMode.Open, Access = FileAccess.Read, Share = FileShare.ReadWrite | FileShare.Delete, BufferSize = 0 });
+
+    private string Full(string rel)
+    {
+        if (rel.Length == 0) return _root;
+        var full = Path.GetFullPath(Path.Join(_root, rel));
+        if (!full.StartsWith(_root + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            throw new UnauthorizedAccessException("Path escapes source root.");
+        return full;
+    }
+}

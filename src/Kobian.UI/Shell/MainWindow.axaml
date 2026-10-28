@@ -1,0 +1,73 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:s="using:Kobian.UI.Shell" xmlns:d="using:Kobian.UI.Dashboard" xmlns:j="using:Kobian.UI.Jobs" xmlns:h="using:Kobian.UI.History" xmlns:w="using:Kobian.UI.Wizard" xmlns:r="using:Kobian.UI.Restore" xmlns:st="using:Kobian.UI.Settings" xmlns:ds="using:Kobian.UI.Destinations"
+        x:Class="Kobian.UI.Shell.MainWindow" x:DataType="s:ShellViewModel"
+        Title="{Binding Title}" Width="1180" Height="780" MinWidth="760" MinHeight="520"
+        Background="{DynamicResource Kb.Brush.Bg}">
+  <Window.Styles>
+    <Style Selector="Border#NavRail"><Setter Property="Width" Value="232" /></Style>
+    <!-- Wąskie okno lub skala 200% (6.9): pasek nawigacji tylko z ikonami; nazwy zostają w AutomationProperties.Name i podpowiedziach. -->
+    <ContainerQuery Name="shell" Query="max-width:960">
+      <Style Selector="Border#NavRail"><Setter Property="Width" Value="68" /></Style>
+      <Style Selector="StackPanel.navtext"><Setter Property="IsVisible" Value="False" /></Style>
+      <Style Selector="TextBlock.navtext"><Setter Property="IsVisible" Value="False" /></Style>
+    </ContainerQuery>
+  </Window.Styles>
+  <Window.DataTemplates>
+    <DataTemplate DataType="d:DashboardViewModel"><d:DashboardView /></DataTemplate>
+    <DataTemplate DataType="j:JobsViewModel"><j:JobsView /></DataTemplate>
+    <DataTemplate DataType="h:HistoryViewModel"><h:HistoryView /></DataTemplate>
+    <DataTemplate DataType="w:WizardViewModel"><w:WizardView /></DataTemplate>
+    <DataTemplate DataType="r:SnapshotBrowserViewModel"><r:SnapshotBrowserView /></DataTemplate>
+    <DataTemplate DataType="r:RestoreViewModel"><r:RestoreView /></DataTemplate>
+    <DataTemplate DataType="r:DbRestoreViewModel"><r:DbRestoreView /></DataTemplate>
+    <DataTemplate DataType="st:SettingsViewModel"><st:SettingsView /></DataTemplate>
+    <DataTemplate DataType="ds:DestinationsViewModel"><ds:DestinationsView /></DataTemplate>
+    <DataTemplate DataType="s:PlaceholderPage">
+      <StackPanel Margin="40" Spacing="8">
+        <TextBlock Classes="display" Text="{Binding Title}" />
+        <TextBlock Classes="body" Text="{Binding Message}" />
+      </StackPanel>
+    </DataTemplate>
+  </Window.DataTemplates>
+  <Grid ColumnDefinitions="Auto,*" Container.Name="shell" Container.Sizing="Width">
+    <Border Grid.Column="0" Name="NavRail" Background="{DynamicResource Kb.Brush.NavBg}">
+      <DockPanel Margin="12,20">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="10,0,10,28">
+          <PathIcon Data="{StaticResource Kb.Icon.Brand}" Width="28" Height="28" Foreground="{DynamicResource Kb.Brush.NavText}" />
+          <StackPanel Classes="navtext" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Kb.Brush.NavText}" />
+            <TextBlock Text="{Binding Tagline}" FontSize="12" Foreground="{DynamicResource Kb.Brush.NavMuted}" />
+          </StackPanel>
+        </StackPanel>
+        <ListBox Name="Nav" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}" Background="Transparent"
+                 AutomationProperties.AutomationId="Shell.Nav" AutomationProperties.Name="Nawigacja">
+          <ListBox.Styles>
+            <Style Selector="ListBoxItem">
+              <Setter Property="Padding" Value="12,10" />
+              <Setter Property="Margin" Value="0,2" />
+              <Setter Property="CornerRadius" Value="{StaticResource Kb.Radius.Control}" />
+              <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.NavMuted}" />
+            </Style>
+            <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+              <Setter Property="Background" Value="{DynamicResource Kb.Brush.NavSelected}" />
+              <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.NavText}" />
+            </Style>
+            <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+              <Setter Property="Background" Value="{DynamicResource Kb.Brush.NavSelected}" />
+              <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.NavText}" />
+            </Style>
+          </ListBox.Styles>
+          <ListBox.ItemTemplate>
+            <DataTemplate DataType="s:NavItem">
+              <StackPanel Orientation="Horizontal" Spacing="12" AutomationProperties.AutomationId="{Binding AutomationId}" AutomationProperties.Name="{Binding Text}" ToolTip.Tip="{Binding Text}">
+                <PathIcon Width="18" Height="18" Data="{Binding IconKey, Converter={x:Static s:ResourceKeyConverter.Instance}}" />
+                <TextBlock Classes="navtext" Text="{Binding Text}" FontSize="14" VerticalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+    <ContentControl Grid.Column="1" Content="{Binding CurrentPage}" />
+  </Grid>
+</Window>

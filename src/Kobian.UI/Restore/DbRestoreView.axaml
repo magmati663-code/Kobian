@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:r="using:Kobian.UI.Restore" xmlns:c="using:Kobian.UI.Controls" xmlns:l="using:Kobian.UI.Localization"
+             x:Class="Kobian.UI.Restore.DbRestoreView" x:DataType="r:DbRestoreViewModel">
+  <!-- SCR-08 Odtwarzanie bazy (R2.6.1, BL-68): kopia bazy → nowa baza. AutomationId „SCR-08.*”. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="40,32" Spacing="20" MaxWidth="760" HorizontalAlignment="Left">
+      <StackPanel Spacing="4">
+        <TextBlock Classes="display" Text="{Binding Title}" AutomationProperties.AutomationId="SCR-08.Title" />
+        <TextBlock Classes="muted" Text="{Binding SnapshotText}" TextWrapping="Wrap" />
+      </StackPanel>
+      <Border Classes="card" Padding="28" AutomationProperties.AutomationId="SCR-08.Panel">
+        <StackPanel Spacing="18">
+          <StackPanel Spacing="6" IsEnabled="{Binding IsForm}">
+            <TextBlock Classes="label" Text="{l:T DbRestore.TargetLabel}" />
+            <TextBox Text="{Binding TargetName}" PlaceholderText="{l:T DbRestore.TargetPlaceholder}" MaxWidth="420" HorizontalAlignment="Left" MinWidth="320"
+                     AutomationProperties.AutomationId="SCR-08.Target" AutomationProperties.Name="{l:T DbRestore.TargetLabel}" />
+            <TextBlock Classes="muted" Text="{l:T DbRestore.TargetHint}" TextWrapping="Wrap" IsVisible="{Binding !HasNameError}" />
+            <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.AtRisk.Text}" Text="{l:T DbRestore.NameInvalid}" TextWrapping="Wrap" IsVisible="{Binding HasNameError}"
+                       AutomationProperties.AutomationId="SCR-08.NameError" />
+          </StackPanel>
+          <Border Classes="notice info" AutomationProperties.AutomationId="SCR-08.NoOverwrite">
+            <TextBlock Text="{l:T DbRestore.NoOverwrite}" TextWrapping="Wrap" />
+          </Border>
+          <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsForm}">
+            <Button Classes="primary" Content="{l:T DbRestore.Start}" Command="{Binding StartCommand}" IsEnabled="{Binding CanStart}" AutomationProperties.AutomationId="SCR-08.Start" />
+            <Button Classes="secondary" Content="{l:T Restore.Cancel}" Command="{Binding CloseCommand}" AutomationProperties.AutomationId="SCR-08.Cancel" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding IsRunning}" AutomationProperties.AutomationId="SCR-08.Running" AutomationProperties.LiveSetting="Polite">
+            <ProgressBar IsIndeterminate="True" Width="160" VerticalAlignment="Center" />
+            <TextBlock Classes="body" Text="{l:T DbRestore.Running}" VerticalAlignment="Center" TextWrapping="Wrap" />
+          </StackPanel>
+          <StackPanel Spacing="12" IsVisible="{Binding IsDone}" AutomationProperties.AutomationId="SCR-08.Result" AutomationProperties.LiveSetting="Assertive">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <c:ProtectionBadge State="Protected" Text="{l:T Restore.Badge.Ok}" IsVisible="{Binding IsSuccess}" />
+              <c:ProtectionBadge State="Warning" Text="{l:T Restore.Badge.Warning}" IsVisible="{Binding IsWarning}" />
+              <c:ProtectionBadge State="AtRisk" Text="{l:T Restore.Badge.Failed}" IsVisible="{Binding IsFailure}" />
+              <TextBlock Classes="title" Text="{Binding ResultTitle}" VerticalAlignment="Center" TextWrapping="Wrap" />
+            </StackPanel>
+            <Border Classes="notice" Classes.error="{Binding IsFailure}" Classes.warning="{Binding IsWarning}" IsVisible="{Binding HasResultDetail}"><TextBlock Text="{Binding ResultDetail}" TextWrapping="Wrap" /></Border>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Classes="primary" Content="{l:T Restore.Close}" Command="{Binding CloseCommand}" AutomationProperties.AutomationId="SCR-08.Close" />
+              <Button Classes="secondary" Content="{l:T Restore.ShowHistory}" Command="{Binding ShowHistoryCommand}" />
+              <Button Classes="secondary" Content="{l:T Restore.Retry}" Command="{Binding RetryCommand}" IsVisible="{Binding IsFailure}" AutomationProperties.AutomationId="SCR-08.Retry" />
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,413 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:w="using:Kobian.UI.Wizard" xmlns:l="using:Kobian.UI.Localization"
+             x:Class="Kobian.UI.Wizard.WizardView" x:DataType="w:WizardViewModel">
+  <!-- SCR-03 Kreator zadania (R2.6.1, D6.7): pasek kroków 1–6 + jeden panel kroku + stały pasek akcji. Kolory wyłącznie z tokenów; AutomationId „SCR-03.*”. -->
+  <UserControl.Styles>
+    <!-- Położenie kolumn wyłącznie w stylach (wartość lokalna wygrywa ze stylem/ContainerQuery — pułapka z it. 57). -->
+    <Style Selector="Border.steprail"><Setter Property="IsVisible" Value="True" /><Setter Property="Width" Value="220" /></Style>
+    <Style Selector="TextBlock.stepcaption"><Setter Property="IsVisible" Value="False" /></Style>
+    <!-- Wąsko lub skala 200% (AC-UX.3): pasek kroków zastąpiony podpisem „Krok n z 6”, bez poziomego przewijania. -->
+    <ContainerQuery Name="wizard" Query="max-width:820">
+      <Style Selector="StackPanel.field"><Setter Property="Width" Value="NaN" /><Setter Property="HorizontalAlignment" Value="Stretch" /></Style>
+      <Style Selector="StackPanel.field.short"><Setter Property="Width" Value="150" /><Setter Property="HorizontalAlignment" Value="Left" /></Style>
+      <Style Selector="Border.steprail"><Setter Property="IsVisible" Value="False" /></Style>
+      <Style Selector="TextBlock.stepcaption"><Setter Property="IsVisible" Value="True" /></Style>
+    </ContainerQuery>
+    <Style Selector="Border.stepdot">
+      <Setter Property="Width" Value="28" /><Setter Property="Height" Value="28" /><Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Background" Value="{DynamicResource Kb.Brush.Sunken}" />
+    </Style>
+    <Style Selector="Border.stepdot > TextBlock"><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.TextMuted}" /></Style>
+    <Style Selector="Border.stepdot.done"><Setter Property="Background" Value="{DynamicResource Kb.Brush.Protected.Bg}" /></Style>
+    <Style Selector="Border.stepdot.done > TextBlock"><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Protected.Text}" /></Style>
+    <Style Selector="Border.stepdot.current"><Setter Property="Background" Value="{DynamicResource Kb.Brush.Accent}" /></Style>
+    <Style Selector="Border.stepdot.current > TextBlock"><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.AccentText}" /></Style>
+    <Style Selector="TextBlock.steptext"><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.TextMuted}" /><Setter Property="FontSize" Value="14" /></Style>
+    <Style Selector="TextBlock.steptext.current"><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Text}" /><Setter Property="FontWeight" Value="SemiBold" /></Style>
+    <Style Selector="TextBlock.keygroup">
+      <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" /><Setter Property="FontSize" Value="18" />
+      <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Text}" /><Setter Property="LetterSpacing" Value="1" />
+    </Style>
+    <!-- Pola formularza o stałej szerokości (nie kurczą się do treści — przegląd zrzutów it. 59); wąsko: pełna szerokość. -->
+    <Style Selector="StackPanel.field"><Setter Property="Spacing" Value="6" /><Setter Property="Width" Value="520" /><Setter Property="HorizontalAlignment" Value="Left" /></Style>
+    <Style Selector="StackPanel.field.short"><Setter Property="Width" Value="150" /></Style>
+    <!-- it. 120: błąd przy polu (FTPS) — kolor „Zagrożone” + treść słowna (kolor nie jest jedynym nośnikiem, WCAG 1.4.1). -->
+    <Style Selector="TextBlock.fielderror">
+      <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.AtRisk.Text}" /><Setter Property="FontSize" Value="13" /><Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+    <Style Selector="TextBox.invalid"><Setter Property="BorderBrush" Value="{DynamicResource Kb.Brush.AtRisk.Solid}" /></Style>
+    <!-- Lista baz S1-db: wiersze-karty; zaznaczenie obramowaniem akcentu i tłem zagłębionym (bez systemowego niebieskiego — pułapka z it. 59). -->
+    <Style Selector="ListBox.dblist"><Setter Property="Background" Value="Transparent" /><Setter Property="MaxWidth" Value="640" /><Setter Property="HorizontalAlignment" Value="Left" /></Style>
+    <Style Selector="ListBox.dblist ListBoxItem">
+      <Setter Property="Padding" Value="14,10" /><Setter Property="Margin" Value="0,0,0,6" /><Setter Property="CornerRadius" Value="{StaticResource Kb.Radius.Control}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Kb.Brush.Border}" /><Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="ListBox.dblist ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Kb.Brush.Sunken}" />
+    </Style>
+    <Style Selector="ListBox.dblist ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Kb.Brush.Sunken}" /><Setter Property="BorderBrush" Value="{DynamicResource Kb.Brush.Accent}" /><Setter Property="BorderThickness" Value="2" />
+    </Style>
+  </UserControl.Styles>
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <Grid Margin="40,32" MaxWidth="1100" ColumnDefinitions="Auto,*" Container.Name="wizard" Container.Sizing="Width">
+
+      <!-- Pasek kroków 1–6 -->
+      <Border Grid.Column="0" Classes="steprail" Margin="0,0,32,0" VerticalAlignment="Top" AutomationProperties.AutomationId="SCR-03.Steps">
+        <StackPanel Spacing="18">
+          <TextBlock Classes="display" Text="{Binding Title}" AutomationProperties.AutomationId="SCR-03.Title" TextWrapping="Wrap" />
+          <ItemsControl ItemsSource="{Binding Steps}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="10" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="w:WizardStepItem">
+                <StackPanel Orientation="Horizontal" Spacing="12" AutomationProperties.AutomationId="{Binding AutomationId}" AutomationProperties.Name="{Binding Text}">
+                  <Border Classes="stepdot" Classes.done="{Binding IsDone}" Classes.current="{Binding IsCurrent}">
+                    <TextBlock Text="{Binding Glyph}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" />
+                  </Border>
+                  <TextBlock Classes="steptext" Classes.current="{Binding IsCurrent}" Text="{Binding Text}" VerticalAlignment="Center" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <StackPanel Grid.Column="1" Spacing="20">
+        <TextBlock Classes="stepcaption muted" Text="{Binding StepCaption}" AutomationProperties.AutomationId="SCR-03.StepCaption" />
+
+        <Border Classes="card" Padding="28" AutomationProperties.AutomationId="SCR-03.Panel">
+          <StackPanel Spacing="18">
+
+            <!-- S1: co chronić -->
+            <StackPanel Spacing="14" IsVisible="{Binding IsS1}" AutomationProperties.AutomationId="SCR-03.S1">
+              <!-- Rodzaj źródła: tylko gdy Agent obsługuje bazy (S1-db, BL-40 cz. 4). -->
+              <ListBox Classes="segmented" ItemsSource="{Binding SourceKinds}" SelectedItem="{Binding SelectedSourceKind}" IsVisible="{Binding ShowSourceKinds}"
+                       AutomationProperties.AutomationId="SCR-03.S1.Kind" AutomationProperties.Name="{l:T Wizard.S1.Title}">
+                <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate></ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                  <DataTemplate DataType="w:WizardOption"><TextBlock Text="{Binding Label}" AutomationProperties.AutomationId="{Binding AutomationId}" /></DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <StackPanel Spacing="14" IsVisible="{Binding IsFilesSource}">
+              <TextBlock Classes="title" Text="{l:T Wizard.S1.Title}" />
+              <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{l:T Wizard.S1.Hint}" TextWrapping="Wrap" />
+              <ItemsControl ItemsSource="{Binding Sources}" IsVisible="{Binding HasSources}" AutomationProperties.AutomationId="SCR-03.S1.Sources">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <Border Background="{DynamicResource Kb.Brush.Sunken}" CornerRadius="{StaticResource Kb.Radius.Control}" Padding="14,8">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="body" Text="{Binding}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding}" />
+                        <Button Grid.Column="1" Classes="secondary" Content="{l:T Wizard.S1.Remove}" CommandParameter="{Binding}"
+                                Command="{Binding $parent[UserControl].((w:WizardViewModel)DataContext).RemoveSourceCommand}" />
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Grid ColumnDefinitions="*,Auto" MaxWidth="640" HorizontalAlignment="Stretch">
+                <TextBox Text="{Binding NewSource}" PlaceholderText="{l:T Wizard.S1.Watermark}" AutomationProperties.AutomationId="SCR-03.S1.NewSource"
+                         AutomationProperties.Name="{l:T Wizard.S1.Watermark}" Margin="0,0,8,0" />
+                <Button Grid.Column="1" Classes="secondary" Content="{l:T Wizard.S1.Add}" Command="{Binding AddSourceCommand}" AutomationProperties.AutomationId="SCR-03.S1.Add" />
+              </Grid>
+              </StackPanel>
+
+              <!-- S1-db: serwer → lista baz (tylko odczyt) → jedna baza; bez sekretów w UI (AC-01.3). -->
+              <StackPanel Spacing="14" IsVisible="{Binding IsDatabaseSource}" AutomationProperties.AutomationId="SCR-03.S1db">
+                <TextBlock Classes="title" Text="{l:T Wizard.Db.Title}" />
+                <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{l:T Wizard.Db.Hint}" TextWrapping="Wrap" />
+                <StackPanel Classes="field">
+                  <TextBlock Classes="label" Text="{l:T Wizard.Db.Server}" />
+                  <TextBox Text="{Binding DbServer}" PlaceholderText="{l:T Wizard.Db.ServerWatermark}" AutomationProperties.AutomationId="SCR-03.S1db.Server"
+                           AutomationProperties.Name="{l:T Wizard.Db.Server}" />
+                  <TextBlock Classes="label" Text="{l:T Wizard.Db.Auth}" Margin="0,8,0,0" />
+                  <ListBox Classes="segmented" ItemsSource="{Binding DatabaseAuths}" SelectedItem="{Binding SelectedDatabaseAuth}" AutomationProperties.AutomationId="SCR-03.S1db.Auth"
+                           AutomationProperties.Name="{l:T Wizard.Db.Auth}">
+                    <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate></ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                      <DataTemplate DataType="w:WizardOption"><TextBlock Text="{Binding Label}" AutomationProperties.AutomationId="{Binding AutomationId}" /></DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                  <StackPanel Spacing="6" IsVisible="{Binding IsSqlLogin}" Margin="0,8,0,0">
+                    <TextBlock Classes="label" Text="{l:T Wizard.Db.Credential}" />
+                    <TextBox Text="{Binding DbCredential}" AutomationProperties.AutomationId="SCR-03.S1db.Credential" AutomationProperties.Name="{l:T Wizard.Db.Credential}" />
+                    <TextBlock Classes="muted" Text="{l:T Wizard.Db.CredentialHint}" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <TextBlock Classes="label" Text="{l:T Wizard.Db.Certificate}" Margin="0,8,0,0" />
+                  <TextBox Text="{Binding DbCertificate}" PlaceholderText="serwer.cer" AutomationProperties.AutomationId="SCR-03.S1db.Certificate"
+                           AutomationProperties.Name="{l:T Wizard.Db.Certificate}" />
+                  <!-- BL-40 cz. 5 (Qb32): odcisk z handshake TLS do porównania z administratorem SQL → Agent zapisuje pin. -->
+                  <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,4,0,0" IsVisible="{Binding SupportsCertificateFetch}">
+                    <Button Classes="secondary" Content="{l:T Wizard.Db.FetchCertificate}" Command="{Binding FetchCertificateCommand}" AutomationProperties.AutomationId="SCR-03.S1db.FetchCertificate" />
+                    <TextBlock Classes="muted" Text="{l:T Wizard.Db.Fetching}" IsVisible="{Binding IsFetchingCertificate}" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
+                  </StackPanel>
+                  <TextBlock Classes="muted" Text="{Binding CertificateStatus}" IsVisible="{Binding HasCertificateStatus}" TextWrapping="Wrap"
+                             AutomationProperties.AutomationId="SCR-03.S1db.CertificateStatus" AutomationProperties.LiveSetting="Polite" />
+                  <!-- Karta odcisku w szerokości pól formularza (przegląd zrzutów it. 74: szersza karta wystawała poza pola i listę). -->
+                  <Border Classes="card" Padding="16" Margin="0,8,0,0" IsVisible="{Binding HasPendingCertificate}" AutomationProperties.AutomationId="SCR-03.S1db.PendingCertificate">
+                    <StackPanel Spacing="10">
+                      <TextBlock Classes="body" FontWeight="SemiBold" Text="{l:T Wizard.Db.CertTitle}" />
+                      <TextBlock Classes="muted" Text="{l:T Wizard.Db.CertHint}" TextWrapping="Wrap" />
+                      <Border Classes="code" Padding="14,10" HorizontalAlignment="Left">
+                        <SelectableTextBlock Text="{Binding CertificateFingerprintText}" FontFamily="Consolas, Cascadia Mono, monospace" FontSize="13"
+                                             AutomationProperties.AutomationId="SCR-03.S1db.CertificateFingerprint" />
+                      </Border>
+                      <TextBlock Classes="muted" Text="{Binding CertificateDetailsText}" TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-03.S1db.CertificateDetails" />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Classes="primary" Content="{l:T Wizard.Db.CertApprove}" Command="{Binding ApproveCertificateCommand}" AutomationProperties.AutomationId="SCR-03.S1db.ApproveCertificate" />
+                        <Button Classes="secondary" Content="{l:T Wizard.Db.CertReject}" Command="{Binding RejectCertificateCommand}" AutomationProperties.AutomationId="SCR-03.S1db.RejectCertificate" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <Button Classes="secondary" Content="{l:T Wizard.Db.Discover}" Command="{Binding DiscoverDatabasesCommand}" AutomationProperties.AutomationId="SCR-03.S1db.Discover" />
+                  <TextBlock Classes="muted" Text="{l:T Wizard.Db.Discovering}" IsVisible="{Binding IsDiscovering}" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
+                </StackPanel>
+                <TextBlock Classes="muted" Text="{Binding ServerInfo}" IsVisible="{Binding HasServerInfo}" TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-03.S1db.ServerInfo" />
+                <ListBox Classes="dblist" ItemsSource="{Binding Databases}" SelectedItem="{Binding SelectedDatabase}" IsVisible="{Binding HasDatabases}" MaxHeight="360"
+                         AutomationProperties.AutomationId="SCR-03.S1db.List" AutomationProperties.Name="{l:T Wizard.Db.Title}">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate DataType="w:DatabaseRow">
+                      <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" AutomationProperties.AutomationId="{Binding AutomationId}" AutomationProperties.Name="{Binding Name}">
+                        <TextBlock Classes="body" Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="1" Classes="body" Text="{Binding SizeText}" Margin="16,0,0,0" />
+                        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="muted" Text="{Binding RecoveryText}" />
+                        <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Classes="lowtext" Text="{Binding Notes}" IsVisible="{Binding HasNotes}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                      </Grid>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+                <!-- Szerokość jak lista baz; blok kodu z większym wcięciem niż etykiety KB (przegląd zrzutów it. 73). -->
+                <StackPanel Spacing="8" IsVisible="{Binding HasPermissionScript}" MaxWidth="640" HorizontalAlignment="Left">
+                  <Button Classes="secondary" Content="{Binding PermissionScriptToggleText}" Command="{Binding TogglePermissionScriptCommand}" AutomationProperties.AutomationId="SCR-03.S1db.ScriptToggle" />
+                  <StackPanel Spacing="6" IsVisible="{Binding IsPermissionScriptVisible}">
+                    <TextBlock Classes="muted" Text="{l:T Wizard.Db.ScriptHint}" TextWrapping="Wrap" />
+                    <Border Classes="code" Padding="14,10"><SelectableTextBlock Text="{Binding PermissionScript}" TextWrapping="Wrap" FontFamily="Consolas, Cascadia Mono, monospace" FontSize="12"
+                                                                 AutomationProperties.AutomationId="SCR-03.S1db.Script" /></Border>
+                  </StackPanel>
+                </StackPanel>
+              </StackPanel>
+            </StackPanel>
+
+            <!-- S2: gdzie -->
+            <StackPanel Spacing="14" IsVisible="{Binding IsS2}" AutomationProperties.AutomationId="SCR-03.S2">
+              <TextBlock Classes="title" Text="{l:T Wizard.S2.Title}" />
+              <ListBox Classes="segmented" ItemsSource="{Binding Destinations}" SelectedItem="{Binding SelectedDestination}" AutomationProperties.AutomationId="SCR-03.S2.Kind"
+                       AutomationProperties.Name="{l:T Wizard.S2.Title}">
+                <!-- 4 rodzaje celu (it. 120: + FTPS) — zawijanie zamiast poziomego przewijania przy 800 px / 200% (AC-UX.3). -->
+                <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate></ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                  <DataTemplate DataType="w:WizardOption"><TextBlock Text="{Binding Label}" AutomationProperties.AutomationId="{Binding AutomationId}" /></DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <StackPanel Classes="field" IsVisible="{Binding IsSftp}">
+                <TextBlock Classes="label" Text="{l:T Wizard.S2.Host}" />
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBox Text="{Binding SftpHost}" AutomationProperties.AutomationId="SCR-03.S2.Host" AutomationProperties.Name="{l:T Wizard.S2.Host}" Margin="0,0,8,0" />
+                  <NumericUpDown Grid.Column="1" Value="{Binding SftpPort}" Minimum="1" Maximum="65535" FormatString="0" Width="130"
+                                 AutomationProperties.AutomationId="SCR-03.S2.Port" AutomationProperties.Name="{l:T Wizard.S2.Port}" />
+                </Grid>
+                <TextBlock Classes="label" Text="{l:T Wizard.S2.User}" />
+                <TextBox Text="{Binding SftpUser}" AutomationProperties.AutomationId="SCR-03.S2.User" AutomationProperties.Name="{l:T Wizard.S2.User}" />
+              </StackPanel>
+              <StackPanel Classes="field" IsVisible="{Binding IsSmb}">
+                <TextBlock Classes="label" Text="{l:T Wizard.S2.SmbCredential}" />
+                <TextBox Text="{Binding SmbCredential}" AutomationProperties.AutomationId="SCR-03.S2.SmbCredential" AutomationProperties.Name="{l:T Wizard.S2.SmbCredential}" />
+                <TextBlock Classes="muted" Text="{l:T Wizard.S2.SmbHint}" TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-03.S2.SmbHint" />
+              </StackPanel>
+              <!-- S2 FTPS (BL-34, it. 120): serwer + port, szyfrowanie słownie (tryb ↔ port, Qb68), poświadczenie jako odwołanie (AC-01.3); błędy przy polach. -->
+              <StackPanel Classes="field" IsVisible="{Binding IsFtps}" AutomationProperties.AutomationId="SCR-03.S2.Ftps">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                  <TextBlock Classes="label" Text="{l:T Wizard.S2.Host}" Margin="0,0,0,6" />
+                  <TextBlock Grid.Column="1" Classes="label" Text="{l:T Wizard.S2.Port}" Margin="0,0,0,6" />
+                  <TextBox Grid.Row="1" Text="{Binding FtpsHost}" PlaceholderText="{l:T Wizard.Ftps.HostWatermark}" Classes.invalid="{Binding HasFtpsHostError}" Margin="0,0,8,0"
+                           AutomationProperties.AutomationId="SCR-03.S2.FtpsHost" AutomationProperties.Name="{l:T Wizard.S2.Host}" />
+                  <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding FtpsPort}" Minimum="1" Maximum="65535" FormatString="0" Width="130"
+                                 AutomationProperties.AutomationId="SCR-03.S2.FtpsPort" AutomationProperties.Name="{l:T Wizard.S2.Port}" />
+                </Grid>
+                <TextBlock Classes="fielderror" Text="{Binding FtpsHostError}" IsVisible="{Binding HasFtpsHostError}" AutomationProperties.AutomationId="SCR-03.S2.FtpsHostError"
+                           AutomationProperties.LiveSetting="Assertive" />
+                <TextBlock Classes="fielderror" Text="{Binding FtpsPortError}" IsVisible="{Binding HasFtpsPortError}" AutomationProperties.AutomationId="SCR-03.S2.FtpsPortError"
+                           AutomationProperties.LiveSetting="Assertive" />
+                <TextBlock Classes="label" Text="{l:T Wizard.Ftps.Mode}" Margin="0,8,0,0" />
+                <ListBox Classes="segmented" ItemsSource="{Binding FtpsModes}" SelectedItem="{Binding SelectedFtpsMode}" AutomationProperties.AutomationId="SCR-03.S2.FtpsMode"
+                         AutomationProperties.Name="{l:T Wizard.Ftps.Mode}">
+                  <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate></ListBox.ItemsPanel>
+                  <ListBox.ItemTemplate>
+                    <DataTemplate DataType="w:WizardOption"><TextBlock Text="{Binding Label}" AutomationProperties.AutomationId="{Binding AutomationId}" /></DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+                <TextBlock Classes="muted" Text="{l:T Wizard.Ftps.ModeHint}" TextWrapping="Wrap" />
+                <TextBlock Classes="label" Text="{l:T Wizard.Ftps.Credential}" Margin="0,8,0,0" />
+                <TextBox Text="{Binding FtpsCredential}" Classes.invalid="{Binding HasFtpsCredentialError}" AutomationProperties.AutomationId="SCR-03.S2.FtpsCredential"
+                         AutomationProperties.Name="{l:T Wizard.Ftps.Credential}" />
+                <TextBlock Classes="fielderror" Text="{Binding FtpsCredentialError}" IsVisible="{Binding HasFtpsCredentialError}" AutomationProperties.AutomationId="SCR-03.S2.FtpsCredentialError"
+                           AutomationProperties.LiveSetting="Assertive" />
+                <TextBlock Classes="muted" Text="{l:T Wizard.Ftps.CredentialHint}" TextWrapping="Wrap" />
+              </StackPanel>
+              <StackPanel Classes="field">
+                <TextBlock Classes="label" Text="{l:T Wizard.S2.Path}" />
+                <TextBox Text="{Binding DestinationPath}" PlaceholderText="{Binding PathWatermark}" Classes.invalid="{Binding HasFtpsPathError}" AutomationProperties.AutomationId="SCR-03.S2.Path"
+                         AutomationProperties.Name="{l:T Wizard.S2.Path}" />
+                <TextBlock Classes="fielderror" Text="{Binding FtpsPathError}" IsVisible="{Binding HasFtpsPathError}" AutomationProperties.AutomationId="SCR-03.S2.FtpsPathError"
+                           AutomationProperties.LiveSetting="Assertive" />
+                <TextBlock Classes="muted" Text="{Binding PathHint}" TextWrapping="Wrap" />
+              </StackPanel>
+              <!-- D4.3: jawny FTP nieoferowany w kreatorze (tylko z flagą „insecure” poza kreatorem — KB-2115). -->
+              <Border Classes="notice info" IsVisible="{Binding IsFtps}" MaxWidth="520" HorizontalAlignment="Left" Padding="14,8" AutomationProperties.AutomationId="SCR-03.S2.PlainFtp">
+                <TextBlock Text="{l:T Wizard.Ftps.PlainFtp}" TextWrapping="Wrap" FontSize="13" />
+              </Border>
+            </StackPanel>
+
+            <!-- S2: tożsamość serwera (D4.11) -->
+            <StackPanel Spacing="14" IsVisible="{Binding IsS2Identity}" AutomationProperties.AutomationId="SCR-03.S2.Identity">
+              <TextBlock Classes="title" Text="{l:T Wizard.Identity.Title}" />
+              <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{l:T Wizard.Identity.Hint}" TextWrapping="Wrap" IsVisible="{Binding IsSftpIdentity}" />
+              <!-- FTPS (it. 120): certyfikat niezaufany przez system (KB-2109) → odcisk SPKI do porównania poza pasmem; zatwierdzenie = pin „hostKey” w zadaniu (D4.11). -->
+              <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{l:T Wizard.Ftps.Identity.Hint}" TextWrapping="Wrap" MaxWidth="640" HorizontalAlignment="Left"
+                         IsVisible="{Binding IsFtpsIdentity}" AutomationProperties.AutomationId="SCR-03.S2.FtpsIdentityHint" />
+              <StackPanel Spacing="6" IsVisible="{Binding IsFtpsIdentity}">
+                <TextBlock Classes="body" FontWeight="SemiBold" Text="{Binding FtpsServerText}" AutomationProperties.AutomationId="SCR-03.S2.FtpsServer" />
+                <TextBlock Classes="label" Text="{l:T Wizard.Ftps.Identity.Fingerprint}" />
+              </StackPanel>
+              <Border Classes="code" Padding="14,10" HorizontalAlignment="Left">
+                <SelectableTextBlock Text="{Binding PendingHostKey}" TextWrapping="Wrap" FontFamily="Consolas, Cascadia Mono, monospace" FontSize="13" AutomationProperties.AutomationId="SCR-03.S2.Fingerprint" />
+              </Border>
+              <TextBlock Classes="muted" Text="{l:T Wizard.Ftps.Identity.AdminHint}" TextWrapping="Wrap" MaxWidth="640" HorizontalAlignment="Left" IsVisible="{Binding IsFtpsIdentity}" />
+            </StackPanel>
+
+            <!-- S3: kiedy -->
+            <StackPanel Spacing="14" IsVisible="{Binding IsS3}" AutomationProperties.AutomationId="SCR-03.S3">
+              <TextBlock Classes="title" Text="{l:T Wizard.S3.Title}" />
+              <ListBox Classes="segmented" ItemsSource="{Binding Schedules}" SelectedItem="{Binding SelectedSchedule}" AutomationProperties.AutomationId="SCR-03.S3.Preset"
+                       AutomationProperties.Name="{l:T Wizard.S3.Title}">
+                <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate></ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                  <DataTemplate DataType="w:WizardOption"><TextBlock Text="{Binding Label}" AutomationProperties.AutomationId="{Binding AutomationId}" /></DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <StackPanel Classes="field" IsVisible="{Binding ScheduleNeedsTime}">
+                <TextBlock Classes="label" Text="{l:T Wizard.S3.Time}" />
+                <TextBox Text="{Binding ScheduleTime}" Width="120" HorizontalAlignment="Left" AutomationProperties.AutomationId="SCR-03.S3.Time" AutomationProperties.Name="{l:T Wizard.S3.Time}" />
+              </StackPanel>
+              <Border Classes="notice" HorizontalAlignment="Left" AutomationProperties.AutomationId="SCR-03.S3.Preview" AutomationProperties.LiveSetting="Polite">
+                <TextBlock Text="{Binding SchedulePreview}" TextWrapping="Wrap" FontWeight="Medium" />
+              </Border>
+            </StackPanel>
+
+            <!-- S4: zabezpieczenie -->
+            <StackPanel Spacing="14" IsVisible="{Binding IsS4}" AutomationProperties.AutomationId="SCR-03.S4">
+              <TextBlock Classes="title" Text="{l:T Wizard.S4.Title}" />
+              <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{l:T Wizard.S4.Hint}" TextWrapping="Wrap" />
+              <StackPanel Classes="field">
+                <TextBlock Classes="label" Text="{l:T Wizard.S4.Password}" />
+                <TextBox Text="{Binding Password}" PasswordChar="●" RevealPassword="False" AutomationProperties.AutomationId="SCR-03.S4.Password" AutomationProperties.Name="{l:T Wizard.S4.Password}" />
+                <TextBlock Classes="label" Text="{l:T Wizard.S4.Confirm}" />
+                <TextBox Text="{Binding PasswordConfirm}" PasswordChar="●" AutomationProperties.AutomationId="SCR-03.S4.Confirm" AutomationProperties.Name="{l:T Wizard.S4.Confirm}" />
+              </StackPanel>
+            </StackPanel>
+
+            <!-- S4: klucz odzyskiwania (AC-28.1) -->
+            <StackPanel Spacing="14" IsVisible="{Binding IsS4Key}" AutomationProperties.AutomationId="SCR-03.S4.Key">
+              <TextBlock Classes="title" Text="{l:T Wizard.Key.Title}" />
+              <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{l:T Wizard.Key.Hint}" TextWrapping="Wrap" />
+              <Border Background="{DynamicResource Kb.Brush.Sunken}" CornerRadius="{StaticResource Kb.Radius.Control}" Padding="18,14" HorizontalAlignment="Left">
+                <ItemsControl ItemsSource="{Binding NumberedKeyGroups}" AutomationProperties.AutomationId="SCR-03.S4.KeyGroups">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="w:KeyGroupItem">
+                      <!-- Numer nad grupą: „Grupa 3” bez liczenia na palcach (przegląd zrzutów it. 59). -->
+                      <StackPanel Margin="0,0,20,8" Spacing="2">
+                        <TextBlock Classes="label" Text="{Binding Number}" HorizontalAlignment="Center" />
+                        <TextBlock Classes="keygroup" Text="{Binding Text}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </Border>
+              <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" HorizontalAlignment="Left">
+                <TextBlock Classes="label" Text="{Binding ChallengeFirstLabel}" Margin="0,0,16,4" />
+                <TextBlock Grid.Column="1" Classes="label" Text="{Binding ChallengeSecondLabel}" Margin="0,0,0,4" />
+                <TextBox Grid.Row="1" Text="{Binding ChallengeFirst}" Width="160" Margin="0,0,16,0" AutomationProperties.AutomationId="SCR-03.S4.ChallengeFirst"
+                         AutomationProperties.Name="{Binding ChallengeFirstLabel}" />
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ChallengeSecond}" Width="160" AutomationProperties.AutomationId="SCR-03.S4.ChallengeSecond"
+                         AutomationProperties.Name="{Binding ChallengeSecondLabel}" />
+              </Grid>
+            </StackPanel>
+
+            <!-- S5: retencja -->
+            <StackPanel Spacing="14" IsVisible="{Binding IsS5}" AutomationProperties.AutomationId="SCR-03.S5">
+              <TextBlock Classes="title" Text="{l:T Wizard.S5.Title}" />
+              <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{l:T Wizard.S5.Hint}" TextWrapping="Wrap" />
+              <WrapPanel Orientation="Horizontal">
+                <StackPanel Classes="field short" Margin="0,0,24,8">
+                  <TextBlock Classes="label" Text="{l:T Wizard.S5.Daily}" />
+                  <NumericUpDown Value="{Binding KeepDaily}" Minimum="0" Maximum="3650" FormatString="0" AutomationProperties.AutomationId="SCR-03.S5.Daily" AutomationProperties.Name="{l:T Wizard.S5.Daily}" />
+                </StackPanel>
+                <StackPanel Classes="field short" Margin="0,0,24,8">
+                  <TextBlock Classes="label" Text="{l:T Wizard.S5.Weekly}" />
+                  <NumericUpDown Value="{Binding KeepWeekly}" Minimum="0" Maximum="520" FormatString="0" AutomationProperties.AutomationId="SCR-03.S5.Weekly" AutomationProperties.Name="{l:T Wizard.S5.Weekly}" />
+                </StackPanel>
+                <StackPanel Classes="field short" Margin="0,0,0,8">
+                  <TextBlock Classes="label" Text="{l:T Wizard.S5.Monthly}" />
+                  <NumericUpDown Value="{Binding KeepMonthly}" Minimum="0" Maximum="1200" FormatString="0" AutomationProperties.AutomationId="SCR-03.S5.Monthly" AutomationProperties.Name="{l:T Wizard.S5.Monthly}" />
+                </StackPanel>
+              </WrapPanel>
+              <!-- Podgląd Keep() (D3.12): wynik symulacji z usługi; region „polite” — czytnik ekranu ogłasza zmianę po edycji liczby. -->
+              <Border Classes="notice info" IsVisible="{Binding HasRetentionPreview}" HorizontalAlignment="Left" AutomationProperties.AutomationId="SCR-03.S5.Preview" AutomationProperties.LiveSetting="Polite">
+                <TextBlock Text="{Binding RetentionPreviewText}" TextWrapping="Wrap" />
+              </Border>
+            </StackPanel>
+
+            <!-- S6: podsumowanie -->
+            <StackPanel Spacing="14" IsVisible="{Binding IsS6}" AutomationProperties.AutomationId="SCR-03.S6">
+              <TextBlock Classes="title" Text="{l:T Wizard.S6.Title}" />
+              <StackPanel Classes="field">
+                <TextBlock Classes="label" Text="{l:T Wizard.S6.Name}" />
+                <TextBox Text="{Binding JobName}" AutomationProperties.AutomationId="SCR-03.S6.Name" AutomationProperties.Name="{l:T Wizard.S6.Name}" />
+              </StackPanel>
+              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" AutomationProperties.AutomationId="SCR-03.S6.Summary">
+                <TextBlock Grid.Row="0" Classes="label" Text="{l:T Wizard.S6.Sources}" Margin="0,0,24,10" />
+                <TextBlock Grid.Row="0" Grid.Column="1" Classes="body" Text="{Binding SourcesText}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                <TextBlock Grid.Row="1" Classes="label" Text="{l:T Wizard.S6.Destination}" Margin="0,0,24,10" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Classes="body" Text="{Binding DestinationText}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                <TextBlock Grid.Row="2" Classes="label" Text="{l:T Wizard.S6.Schedule}" Margin="0,0,24,10" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Classes="body" Text="{Binding SchedulePreview}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                <TextBlock Grid.Row="3" Classes="label" Text="{l:T Wizard.S6.Retention}" Margin="0,0,24,0" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Classes="body" Text="{Binding RetentionText}" TextWrapping="Wrap" />
+              </Grid>
+              <CheckBox IsChecked="{Binding RunNow}" Content="{l:T Wizard.S6.RunNow}" AutomationProperties.AutomationId="SCR-03.S6.RunNow" />
+            </StackPanel>
+
+            <!-- Po zapisie: pierwsza kopia / wynik -->
+            <StackPanel Spacing="10" IsVisible="{Binding IsFinal}" AutomationProperties.AutomationId="SCR-03.Final">
+              <TextBlock Classes="title" Text="{l:T Wizard.Final.Title}" />
+              <TextBlock Classes="body" Text="{Binding FinalText}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+            </StackPanel>
+
+            <!-- Komunikaty walidacji: KB + jedna akcja (6.3) -->
+            <ItemsControl ItemsSource="{Binding Messages}" IsVisible="{Binding HasMessages}" AutomationProperties.AutomationId="SCR-03.Messages">
+              <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <Border Classes="notice error" AutomationProperties.LiveSetting="Assertive"><TextBlock Text="{Binding}" TextWrapping="Wrap" FontWeight="Medium" /></Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <!-- Pasek akcji: Anuluj (lewo) · Wstecz / Dalej (prawo) -->
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <Button Classes="secondary" Content="{l:T Wizard.Cancel}" Command="{Binding CancelCommand}" IsVisible="{Binding CanCancel}" AutomationProperties.AutomationId="SCR-03.Cancel" />
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
+            <Button Classes="secondary" Content="{l:T Wizard.Back}" Command="{Binding BackCommand}" IsVisible="{Binding CanGoBack}" AutomationProperties.AutomationId="SCR-03.Back" />
+            <Button Classes="primary" Content="{Binding NextText}" Command="{Binding NextCommand}" AutomationProperties.AutomationId="SCR-03.Next" />
+          </StackPanel>
+        </Grid>
+      </StackPanel>
+    </Grid>
+  </ScrollViewer>
+</UserControl>

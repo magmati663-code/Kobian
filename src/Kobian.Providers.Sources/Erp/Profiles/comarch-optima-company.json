@@ -1,0 +1,10 @@
+{
+  "id": "comarch-optima-company",
+  "version": 1,
+  "priority": 40,
+  "status": "to-verify",
+  "match": { "allTables": ["CDN.TraNag", "CDN.Kontrahenci"], "anyTables": null },
+  "consistencyGroup": "optima-config",
+  "controlQueries": [],
+  "restoreNotesKey": "Erp_OptimaCompany_RestoreNotes"
+}

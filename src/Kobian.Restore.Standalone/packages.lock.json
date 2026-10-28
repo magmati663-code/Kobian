@@ -1,0 +1,101 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0-windows10.0.17763": {
+      "BouncyCastle.Cryptography": {
+        "type": "Transitive",
+        "resolved": "2.7.0",
+        "contentHash": "U+12df8UEWHgBi04YVf/Lgi2dy3SItlIYvHjjEVa/BngCQIzDCDRBk50DDByCfDvSbe5pRNFr3b7UrVK2kMcLw=="
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions": {
+        "type": "Transitive",
+        "resolved": "8.0.2",
+        "contentHash": "3iE7UF7MQkCv1cxzCahz+Y/guQbTqieyxyaWKhrRO91itI9cOKO76OHeQDahqG4MmW5umr3CcCvGmK92lWNlbg=="
+      },
+      "Microsoft.Extensions.Logging.Abstractions": {
+        "type": "Transitive",
+        "resolved": "8.0.3",
+        "contentHash": "dL0QGToTxggRLMYY4ZYX5AMwBb+byQBd/5dMiZE07Nv73o6I5Are3C7eQTh7K2+A4ct0PVISSr7TZANbiNb2yQ==",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2"
+        }
+      },
+      "kobian.application": {
+        "type": "Project",
+        "dependencies": {
+          "Kobian.Domain": "[1.0.0, )"
+        }
+      },
+      "kobian.crypto": {
+        "type": "Project",
+        "dependencies": {
+          "Kobian.Domain": "[1.0.0, )"
+        }
+      },
+      "kobian.domain": {
+        "type": "Project"
+      },
+      "kobian.engine": {
+        "type": "Project",
+        "dependencies": {
+          "Kobian.Application": "[1.0.0, )",
+          "Kobian.Crypto": "[1.0.0, )",
+          "Kobian.Domain": "[1.0.0, )",
+          "Kobian.Format": "[1.0.0, )",
+          "ZstdSharp.Port": "[0.8.8, )"
+        }
+      },
+      "kobian.format": {
+        "type": "Project",
+        "dependencies": {
+          "Kobian.Domain": "[1.0.0, )",
+          "System.Formats.Cbor": "[10.0.13, )"
+        }
+      },
+      "kobian.platform.windows": {
+        "type": "Project",
+        "dependencies": {
+          "Kobian.Application": "[1.0.0, )",
+          "Kobian.Domain": "[1.0.0, )"
+        }
+      },
+      "kobian.providers.storage": {
+        "type": "Project",
+        "dependencies": {
+          "FluentFTP": "[55.0.0, )",
+          "Kobian.Application": "[1.0.0, )",
+          "Kobian.Domain": "[1.0.0, )",
+          "SSH.NET": "[2026.0.0, )"
+        }
+      },
+      "FluentFTP": {
+        "type": "CentralTransitive",
+        "requested": "[55.0.0, )",
+        "resolved": "55.0.0",
+        "contentHash": "5ufTSEjrItvSsPWz5IZ7OTilYu42YM9fGQbogrJZsvCrKat/tz+sWHCDt0/izVvi8ZYfy3G9bZR8D9goyJ9BuA=="
+      },
+      "SSH.NET": {
+        "type": "CentralTransitive",
+        "requested": "[2026.0.0, )",
+        "resolved": "2026.0.0",
+        "contentHash": "Yu9dirPq8l3oaat0+OQ7K0nUf5MmYltpia5UGqsApTG4zTPvBC1cxbNnC3NERij26dUST0A3Ef1QdHSn5ArbWQ==",
+        "dependencies": {
+          "BouncyCastle.Cryptography": "2.7.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.3"
+        }
+      },
+      "System.Formats.Cbor": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.13, )",
+        "resolved": "10.0.13",
+        "contentHash": "WdxppUxfamltxOsieYg3gJCJW+lB/udiWrya4UCUg0DjTr/w07E4XoivqS35xoM5kVfMyyXEkRgPBRb24H+fWA=="
+      },
+      "ZstdSharp.Port": {
+        "type": "CentralTransitive",
+        "requested": "[0.8.8, )",
+        "resolved": "0.8.8",
+        "contentHash": "UIDFkA5DC3en3tOJ3Mof11yBx9kUQLsaeo/oFdvN6Bbkr9E9+VCqfIadHci8cu+I51K2Sl7XYWVl2R/mA75NBQ=="
+      }
+    }
+  }
+}

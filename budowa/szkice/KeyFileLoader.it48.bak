@@ -1,0 +1,69 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using Kobian.Domain;
+
+namespace Kobian.Crypto;
+
+/// <summary>
+/// Ładuje <see cref="RepoKeys"/> z pliku klucza: opakowany <c>keys/*.key</c> (D3.11, wymaga hasła i <c>repoId</c>)
+/// albo — tylko do testów — <see cref="DevKeyFile"/> (ADR-0002).
+/// <c>repoId</c> pochodzi z <c>kobian.repo</c> (D3.11, <paramref name="repoHeaderPath"/>) albo — alternatywnie — jawnego <c>--repo-id</c> (Qb12/ADR-0003).
+/// Gdy podano nagłówek: po odblokowaniu MAC jest weryfikowany kluczem <c>K_mac</c> (SEC-7.3), a <c>keyId</c> klucza musi być na uwierzytelnionej liście <c>body.keys</c> (unieważnione klucze odpadają, D3.11/D8.3).
+/// </summary>
+public static class KeyFileLoader
+{
+    private const int MaxPasswordFileBytes = 1024;
+
+    public static RepoKeys Load(string keyFilePath, string? repoIdHex, string? passwordFilePath, string? repoHeaderPath = null)
+    {
+        var text = File.ReadAllText(keyFilePath, Encoding.UTF8);
+        var wrapped = false;
+        string? keyIdHex = null;
+        try
+        {
+            using var doc = JsonDocument.Parse(text.TrimStart('﻿'), new JsonDocumentOptions { MaxDepth = 8 });
+            wrapped = doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty("wrapped", out _);
+            if (wrapped && doc.RootElement.TryGetProperty("keyId", out var kid) && kid.ValueKind == JsonValueKind.String) keyIdHex = kid.GetString();
+        }
+        catch (JsonException)
+        {
+            // niepoprawny JSON: niech zdecyduje DevKeyFile (zwróci KB-1002 z jednolitym komunikatem)
+        }
+        if (!wrapped) return DevKeyFile.Load(keyFilePath);
+
+        if (passwordFilePath is null) throw new KobianException(KbCode.KeyUnwrapFailed, ErrorClass.Security, "Password source is required for a wrapped key file.");
+        var headerJson = repoHeaderPath is null ? null : File.ReadAllText(repoHeaderPath, Encoding.UTF8);
+        if (repoIdHex is null && headerJson is not null) repoIdHex = Convert.ToHexStringLower(RepoHeader.PeekRepoId(headerJson)); // niezaufane do czasu Verify
+        if (repoIdHex is null || repoIdHex.Length != RepoKeys.IdSize * 2) throw new KobianException(KbCode.KeyUnwrapFailed, ErrorClass.Security, "repoId (32 hex) is required.");
+        byte[] repoId;
+        try { repoId = Convert.FromHexString(repoIdHex); }
+        catch (FormatException ex) { throw new KobianException(KbCode.KeyUnwrapFailed, ErrorClass.Security, "repoId is not hex.", ex); }
+
+        var pwBytes = File.ReadAllBytes(passwordFilePath);
+        try
+        {
+            if (pwBytes.Length > MaxPasswordFileBytes) throw new KobianException(KbCode.KeyUnwrapFailed, ErrorClass.Security, "Password file too large.");
+            var span = pwBytes.AsSpan();
+            if (span.StartsWith("﻿"u8)) span = span[3..];
+            var nl = span.IndexOfAny((byte)'\r', (byte)'\n');
+            var password = Encoding.UTF8.GetString(nl >= 0 ? span[..nl] : span);
+            var mk = KeyFiles.UnwrapWithPassword(text, password);
+            try
+            {
+                var keys = RepoKeys.Derive(mk, repoId);
+                if (headerJson is null) return keys;
+                try
+                {
+                    var info = RepoHeader.Verify(headerJson, keys);
+                    if (keyIdHex is null || !info.KeyIds.Contains(keyIdHex.ToLowerInvariant(), StringComparer.Ordinal))
+                        throw new KobianException(KbCode.KeyUnwrapFailed, ErrorClass.Security, "Key is not listed in the repository header.");
+                    return keys;
+                }
+                catch { keys.Dispose(); throw; }
+            }
+            finally { CryptographicOperations.ZeroMemory(mk); }
+        }
+        finally { CryptographicOperations.ZeroMemory(pwBytes); }
+    }
+}

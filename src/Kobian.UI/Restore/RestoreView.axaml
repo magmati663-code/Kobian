@@ -1,0 +1,99 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:r="using:Kobian.UI.Restore" xmlns:c="using:Kobian.UI.Controls" xmlns:l="using:Kobian.UI.Localization"
+             x:Class="Kobian.UI.Restore.RestoreView" x:DataType="r:RestoreViewModel">
+  <!-- SCR-07 Odtwarzanie plików (R2.6.1, BL-64): co → dokąd → wynik. Kolory z tokenów; AutomationId „SCR-07.*”. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="40,32" Spacing="20" MaxWidth="760" HorizontalAlignment="Left">
+      <StackPanel Spacing="4">
+        <TextBlock Classes="display" Text="{Binding Title}" AutomationProperties.AutomationId="SCR-07.Title" />
+        <TextBlock Classes="muted" Text="{Binding SnapshotText}" TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-07.Snapshot" />
+      </StackPanel>
+
+      <Border Classes="card" Padding="28" AutomationProperties.AutomationId="SCR-07.Panel">
+        <StackPanel Spacing="18">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label" Text="{l:T Restore.Source}" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <PathIcon Data="{StaticResource Kb.Icon.Folder}" Width="16" Height="16" Foreground="{DynamicResource Kb.Brush.Accent}" />
+              <TextBlock Classes="body" FontWeight="SemiBold" Text="{Binding WhatText}" TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-07.What" />
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel Spacing="6" IsEnabled="{Binding IsForm}">
+            <TextBlock Classes="label" Text="{l:T Restore.TargetLabel}" />
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Text="{Binding Target}" PlaceholderText="D:\Odtworzone" AutomationProperties.AutomationId="SCR-07.Target"
+                       AutomationProperties.Name="{l:T Restore.TargetLabel}" />
+              <Button Grid.Column="1" Name="PickFolder" Classes="secondary" Content="{l:T Restore.PickFolder}" Margin="10,0,0,0"
+                      AutomationProperties.AutomationId="SCR-07.PickFolder" />
+            </Grid>
+            <!-- Podpowiedź neutralna (lowtext ma kolor ostrzeżenia — przegląd zrzutu it. 77); po starcie chowana. -->
+            <TextBlock Classes="muted" Text="{l:T Restore.TargetHint}" TextWrapping="Wrap" IsVisible="{Binding ShowHint}" />
+            <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.AtRisk.Text}" Text="{Binding TargetError}" TextWrapping="Wrap" IsVisible="{Binding HasTargetError}"
+                       AutomationProperties.AutomationId="SCR-07.TargetError" />
+            <TextBlock Classes="muted" Text="{Binding PreviewText}" TextWrapping="Wrap" IsVisible="{Binding CanStart}" AutomationProperties.AutomationId="SCR-07.Preview" />
+          </StackPanel>
+
+          <Border Classes="notice info" AutomationProperties.AutomationId="SCR-07.NoOverwrite">
+            <TextBlock Text="{l:T Restore.NoOverwrite}" TextWrapping="Wrap" />
+          </Border>
+
+          <!-- it. 98: podgląd (PlanRestore) — liczby, pominięcia, blokada KB; zmiana folderu go unieważnia. -->
+          <StackPanel Spacing="8" IsVisible="{Binding HasPlan}" AutomationProperties.AutomationId="SCR-07.Plan" AutomationProperties.LiveSetting="Polite">
+            <TextBlock Classes="body" FontWeight="SemiBold" Text="{Binding PlanSummary}" TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-07.PlanSummary" />
+            <Border Classes="notice info" IsVisible="{Binding HasPlanResumable}" AutomationProperties.AutomationId="SCR-07.PlanResumable">
+              <TextBlock Text="{Binding PlanResumableText}" TextWrapping="Wrap" />
+            </Border>
+            <Border Classes="notice warning" IsVisible="{Binding HasPlanConflicts}" AutomationProperties.AutomationId="SCR-07.PlanConflicts">
+              <StackPanel Spacing="4">
+                <TextBlock Text="{Binding PlanConflictsText}" TextWrapping="Wrap" />
+                <ItemsControl ItemsSource="{Binding PlanConflictSample}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Classes="mono" Text="{Binding}" TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+          <Border Classes="notice error" IsVisible="{Binding HasPlanBlock}" AutomationProperties.AutomationId="SCR-07.PlanBlock" AutomationProperties.LiveSetting="Assertive">
+            <TextBlock Text="{Binding PlanBlockText}" TextWrapping="Wrap" />
+          </Border>
+
+          <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding IsPlanning}" AutomationProperties.AutomationId="SCR-07.Planning" AutomationProperties.LiveSetting="Polite">
+            <ProgressBar IsIndeterminate="True" Width="160" VerticalAlignment="Center" />
+            <TextBlock Classes="body" Text="{l:T Restore.Planning}" VerticalAlignment="Center" TextWrapping="Wrap" />
+          </StackPanel>
+
+          <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsForm}">
+            <Button Classes="primary" Content="{Binding StartText}" Command="{Binding StartCommand}" IsEnabled="{Binding CanStart}" AutomationProperties.AutomationId="SCR-07.Start" />
+            <Button Classes="secondary" Content="{l:T Restore.Cancel}" Command="{Binding CloseCommand}" AutomationProperties.AutomationId="SCR-07.Cancel" />
+          </StackPanel>
+
+          <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding IsRunning}" AutomationProperties.AutomationId="SCR-07.Running" AutomationProperties.LiveSetting="Polite">
+            <ProgressBar IsIndeterminate="True" Width="160" VerticalAlignment="Center" />
+            <TextBlock Classes="body" Text="{Binding RunningText}" VerticalAlignment="Center" TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-07.RunningText" />
+          </StackPanel>
+
+          <StackPanel Spacing="12" IsVisible="{Binding IsDone}" AutomationProperties.AutomationId="SCR-07.Result" AutomationProperties.LiveSetting="Assertive">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <c:ProtectionBadge State="Protected" Text="{l:T Restore.Badge.Ok}" IsVisible="{Binding IsSuccess}" />
+              <c:ProtectionBadge State="Warning" Text="{l:T Restore.Badge.Warning}" IsVisible="{Binding IsWarning}" />
+              <c:ProtectionBadge State="AtRisk" Text="{l:T Restore.Badge.Failed}" IsVisible="{Binding IsFailure}" />
+              <TextBlock Classes="title" Text="{Binding ResultTitle}" VerticalAlignment="Center" TextWrapping="Wrap" />
+            </StackPanel>
+            <Border Classes="notice" Classes.error="{Binding IsFailure}" Classes.info="{Binding !IsFailure}" IsVisible="{Binding HasResultDetail}">
+              <TextBlock Text="{Binding ResultDetail}" TextWrapping="Wrap" />
+            </Border>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Classes="primary" Content="{l:T Restore.Close}" Command="{Binding CloseCommand}" AutomationProperties.AutomationId="SCR-07.Close" />
+              <Button Classes="secondary" Content="{l:T Restore.ShowHistory}" Command="{Binding ShowHistoryCommand}" AutomationProperties.AutomationId="SCR-07.ShowHistory" />
+              <Button Classes="secondary" Content="{l:T Restore.Retry}" Command="{Binding RetryCommand}" IsVisible="{Binding IsFailure}" AutomationProperties.AutomationId="SCR-07.Retry" />
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

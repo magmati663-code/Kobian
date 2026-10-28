@@ -1,0 +1,9 @@
+# ADR-0036 — Launcher procesu Kobian.Worker (D2.8, SEC-2.7, NFR-19) — PROWIZORYCZNIE Qb55
+
+- Data: 2026-10-17, iteracja 106 (prowadzi rola 1; 13, 11, 2). Status: przyjęte prowizorycznie (Qb55).
+- Kontekst: protokół i host Workera gotowe (it. 103, ADR-0035); brakowało uruchamiania procesu z izolacją: job object (NFR-19: 0 osieroconych procesów, ≤ 150 MB), weryfikacja podpisu (SEC-2.7), PATH systemowy (SEC-7.1), odmowa przez WDAC/AppLocker/ASR (PM-12 → KB-7008).
+- Decyzja: `WorkerLauncher` (Agent) + porty w Application (`WorkerCommand`, `ISignatureVerifier`, `IProcessJob`, `IWorkerProcess`, `WorkerStartException`) + adaptery Windows (`WindowsProcessJob`, `AuthenticodeVerifier`). Kolejność: rola → ścieżka (bezwzględna, istnieje, nie dowiązanie) → podpis → start bez powłoki (ArgumentList) ze środowiskiem z listy dozwolonej (SystemRoot, windir, TEMP, TMP, DOTNET_ROOT, HOME, LANG) i PATH = System32;SystemRoot → przypisanie do obiektu zadania (błąd = zabicie procesu). `WorkerVssSnapshotService` = port IVssSnapshotService po stronie Agenta.
+- PROWIZORYCZNIE: (a) proces startuje, zanim trafi do obiektu zadania (Process.Start nie tworzy procesu wstrzymanego) — okno ms, Worker czeka na stdin; (b) Authenticode bez sprawdzania odwołań przez sieć i bez porównania wydawcy z podpisem Agenta (RD-67); (c) tryb konsoli/dev bez weryfikacji podpisu (`NoSignatureCheck`), usługa — zawsze Authenticode (do podłączenia przy pierwszym konsumencie VSS).
+- Konsekwencje: niepodpisane kompilacje deweloperskie nie uruchomią Workera w usłudze — testy W-45 na kompilacji podpisanej testowym certyfikatem w magazynie maszyny testowej.
+- Alternatywy: CreateProcess z CREATE_SUSPENDED + przypisanie do zadania (P/Invoke całego startu procesu i potoków — więcej kodu natywnego); weryfikacja skrótu pliku z manifestu instalatora zamiast Authenticode.
+- Koszt zmiany zdania: mały.

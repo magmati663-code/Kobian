@@ -1,0 +1,11 @@
+{
+  "seed": "6b6f6269616e2d636f727075732d736d616c6c2d6d697865642d7631",
+  "files": 300,
+  "dirs": 25,
+  "maxDepth": 6,
+  "sizes": [ { "max": 0, "weight": 5 }, { "max": 1024, "weight": 40 }, { "max": 65536, "weight": 40 }, { "max": 1048576, "weight": 13 }, { "max": 5242880, "weight": 2 } ],
+  "plNamesPct": 30,
+  "emojiPct": 5,
+  "longNamePct": 2,
+  "duplicatePct": 10
+}

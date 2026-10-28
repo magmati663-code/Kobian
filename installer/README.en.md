@@ -1,0 +1,6 @@
+# MSI installer (skeleton, it. 100 — PROVISIONAL Qb50, ADR-0033)
+
+- `Package.wxs` — per-machine package (D10.2): `KobianAgent` service (virtual account `NT SERVICE\KobianAgent`, Automatic (Delayed), token privilege list D2.12, recovery actions 1/1/5 min), Agent and client (CLI/UI) files, custom action `Kobian.Agent.exe --provision` (deferred, LocalSystem) after InstallServices and `--unprovision` on uninstall.
+- `--provision` steps (`AgentInstallPlan`): groups “Kobian Operators”, “Kobian Admins”; `%ProgramData%\Kobian` (+ `secrets`, `keys`, `certs`, `staging`) with a non-inherited ACL: SYSTEM, Administrators, `NT SERVICE\KobianAgent` — full control (2.6); `VssAccessControl` = 2; LSA rights SeBackup/SeRestore. `--unprovision`: only VssAccessControl and LSA rights. **Data and groups are kept** on uninstall.
+- `InstallerTests` (Linux) keep `Package.wxs` consistent with `AgentServiceProfile`. The file has not been compiled with WiX in the build loop — first build and install tests: Windows queue **W-42**.
+- Build (Windows, after decision Q37 — WiX v6+ OSMF fee): commands in the `Kobian.Installer.wixproj` comment. MSI signing is outside the loop (keys are never created by the build loop).

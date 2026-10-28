@@ -1,0 +1,74 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:Kobian.UI.Settings" xmlns:l="using:Kobian.UI.Localization"
+             x:Class="Kobian.UI.Settings.SettingsView" x:DataType="s:SettingsViewModel">
+  <!-- SCR-11 Ustawienia (R2.6.1, it. 81): wygląd i język (lokalnie), informacje o usłudze, dziennik audytu. AutomationId „SCR-11.*”. -->
+  <UserControl.Styles>
+    <Style Selector="Grid.kv > TextBlock.k"><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.TextMuted}" /><Setter Property="Margin" Value="0,0,24,10" /></Style>
+    <Style Selector="Grid.kv > TextBlock.v"><Setter Property="Margin" Value="0,0,0,10" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+  </UserControl.Styles>
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="40,32" Spacing="20" MaxWidth="760" HorizontalAlignment="Left">
+      <TextBlock Classes="display" Text="{Binding Title}" AutomationProperties.AutomationId="SCR-11.Title" />
+
+      <Border Classes="card" Padding="28">
+        <StackPanel Spacing="16">
+          <TextBlock Classes="title" Text="{l:T Settings.Appearance}" />
+          <StackPanel Spacing="8">
+            <TextBlock Classes="label" Text="{l:T Settings.Theme}" />
+            <ListBox Classes="segmented" ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme}" AutomationProperties.AutomationId="SCR-11.Theme"
+                     AutomationProperties.Name="{l:T Settings.Theme}">
+              <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate></ListBox.ItemsPanel>
+              <ListBox.ItemTemplate><DataTemplate DataType="s:SettingOption"><TextBlock Text="{Binding Label}" AutomationProperties.AutomationId="{Binding AutomationId}" /></DataTemplate></ListBox.ItemTemplate>
+            </ListBox>
+          </StackPanel>
+          <StackPanel Spacing="8">
+            <TextBlock Classes="label" Text="{l:T Settings.Language}" />
+            <ListBox Classes="segmented" ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}" AutomationProperties.AutomationId="SCR-11.Language"
+                     AutomationProperties.Name="{l:T Settings.Language}">
+              <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate></ListBox.ItemsPanel>
+              <ListBox.ItemTemplate><DataTemplate DataType="s:SettingOption"><TextBlock Text="{Binding Label}" AutomationProperties.AutomationId="{Binding AutomationId}" /></DataTemplate></ListBox.ItemTemplate>
+            </ListBox>
+            <Border Classes="notice info" IsVisible="{Binding RestartNeeded}" AutomationProperties.AutomationId="SCR-11.RestartNeeded" AutomationProperties.LiveSetting="Polite">
+              <TextBlock Text="{l:T Settings.RestartNeeded}" TextWrapping="Wrap" />
+            </Border>
+          </StackPanel>
+          <TextBlock Classes="muted" Text="{l:T Settings.LocalNote}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" Padding="28" IsVisible="{Binding HasService}" AutomationProperties.AutomationId="SCR-11.Service">
+        <StackPanel Spacing="16">
+          <TextBlock Classes="title" Text="{l:T Settings.Service}" />
+          <Border Classes="notice error" IsVisible="{Binding ConnectionLost}" AutomationProperties.AutomationId="SCR-11.Offline">
+            <TextBlock Text="{l:T Settings.Offline}" TextWrapping="Wrap" />
+          </Border>
+          <Grid Classes="kv" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" IsVisible="{Binding HasInfo}">
+            <TextBlock Classes="k body" Text="{l:T Settings.Version}" />
+            <TextBlock Classes="v body" Grid.Column="1" Text="{Binding VersionText}" AutomationProperties.AutomationId="SCR-11.Version" />
+            <TextBlock Classes="k body" Grid.Row="1" Text="{l:T Settings.YourRole}" />
+            <TextBlock Classes="v body" Grid.Row="1" Grid.Column="1" Text="{Binding RoleText}" />
+            <TextBlock Classes="k body" Grid.Row="2" Text="{l:T Settings.Runtime}" />
+            <TextBlock Classes="v body" Grid.Row="2" Grid.Column="1" Text="{Binding RuntimeText}" AutomationProperties.AutomationId="SCR-11.Runtime"
+                       Foreground="{Binding RuntimeUnpatched, Converter={x:Static s:WarningBrushConverter.Instance}}" />
+          </Grid>
+          <StackPanel Spacing="8">
+            <TextBlock Classes="label" Text="{l:T Settings.Audit}" />
+            <TextBlock Classes="muted" Text="{l:T Settings.AuditHint}" TextWrapping="Wrap" />
+            <Button Classes="secondary" HorizontalAlignment="Left" Content="{l:T Settings.AuditVerify}" Command="{Binding VerifyAuditCommand}" AutomationProperties.AutomationId="SCR-11.AuditVerify" />
+            <Border Classes="notice" Classes.error="{Binding AuditBroken}" Classes.info="{Binding !AuditBroken}" IsVisible="{Binding HasAuditResult}"
+                    AutomationProperties.AutomationId="SCR-11.AuditResult" AutomationProperties.LiveSetting="Polite">
+              <TextBlock Text="{Binding AuditText}" TextWrapping="Wrap" />
+            </Border>
+            <!-- it. 104 (D9.9): ostatnia kotwica do przepisania poza serwer — pole tylko do odczytu, zaznaczalne (kopiowanie). -->
+            <StackPanel Spacing="4" IsVisible="{Binding HasLastAnchor}" AutomationProperties.AutomationId="SCR-11.Anchor">
+              <TextBlock Classes="body" Text="{Binding LastAnchorText}" TextWrapping="Wrap" />
+              <TextBox Classes="mono" IsReadOnly="True" Text="{Binding LastAnchor, Mode=OneWay}" TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-11.AnchorValue"
+                       AutomationProperties.Name="{l:T Settings.AnchorName}" />
+              <TextBlock Classes="muted" Text="{l:T Settings.AnchorHint}" TextWrapping="Wrap" />
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="KB_0001_Message" xml:space="preserve"><value>Internal program error.</value></data>
+  <data name="KB_0001_Action" xml:space="preserve"><value>Report the bug with the run ID.</value></data>
+  <data name="KB_0101_Message" xml:space="preserve"><value>The selected source does not exist or is not readable by the service.</value></data>
+  <data name="KB_0101_Action" xml:space="preserve"><value>Choose another folder or grant permissions.</value></data>
+  <data name="KB_0102_Message" xml:space="preserve"><value>Sources in the job overlap (a folder and its subfolder).</value></data>
+  <data name="KB_0102_Action" xml:space="preserve"><value>Remove the subfolder from the list.</value></data>
+  <data name="KB_0103_Message" xml:space="preserve"><value>The job definition is invalid or not supported in this version.</value></data>
+  <data name="KB_0103_Action" xml:space="preserve"><value>Fix the job definition (source, destination, key).</value></data>
+  <data name="KB_0104_Message" xml:space="preserve"><value>No job with the given name exists.</value></data>
+  <data name="KB_0104_Action" xml:space="preserve"><value>Check the job name (kobian status).</value></data>
+  <data name="KB_0105_Message" xml:space="preserve"><value>The job is disabled — the run was skipped.</value></data>
+  <data name="KB_0105_Action" xml:space="preserve"><value>Enable the job to run it.</value></data>
+  <data name="KB_0106_Message" xml:space="preserve"><value>A job with this name already exists.</value></data>
+  <data name="KB_0106_Action" xml:space="preserve"><value>Choose another job name.</value></data>
+  <data name="KB_0107_Message" xml:space="preserve"><value>No run with this identifier was found.</value></data>
+  <data name="KB_0107_Action" xml:space="preserve"><value>Check the identifier in the run history.</value></data>
+  <data name="KB_0120_Message" xml:space="preserve"><value>The job import file does not match the kobian-export v1 schema — nothing was imported.</value></data>
+  <data name="KB_0120_Action" xml:space="preserve"><value>Fix the file according to the error list (JSON path + reason) or export it again.</value></data>
+  <data name="KB_0121_Message" xml:space="preserve"><value>The job import file exceeds the size, depth or job count limit.</value></data>
+  <data name="KB_0121_Action" xml:space="preserve"><value>Split the export (kobian export --job ...) and import it in parts.</value></data>
+  <data name="KB_0122_Message" xml:space="preserve"><value>The job file contains a value that looks like a secret — rejected.</value></data>
+  <data name="KB_0122_Action" xml:space="preserve"><value>Remove passwords and keys from the file; credentials are given only as secretRef (file:name) in the Agent secret store.</value></data>
+  <data name="KB_0123_Message" xml:space="preserve"><value>The job file contains scripts or actions (pre/post, runSql) — import does not accept them.</value></data>
+  <data name="KB_0123_Action" xml:space="preserve"><value>Remove the actions from the file; scripts are configured by the administrator in the program after import.</value></data>
+  <data name="KB_0124_Message" xml:space="preserve"><value>A job with this name already exists with a different definition — nothing was imported.</value></data>
+  <data name="KB_0124_Action" xml:space="preserve"><value>Choose how to resolve the conflict: skip, overwrite or rename (--on-conflict skip|overwrite|rename).</value></data>
+  <data name="KB_0201_Message" xml:space="preserve"><value>The schedule is invalid or too frequent.</value></data>
+  <data name="KB_0201_Action" xml:space="preserve"><value>Fix the schedule.</value></data>
+  <data name="KB_0301_Message" xml:space="preserve"><value>The password is too weak.</value></data>
+  <data name="KB_0301_Action" xml:space="preserve"><value>Use a longer, less common password.</value></data>
+  <data name="KB_0401_Message" xml:space="preserve"><value>The retention policy is invalid.</value></data>
+  <data name="KB_0401_Action" xml:space="preserve"><value>Add a rule or shorten the retention hold.</value></data>
+  <data name="KB_1002_Message" xml:space="preserve"><value>The repository requires a feature this program version does not support.</value></data>
+  <data name="KB_1002_Action" xml:space="preserve"><value>Update Kobian Backup.</value></data>
+  <data name="KB_1003_Message" xml:space="preserve"><value>An object with this identifier already exists in the repository.</value></data>
+  <data name="KB_1003_Action" xml:space="preserve"><value>Run the job again; if it repeats, check the repository (check).</value></data>
+  <data name="KB_1101_Message" xml:space="preserve"><value>The data file does not belong to this repository or key.</value></data>
+  <data name="KB_1101_Action" xml:space="preserve"><value>Check that the destination was not swapped; run check.</value></data>
+  <data name="KB_1102_Message" xml:space="preserve"><value>Cannot unlock the repository key (wrong password or modified key parameters).</value></data>
+  <data name="KB_1102_Action" xml:space="preserve"><value>Check the password; if it is correct, the key file may have been changed.</value></data>
+  <data name="KB_1103_Message" xml:space="preserve"><value>Data authentication failed (data corrupted or modified).</value></data>
+  <data name="KB_1103_Action" xml:space="preserve"><value>Run check; restore from another version or copy.</value></data>
+  <data name="KB_1104_Message" xml:space="preserve"><value>The repository header (kobian.repo) is invalid or has been modified.</value></data>
+  <data name="KB_1104_Action" xml:space="preserve"><value>Check that the destination was not swapped; use the header copy from the snapshot.</value></data>
+  <data name="KB_1201_Message" xml:space="preserve"><value>A repository lock with an invalid signature was found on the destination and ignored.</value></data>
+  <data name="KB_1201_Action" xml:space="preserve"><value>Check who has write access to the destination; only the holder of the repository key may create locks.</value></data>
+  <data name="KB_1202_Message" xml:space="preserve"><value>The repository is in use by another operation (locked).</value></data>
+  <data name="KB_1202_Action" xml:space="preserve"><value>Wait for the backup or pruning to finish; the lock of an interrupted host expires after 30 minutes.</value></data>
+  <data name="KB_1301_Message" xml:space="preserve"><value>Data frame exceeds the allowed size.</value></data>
+  <data name="KB_1301_Action" xml:space="preserve"><value>Run check.</value></data>
+  <data name="KB_1302_Message" xml:space="preserve"><value>Block exceeds the allowed size after decompression.</value></data>
+  <data name="KB_1302_Action" xml:space="preserve"><value>Run check.</value></data>
+  <data name="KB_1303_Message" xml:space="preserve"><value>Metadata object exceeds the allowed size.</value></data>
+  <data name="KB_1303_Action" xml:space="preserve"><value>Run check.</value></data>
+  <data name="KB_1304_Message" xml:space="preserve"><value>Metadata has an invalid structure (nesting or encoding).</value></data>
+  <data name="KB_1304_Action" xml:space="preserve"><value>Run check.</value></data>
+  <data name="KB_1305_Message" xml:space="preserve"><value>A directory in the backup has too many entries.</value></data>
+  <data name="KB_1305_Action" xml:space="preserve"><value>Run check.</value></data>
+  <data name="KB_1306_Message" xml:space="preserve"><value>Invalid entry name in the backup.</value></data>
+  <data name="KB_1306_Action" xml:space="preserve"><value>Run check.</value></data>
+  <data name="KB_1308_Message" xml:space="preserve"><value>The data file contains too many frames.</value></data>
+  <data name="KB_1308_Action" xml:space="preserve"><value>Run check.</value></data>
+  <data name="KB_1309_Message" xml:space="preserve"><value>The data file is incomplete or has an invalid layout.</value></data>
+  <data name="KB_1309_Action" xml:space="preserve"><value>Run check; incomplete files are removed by prune.</value></data>
+  <data name="KB_1401_Message" xml:space="preserve"><value>File changed while being read — stored with an unstable flag.</value></data>
+  <data name="KB_1401_Action" xml:space="preserve"><value>Enable VSS or schedule the backup outside working hours.</value></data>
+  <data name="KB_1402_Message" xml:space="preserve"><value>Repository write failed — run aborted, no snapshot created.</value></data>
+  <data name="KB_1402_Action" xml:space="preserve"><value>Check the space and access to the destination, then run again.</value></data>
+  <data name="KB_1403_Message" xml:space="preserve"><value>Reference inconsistency detected before snapshot commit.</value></data>
+  <data name="KB_1403_Action" xml:space="preserve"><value>Run check; report the bug.</value></data>
+  <data name="KB_1404_Message" xml:space="preserve"><value>Deduplication switched to Bloom filter mode (large repository).</value></data>
+  <data name="KB_1404_Action" xml:space="preserve"><value>None - informational.</value></data>
+  <data name="KB_1405_Message" xml:space="preserve"><value>Source file unreadable — skipped.</value></data>
+  <data name="KB_1405_Action" xml:space="preserve"><value>Check permissions or file locks.</value></data>
+  <data name="KB_1406_Message" xml:space="preserve"><value>The VSS snapshot could not be created — backup without a snapshot is not possible.</value></data>
+  <data name="KB_1406_Action" xml:space="preserve"><value>Check the Volume Shadow Copy service and the event log; retry the backup.</value></data>
+  <data name="KB_1501_Message" xml:space="preserve"><value>A pack referenced by the repository index is missing.</value></data>
+  <data name="KB_1501_Action" xml:space="preserve"><value>Run kobian check --repair (D8.10); restore the affected files from another copy.</value></data>
+  <data name="KB_1502_Message" xml:space="preserve"><value>The size of a pack on the destination differs from the size recorded in the index.</value></data>
+  <data name="KB_1502_Action" xml:space="preserve"><value>Run kobian check with 100% sampling; check the medium or the destination server.</value></data>
+  <data name="KB_1503_Message" xml:space="preserve"><value>A snapshot references a block that is missing from its indexes.</value></data>
+  <data name="KB_1503_Action" xml:space="preserve"><value>Run kobian check --repair; make a full backup.</value></data>
+  <data name="KB_1504_Message" xml:space="preserve"><value>The repository contains an object nothing refers to (e.g. after an interrupted job).</value></data>
+  <data name="KB_1504_Action" xml:space="preserve"><value>No action needed - maintenance (prune) will remove the object; if the count grows, check the job log.</value></data>
+  <data name="KB_1505_Message" xml:space="preserve"><value>The backup index was unavailable — blocks were found in an index rebuilt from data files.</value></data>
+  <data name="KB_1505_Action" xml:space="preserve"><value>Run kobian check --repair and check the backup; make a new full backup.</value></data>
+  <data name="KB_1510_Message" xml:space="preserve"><value>Periodic repository verification (V3) found damaged or missing backup data.</value></data>
+  <data name="KB_1510_Action" xml:space="preserve"><value>Run kobian check --repair for the job; the next backup of the job will be full; check the medium or the destination server and restore from another copy (replica/USB).</value></data>
+  <data name="KB_1511_Message" xml:space="preserve"><value>A backup recorded in the catalog does not exist in the repository on the destination (a different medium is attached or data was deleted).</value></data>
+  <data name="KB_1511_Action" xml:space="preserve"><value>Check that the right medium/share is attached; if the data was deleted, make a full backup and restore from another copy (replica/USB).</value></data>
+  <data name="KB_1601_Message" xml:space="preserve"><value>Prune stopped: a snapshot or index that must be kept cannot be read.</value></data>
+  <data name="KB_1601_Action" xml:space="preserve"><value>Run kobian check; pruning removes nothing while the repository is not readable.</value></data>
+  <data name="KB_1602_Message" xml:space="preserve"><value>Prune stopped: no backup would remain in the repository.</value></data>
+  <data name="KB_1602_Action" xml:space="preserve"><value>Check that the job points to the right repository and that the catalog was not wiped.</value></data>
+  <data name="KB_1603_Message" xml:space="preserve"><value>Prune stopped: the repository changed while objects were being deleted.</value></data>
+  <data name="KB_1603_Action" xml:space="preserve"><value>Run pruning again later; nothing that is still needed has been removed.</value></data>
+  <data name="KB_1604_Message" xml:space="preserve"><value>Index consolidation did not complete; the repository remains readable and complete.</value></data>
+  <data name="KB_1604_Action" xml:space="preserve"><value>Nothing to do: the next pruning will repeat the consolidation. If it repeats, run kobian check.</value></data>
+  <data name="KB_2001_Message" xml:space="preserve"><value>Transient connection or write error on the destination.</value></data>
+  <data name="KB_2001_Action" xml:space="preserve"><value>None - automatic retry.</value></data>
+  <data name="KB_2101_Message" xml:space="preserve"><value>The SMB server already has a connection under a different account (error 1219).</value></data>
+  <data name="KB_2101_Action" xml:space="preserve"><value>Report the bug - jobs with different accounts to one server should be queued.</value></data>
+  <data name="KB_2102_Message" xml:space="preserve"><value>The destination rejected the credentials (key or password).</value></data>
+  <data name="KB_2102_Action" xml:space="preserve"><value>Fix the access key or password for the destination.</value></data>
+  <data name="KB_2103_Message" xml:space="preserve"><value>The account on the server is locked, expired or must change its password.</value></data>
+  <data name="KB_2103_Action" xml:space="preserve"><value>Unlock the account or change the password on the server, then update the destination credential.</value></data>
+  <data name="KB_2104_Message" xml:space="preserve"><value>The SSH server host key does not match the pinned key (or none is pinned).</value></data>
+  <data name="KB_2104_Action" xml:space="preserve"><value>Verify the server key fingerprint out of band and approve it in the destination settings.</value></data>
+  <data name="KB_2105_Message" xml:space="preserve"><value>No permission to write to the destination.</value></data>
+  <data name="KB_2105_Action" xml:space="preserve"><value>Grant permissions to the folder or share.</value></data>
+  <data name="KB_2106_Message" xml:space="preserve"><value>The destination folder or share does not exist.</value></data>
+  <data name="KB_2106_Action" xml:space="preserve"><value>Check the destination path.</value></data>
+  <data name="KB_2109_Message" xml:space="preserve"><value>The FTPS server certificate is untrusted or its key (SPKI) does not match the pinned one.</value></data>
+  <data name="KB_2109_Action" xml:space="preserve"><value>Verify the server SPKI fingerprint out of band and approve it in the destination settings, or use a certificate from a trusted authority.</value></data>
+  <data name="KB_2110_Message" xml:space="preserve"><value>The FTP server does not support FTPS encryption (AUTH TLS refused).</value></data>
+  <data name="KB_2110_Action" xml:space="preserve"><value>Enable FTPS (TLS) on the server or use an SFTP destination.</value></data>
+  <data name="KB_2112_Message" xml:space="preserve"><value>The server refused a new session (server limit).</value></data>
+  <data name="KB_2112_Action" xml:space="preserve"><value>None - the program reduces the number of parallel connections.</value></data>
+  <data name="KB_2114_Message" xml:space="preserve"><value>Connection attempts to the destination are paused for 10 minutes after 3 failures within an hour (protects the account and address from lockout).</value></data>
+  <data name="KB_2114_Action" xml:space="preserve"><value>Check the credentials and the server availability; the next attempt will follow automatically after a pause.</value></data>
+  <data name="KB_2115_Message" xml:space="preserve"><value>An unencrypted FTP destination requires explicit confirmation — connection refused.</value></data>
+  <data name="KB_2115_Action" xml:space="preserve"><value>Use FTPS or SFTP; plain FTP only with the insecure-connection flag (the password is sent in clear text).</value></data>
+  <data name="KB_2141_Message" xml:space="preserve"><value>This fingerprint is not awaiting approval for this destination (only a fingerprint presented by the server and still pending can be approved).</value></data>
+  <data name="KB_2141_Action" xml:space="preserve"><value>Check the list: kobian destinations identity list - and copy the exact fingerprint from the pending state.</value></data>
+  <data name="KB_2142_Message" xml:space="preserve"><value>The server identity approval request has expired (24 h).</value></data>
+  <data name="KB_2142_Action" xml:space="preserve"><value>Connect to the destination again (destination check or a job run), verify the fingerprint out of band and approve it within 24 h.</value></data>
+  <data name="KB_2143_Message" xml:space="preserve"><value>The destination already has the maximum number of approved server keys (4).</value></data>
+  <data name="KB_2143_Action" xml:space="preserve"><value>Approve the new key with the replace option (--replace) or remove the unneeded destination.</value></data>
+  <data name="KB_2201_Message" xml:space="preserve"><value>No space left on the destination.</value></data>
+  <data name="KB_2201_Action" xml:space="preserve"><value>Free up space or change the retention.</value></data>
+  <data name="KB_2301_Message" xml:space="preserve"><value>An object with this name already exists on the destination — never overwritten.</value></data>
+  <data name="KB_2301_Action" xml:space="preserve"><value>Report the bug.</value></data>
+  <data name="KB_2302_Message" xml:space="preserve"><value>Invalid repository object name.</value></data>
+  <data name="KB_2302_Action" xml:space="preserve"><value>Report the bug.</value></data>
+  <data name="KB_2303_Message" xml:space="preserve"><value>The destination path contains a link — write refused.</value></data>
+  <data name="KB_2303_Action" xml:space="preserve"><value>Remove the link from the repository folder.</value></data>
+  <data name="KB_2401_Message" xml:space="preserve"><value>Object size or checksum on the destination differs from expected.</value></data>
+  <data name="KB_2401_Action" xml:space="preserve"><value>None - retry; if it repeats, check the destination.</value></data>
+  <data name="KB_3001_Message" xml:space="preserve"><value>Cannot connect to the SQL Server instance.</value></data>
+  <data name="KB_3001_Action" xml:space="preserve"><value>Check that the SQL service is running.</value></data>
+  <data name="KB_3002_Message" xml:space="preserve"><value>SQL Server rejected the login.</value></data>
+  <data name="KB_3002_Action" xml:space="preserve"><value>Run the permissions script.</value></data>
+  <data name="KB_3003_Message" xml:space="preserve"><value>BACKUP DATABASE permission is missing.</value></data>
+  <data name="KB_3003_Action" xml:space="preserve"><value>Run the permissions script.</value></data>
+  <data name="KB_3004_Message" xml:space="preserve"><value>SQL Server TLS certificate does not match the approved one.</value></data>
+  <data name="KB_3004_Action" xml:space="preserve"><value>Approve the SQL Server certificate.</value></data>
+  <data name="KB_3005_Message" xml:space="preserve"><value>The database does not exist on the SQL Server or is not ONLINE.</value></data>
+  <data name="KB_3005_Action" xml:space="preserve"><value>Check the database state in SQL Server Management Studio or select the database again in the wizard.</value></data>
+  <data name="KB_3006_Message" xml:space="preserve"><value>The SQL Server did not present a TLS certificate (encryption unavailable).</value></data>
+  <data name="KB_3006_Action" xml:space="preserve"><value>Enable encryption and a certificate in SQL Server Configuration Manager, or check that the address points to a SQL Server.</value></data>
+  <data name="KB_3007_Message" xml:space="preserve"><value>The SQL Server certificate changed after its fingerprint was shown — nothing was saved.</value></data>
+  <data name="KB_3007_Action" xml:space="preserve"><value>Download the certificate again and compare the fingerprint with the SQL Server administrator.</value></data>
+  <data name="KB_3008_Message" xml:space="preserve"><value>A certificate file with this name already exists with different content.</value></data>
+  <data name="KB_3008_Action" xml:space="preserve"><value>Approve the certificate under a new name; the old file may be used by other jobs.</value></data>
+  <data name="KB_3009_Message" xml:space="preserve"><value>The SQL Server is not on the list of servers allowed for this Kobian service.</value></data>
+  <data name="KB_3009_Action" xml:space="preserve"><value>The administrator adds the server to KOBIAN_SQL_ALLOWED_SERVERS (name as in the job) and restarts the service.</value></data>
+  <data name="KB_3010_Message" xml:space="preserve"><value>An ERP control query was skipped (timeout, missing read permission or disallowed result) — the backup is valid.</value></data>
+  <data name="KB_3010_Action" xml:space="preserve"><value>Optionally grant the Kobian account read access (db_datareader) for the logical check after restore; without it the check will be incomplete.</value></data>
+  <data name="KB_3101_Message" xml:space="preserve"><value>Another backup, restore or DBCC is running on the database — job skipped.</value></data>
+  <data name="KB_3101_Action" xml:space="preserve"><value>None - the next run follows the schedule.</value></data>
+  <data name="KB_3102_Message" xml:space="preserve"><value>Not enough space for the database backup staging file.</value></data>
+  <data name="KB_3102_Action" xml:space="preserve"><value>Free up space or choose another volume.</value></data>
+  <data name="KB_3103_Message" xml:space="preserve"><value>A foreign full backup was detected — a full backup was taken.</value></data>
+  <data name="KB_3103_Action" xml:space="preserve"><value>None.</value></data>
+  <data name="KB_3104_Message" xml:space="preserve"><value>Log backups made by another tool were detected.</value></data>
+  <data name="KB_3104_Action" xml:space="preserve"><value>Find out which tool makes the log backups.</value></data>
+  <data name="KB_3105_Message" xml:space="preserve"><value>Transaction log is growing — no log backups in FULL recovery.</value></data>
+  <data name="KB_3105_Action" xml:space="preserve"><value>Consider log backups or the SIMPLE recovery model.</value></data>
+  <data name="KB_3201_Message" xml:space="preserve"><value>The database has damaged pages (checksum error during backup).</value></data>
+  <data name="KB_3201_Action" xml:space="preserve"><value>Run DBCC CHECKDB.</value></data>
+  <data name="KB_3202_Message" xml:space="preserve"><value>Database backup verification (VERIFYONLY) failed.</value></data>
+  <data name="KB_3202_Action" xml:space="preserve"><value>Run the backup again and test the restore.</value></data>
+  <data name="KB_3203_Message" xml:space="preserve"><value>The msdb backup set does not confirm a full COPY_ONLY backup with checksums.</value></data>
+  <data name="KB_3203_Action" xml:space="preserve"><value>Check that no other tool writes to the Kobian temporary folder; run the job again.</value></data>
+  <data name="KB_3301_Message" xml:space="preserve"><value>TDE-encrypted database without a certificate backup.</value></data>
+  <data name="KB_3301_Action" xml:space="preserve"><value>Include the TDE certificate.</value></data>
+  <data name="KB_3401_Message" xml:space="preserve"><value>SQL Server version unsupported or out of vendor support.</value></data>
+  <data name="KB_3401_Action" xml:space="preserve"><value>Update SQL Server.</value></data>
+  <data name="KB_3501_Message" xml:space="preserve"><value>A target database with this name already exists — restore never overwrites existing databases.</value></data>
+  <data name="KB_3501_Action" xml:space="preserve"><value>Provide another target database name (default &lt;name&gt;_restore_YYYYMMDD).</value></data>
+  <data name="KB_3502_Message" xml:space="preserve"><value>The service account lacks CREATE ANY DATABASE on the SQL Server.</value></data>
+  <data name="KB_3502_Action" xml:space="preserve"><value>Grant the service account the dbcreator role or the CREATE ANY DATABASE permission.</value></data>
+  <data name="KB_3503_Message" xml:space="preserve"><value>The backup contains FILESTREAM or full-text files — restoring them is not supported yet.</value></data>
+  <data name="KB_3503_Action" xml:space="preserve"><value>Restore the .bak file manually in SQL Server Management Studio.</value></data>
+  <data name="KB_3504_Message" xml:space="preserve"><value>The SQL Server does not report default data and log directories.</value></data>
+  <data name="KB_3504_Action" xml:space="preserve"><value>Set the default directories in the SQL Server settings or provide them in the restore request.</value></data>
+  <data name="KB_3505_Message" xml:space="preserve"><value>The restored database does not match the control queries recorded at backup time.</value></data>
+  <data name="KB_3505_Action" xml:space="preserve"><value>The database was created under a new name - check it before switching the application over; try an older backup.</value></data>
+  <data name="KB_4101_Message" xml:space="preserve"><value>Outside the time window — the backup will run in the next window.</value></data>
+  <data name="KB_4101_Action" xml:space="preserve"><value>None.</value></data>
+  <data name="KB_4102_Message" xml:space="preserve"><value>Queue wait time exceeded — other jobs held the resource.</value></data>
+  <data name="KB_4102_Action" xml:space="preserve"><value>Consider changing the job times.</value></data>
+  <data name="KB_4103_Message" xml:space="preserve"><value>The previous run is still in progress.</value></data>
+  <data name="KB_4103_Action" xml:space="preserve"><value>Lengthen the interval or the window.</value></data>
+  <data name="KB_4104_Message" xml:space="preserve"><value>Event-triggered run budget exhausted.</value></data>
+  <data name="KB_4104_Action" xml:space="preserve"><value>None; if it repeats, check the event source.</value></data>
+  <data name="KB_4105_Message" xml:space="preserve"><value>The media was removed during the backup.</value></data>
+  <data name="KB_4105_Action" xml:space="preserve"><value>Reconnect the drive - the backup will resume.</value></data>
+  <data name="KB_4201_Message" xml:space="preserve"><value>A system clock jump was detected.</value></data>
+  <data name="KB_4201_Action" xml:space="preserve"><value>None.</value></data>
+  <data name="KB_4901_Message" xml:space="preserve"><value>Internal error: duplicate run of the same occurrence.</value></data>
+  <data name="KB_4901_Action" xml:space="preserve"><value>Report the bug.</value></data>
+  <data name="KB_4902_Message" xml:space="preserve"><value>Internal error: illegal run state transition.</value></data>
+  <data name="KB_4902_Action" xml:space="preserve"><value>Report the bug.</value></data>
+  <data name="KB_5001_Message" xml:space="preserve"><value>No write permission at the restore destination.</value></data>
+  <data name="KB_5001_Action" xml:space="preserve"><value>Choose a folder you have write access to.</value></data>
+  <data name="KB_5002_Message" xml:space="preserve"><value>No snapshot with the given identifier was found (or the prefix is ambiguous).</value></data>
+  <data name="KB_5002_Action" xml:space="preserve"><value>Check the ID (kobian snapshots) or use a longer prefix.</value></data>
+  <data name="KB_5003_Message" xml:space="preserve"><value>The backup does not contain a folder at the given path.</value></data>
+  <data name="KB_5003_Action" xml:space="preserve"><value>Go back to the backup root and choose a folder from the list.</value></data>
+  <data name="KB_5101_Message" xml:space="preserve"><value>Invalid name in the backup — file skipped.</value></data>
+  <data name="KB_5101_Action" xml:space="preserve"><value>Check the restore report.</value></data>
+  <data name="KB_5102_Message" xml:space="preserve"><value>The destination path is too long.</value></data>
+  <data name="KB_5102_Action" xml:space="preserve"><value>Restore to a shorter path or to a ZIP.</value></data>
+  <data name="KB_5103_Message" xml:space="preserve"><value>The destination file system cannot hold this item (e.g. FAT32).</value></data>
+  <data name="KB_5103_Action" xml:space="preserve"><value>Restore to NTFS.</value></data>
+  <data name="KB_5104_Message" xml:space="preserve"><value>Write through a link at the destination was refused.</value></data>
+  <data name="KB_5104_Action" xml:space="preserve"><value>Check the target folder.</value></data>
+  <data name="KB_5105_Message" xml:space="preserve"><value>Target file already exists — not overwritten.</value></data>
+  <data name="KB_5105_Action" xml:space="preserve"><value>Choose an empty target folder or rename the existing file.</value></data>
+  <data name="KB_5106_Message" xml:space="preserve"><value>Not enough free space in the destination folder for the files to restore.</value></data>
+  <data name="KB_5106_Action" xml:space="preserve"><value>Free up space or choose another folder or a smaller scope.</value></data>
+  <data name="KB_5201_Message" xml:space="preserve"><value>Restored file checksum mismatch — file quarantined.</value></data>
+  <data name="KB_5201_Action" xml:space="preserve"><value>Run check; restore from another version.</value></data>
+  <data name="KB_5202_Message" xml:space="preserve"><value>A data file required for restore is missing.</value></data>
+  <data name="KB_5202_Action" xml:space="preserve"><value>Run kobian check.</value></data>
+  <data name="KB_6101_Message" xml:space="preserve"><value>The backup job failed.</value></data>
+  <data name="KB_6101_Action" xml:space="preserve"><value>Check the run details.</value></data>
+  <data name="KB_6103_Message" xml:space="preserve"><value>No successful backup for longer than the required RPO.</value></data>
+  <data name="KB_6103_Action" xml:space="preserve"><value>Check the job and the destination.</value></data>
+  <data name="KB_6111_Message" xml:space="preserve"><value>A ransomware-like anomaly was detected; retention is paused.</value></data>
+  <data name="KB_6111_Action" xml:space="preserve"><value>Review the comparison report and confirm or reject the change.</value></data>
+  <data name="KB_6116_Message" xml:space="preserve"><value>The OS or SQL instance is out of vendor support or unpatched for over 60 days.</value></data>
+  <data name="KB_6116_Action" xml:space="preserve"><value>Install updates or plan a migration.</value></data>
+  <data name="KB_6117_Message" xml:space="preserve"><value>A system clock jump was detected; retention is paused until confirmed.</value></data>
+  <data name="KB_6117_Action" xml:space="preserve"><value>Check the system time and confirm in the interface.</value></data>
+  <data name="KB_6120_Message" xml:space="preserve"><value>The alert cannot be acknowledged or silenced (it does not exist, is resolved, or is not awaiting a response).</value></data>
+  <data name="KB_6120_Action" xml:space="preserve"><value>Refresh the alert list and pick an alert that has been notified.</value></data>
+  <data name="KB_6201_Message" xml:space="preserve"><value>The SMTP server rejected authentication (e.g. 550 5.7.30 — Basic Auth disabled).</value></data>
+  <data name="KB_6201_Action" xml:space="preserve"><value>Check the login and password in the smtp.credentials file; for Microsoft 365 use OAuth2.</value></data>
+  <data name="KB_6203_Message" xml:space="preserve"><value>E-mail notification delivery failed.</value></data>
+  <data name="KB_6203_Action" xml:space="preserve"><value>Check the SMTP server, the recipient addresses and the audit log.</value></data>
+  <data name="KB_6204_Message" xml:space="preserve"><value>The e-mail notification configuration is invalid.</value></data>
+  <data name="KB_6204_Action" xml:space="preserve"><value>Fix the KOBIAN_SMTP_* variables and the smtp.credentials file.</value></data>
+  <data name="KB_6205_Message" xml:space="preserve"><value>The e-mail address is invalid or unsafe.</value></data>
+  <data name="KB_6205_Action" xml:space="preserve"><value>Provide a single address in the form name@domain, without control characters.</value></data>
+  <data name="KB_6206_Message" xml:space="preserve"><value>Could not establish an encrypted connection to the SMTP server (TLS or certificate).</value></data>
+  <data name="KB_6206_Action" xml:space="preserve"><value>Check the server certificate and STARTTLS/TLS support.</value></data>
+  <data name="KB_6207_Message" xml:space="preserve"><value>E-mail notifications are sent without encryption (plain SMTP).</value></data>
+  <data name="KB_6207_Action" xml:space="preserve"><value>Enable STARTTLS or TLS on the server and remove KOBIAN_SMTP_INSECURE.</value></data>
+  <data name="KB_6208_Message" xml:space="preserve"><value>The identity provider rejected the OAuth2 token request for e-mail notifications.</value></data>
+  <data name="KB_6208_Action" xml:space="preserve"><value>Check the tenant id, application id and the secret in smtp.oauth, and the application's SMTP.SendAsApp permission.</value></data>
+  <data name="KB_6209_Message" xml:space="preserve"><value>The OAuth2 authentication configuration for e-mail is invalid.</value></data>
+  <data name="KB_6209_Action" xml:space="preserve"><value>Fix the KOBIAN_SMTP_OAUTH_* variables and the smtp.oauth file.</value></data>
+  <data name="KB_6301_Message" xml:space="preserve"><value>Webhook delivery failed after all retries.</value></data>
+  <data name="KB_6301_Action" xml:space="preserve"><value>Check the recipient address.</value></data>
+  <data name="KB_6302_Message" xml:space="preserve"><value>The webhook URL is blocked (local or unsafe address).</value></data>
+  <data name="KB_6302_Action" xml:space="preserve"><value>Use a public https address.</value></data>
+  <data name="KB_6501_Message" xml:space="preserve"><value>Audit log verification failed.</value></data>
+  <data name="KB_6501_Action" xml:space="preserve"><value>Report a security incident; keep a copy of the catalog.</value></data>
+  <data name="KB_6502_Message" xml:space="preserve"><value>The audit log schema was changed outside the program.</value></data>
+  <data name="KB_6502_Action" xml:space="preserve"><value>Report a security incident; keep a copy of the catalog.</value></data>
+  <data name="KB_6503_Message" xml:space="preserve"><value>The audit log does not match an anchor.</value></data>
+  <data name="KB_6503_Action" xml:space="preserve"><value>Report a security incident; compare with the anchor from the daily report.</value></data>
+  <data name="KB_7001_Message" xml:space="preserve"><value>Caller identity could not be established — connection to the service rejected.</value></data>
+  <data name="KB_7001_Action" xml:space="preserve"><value>Run Kobian locally under an account in the Kobian Operators or Administrators group (not over the network or as an anonymous account).</value></data>
+  <data name="KB_7006_Message" xml:space="preserve"><value>Client revision is older than the service requires — read-only commands only.</value></data>
+  <data name="KB_7006_Action" xml:space="preserve"><value>Update Kobian Backup.</value></data>
+  <data name="KB_7007_Message" xml:space="preserve"><value>The Kobian service is already running on this computer — the second instance stopped without changing the catalog.</value></data>
+  <data name="KB_7007_Action" xml:space="preserve"><value>Do not start the Agent manually while the KobianAgent service is running; check the service state in Services.</value></data>
+  <data name="KB_7008_Message" xml:space="preserve"><value>Starting the Kobian.Worker helper process was blocked by a system policy.</value></data>
+  <data name="KB_7008_Action" xml:space="preserve"><value>Add a publisher rule for Kobian (WDAC/AppLocker/ASR) - see the administrator documentation.</value></data>
+  <data name="KB_7010_Message" xml:space="preserve"><value>Cannot connect to the Kobian Backup service.</value></data>
+  <data name="KB_7010_Action" xml:space="preserve"><value>Check that the service is running (services.msc) and try again.</value></data>
+  <data name="KB_7011_Message" xml:space="preserve"><value>Not authorized to call this service operation.</value></data>
+  <data name="KB_7011_Action" xml:space="preserve"><value>Run the command as a user with the appropriate role.</value></data>
+  <data name="KB_7012_Message" xml:space="preserve"><value>Operation is not yet available in this service version.</value></data>
+  <data name="KB_7012_Action" xml:space="preserve"><value>Update Kobian Backup or configure the missing components.</value></data>
+  <data name="KB_7013_Message" xml:space="preserve"><value>The Kobian service runs on an unpatched .NET runtime (below the required security patch level).</value></data>
+  <data name="KB_7013_Action" xml:space="preserve"><value>Install the .NET 10 update (at least 10.0.13) and restart the service.</value></data>
+  <data name="KB_7014_Message" xml:space="preserve"><value>The helper process returned an invalid response — process terminated.</value></data>
+  <data name="KB_7014_Action" xml:space="preserve"><value>Report the bug; check the installation integrity.</value></data>
+  <data name="KB_7015_Message" xml:space="preserve"><value>The Kobian.Worker helper file has no valid signature — start refused.</value></data>
+  <data name="KB_7015_Action" xml:space="preserve"><value>Reinstall Kobian Backup from the official installer; report an incident.</value></data>
+  <data name="KB_7016_Message" xml:space="preserve"><value>The Kobian.Worker helper process could not be started.</value></data>
+  <data name="KB_7016_Action" xml:space="preserve"><value>Check the installation (Kobian.Worker.exe next to the service) and the event log.</value></data>
+</root>

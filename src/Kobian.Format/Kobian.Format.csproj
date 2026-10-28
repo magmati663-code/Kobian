@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Kobian Repo v1: nagłówek, pack, trailer, indeks, manifest — parsery niezaufanych danych (R2.3). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Kobian.Format</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kobian.Tests.Unit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Formats.Cbor" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Kobian.Domain\Kobian.Domain.csproj" />
+  </ItemGroup>
+</Project>

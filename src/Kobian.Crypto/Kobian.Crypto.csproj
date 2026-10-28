@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- HKDF, AES-GCM, HMAC chunkId, KDF, opakowania MK — tylko BCL (D3.4, D3.9). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Kobian.Crypto</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kobian.Tests.Unit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Kobian.Domain\Kobian.Domain.csproj" />
+  </ItemGroup>
+</Project>
