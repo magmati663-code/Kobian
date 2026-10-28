@@ -200,19 +200,28 @@ public sealed class RestoreExecutor(RepoReader reader)
         }
         var ok = false;
         long written = 0;
-        await using (fs.ConfigureAwait(false))
+        try
         {
-            using var h = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-            foreach (var c in e.Chunks ?? [])
+            await using (fs.ConfigureAwait(false))
             {
-                var block = await _reader.ReadBlockAsync(c, Kobian.Format.Pack.BlobType.Data, ct).ConfigureAwait(false);
-                h.AppendData(block);
-                await fs.WriteAsync(block, ct).ConfigureAwait(false);
-                written += block.Length;
+                using var h = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+                foreach (var c in e.Chunks ?? [])
+                {
+                    var block = await _reader.ReadBlockAsync(c, Kobian.Format.Pack.BlobType.Data, ct).ConfigureAwait(false);
+                    h.AppendData(block);
+                    await fs.WriteAsync(block, ct).ConfigureAwait(false);
+                    written += block.Length;
+                }
+                var sha = h.GetHashAndReset();
+                ok = written == e.Size && (e.FileSha256 is null || CryptographicOperations.FixedTimeEquals(sha, e.FileSha256));
+                if (ok) await fs.FlushAsync(ct).ConfigureAwait(false);
             }
-            var sha = h.GetHashAndReset();
-            ok = written == e.Size && (e.FileSha256 is null || CryptographicOperations.FixedTimeEquals(sha, e.FileSha256));
-            if (ok) await fs.FlushAsync(ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Błąd odczytu bloku (brakujący/uszkodzony pack, anulowanie): strumień jest już zamknięty — nasz plik roboczy z niepełną treścią nie zostaje na dysku.
+            try { File.Delete(partial); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { /* sprzątanie best-effort; błąd oryginalny jest ważniejszy */ }
+            throw;
         }
         if (!ok)
         {

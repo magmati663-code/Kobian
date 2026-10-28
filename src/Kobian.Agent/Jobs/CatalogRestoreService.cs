@@ -20,7 +20,7 @@ namespace Kobian.Agent.Jobs;
 /// Dziennik wznowień restore_* (D8.8) zapisuje <see cref="CatalogRestoreJournal"/>: wznowienie pomija pliki zweryfikowane w poprzedniej próbie, a nic nie jest nadpisywane (KB-5105).
 /// Cel musi być ścieżką bezwzględną istniejącego katalogu. Komunikaty błędów nie zawierają ścieżek (NFR-11).
 /// </summary>
-public sealed class CatalogRestoreService
+public sealed class CatalogRestoreService : IDisposable
 {
     public const int MinPrefixLength = 8;
 
@@ -62,6 +62,13 @@ public sealed class CatalogRestoreService
 
     /// <summary>Anuluje odtworzenia w tle (zamykanie Agenta): trwające kończą się stanem Cancelled, oczekujące w kolejce także.</summary>
     public void CancelDetached() => _shutdown.Cancel();
+
+    public void Dispose()
+    {
+        _shutdown.Cancel();
+        _shutdown.Dispose();
+        if (_slots.IsValueCreated) _slots.Value.Dispose();
+    }
 
     /// <summary>
     /// RD-81 (it. 137): start odtworzenia bez czekania na wynik — walidacja celu i wybór snapshotu synchronicznie (błąd = JobOutcome Failed, bez wiersza),

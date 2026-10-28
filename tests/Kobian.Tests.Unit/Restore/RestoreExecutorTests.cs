@@ -165,6 +165,7 @@ public sealed class RestoreExecutorTests : IDisposable
             await reader.LoadIndexesAsync(snap, _ct);
             var r = await new RestoreExecutor(reader).RestoreAsync(snap, Dst, null, _ct);
             Assert.Equal(RestoreStatus.Failed, r.Status);
+            Assert.Empty(Directory.GetFiles(Dst, "*" + RestoreExecutor.PartialSuffix, SearchOption.AllDirectories)); // nazwa testu obiecuje to od początku; wcześniej nie była sprawdzana
         }
     }
 
