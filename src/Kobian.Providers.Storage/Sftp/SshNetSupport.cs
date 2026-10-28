@@ -18,6 +18,11 @@ internal sealed record SshNetOptions(string Host, int Port, string PinnedSha256,
     public const string IdentityProbeOption = "identity_probe";
 
     public const string PinPrefix = "SHA256:";
+
+    /// <summary>Limit oczekiwania na odpowiedź na pojedyncze żądanie SFTP (zgodny z ReadTimeout sterowania FTP: 30 s; transfer dużego pliku to wiele żądań).</summary>
+    public static readonly TimeSpan OperationTimeout = TimeSpan.FromSeconds(60);
+
+    public static readonly TimeSpan KeepAliveInterval = TimeSpan.FromSeconds(30);
     public const int MaxPins = 4;
 
     /// <summary>Przypięte odciski (pusta lista tylko w trybie identity_probe).</summary>

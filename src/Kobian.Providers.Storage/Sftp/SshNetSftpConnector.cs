@@ -70,7 +70,13 @@ public sealed class SshNetSftpConnector(ISftpCredentialProvider credentials) : I
             if (methods.Count == 0)
                 throw new SftpProtocolException(SftpStatus.AuthRejected, "No usable credential for destination.");
             var info = new ConnectionInfo(opt.Host, opt.Port, cred.UserName, [.. methods]) { Timeout = opt.ConnectTimeout };
-            var client = new SftpClient(info);
+            var client = new SftpClient(info)
+            {
+                // Domyślnie SSH.NET czeka na odpowiedź serwera bez końca (OperationTimeout = -1): zawieszony serwer/NAS wieszał cały backup.
+                // Limit dotyczy pojedynczego żądania SFTP, nie całego transferu. KeepAlive utrzymuje sesję przez NAT/firewall w długich pauzach.
+                OperationTimeout = SshNetOptions.OperationTimeout,
+                KeepAliveInterval = SshNetOptions.KeepAliveInterval,
+            };
             ServerIdentity? identity = null;
             var mismatch = false;
             client.HostKeyReceived += (_, e) =>
