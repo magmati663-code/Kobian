@@ -90,7 +90,9 @@ public sealed class CatalogWriter : IAsyncDisposable
                 ControlTransactions++;
                 item.Done.SetResult(result);
             }
-            catch (Exception ex) when (ex is SqliteException or InvalidOperationException or ArgumentException)
+#pragma warning disable CA1031 // dowolny wyjątek operacji trafia do wywołującego; wyciek z pętli pisarza zostawiłby wszystkie kolejne ExecuteControlAsync wiszące bez końca
+            catch (Exception ex)
+#pragma warning restore CA1031
             {
                 item.Done.SetException(ex);
             }

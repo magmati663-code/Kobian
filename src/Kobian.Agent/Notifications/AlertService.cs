@@ -349,12 +349,12 @@ public static class AlertFactsCollector
         var names = new Dictionary<string, string>(StringComparer.Ordinal);
         List<ScopedFacts> a01 = [], a02 = [], a03 = [], a04 = [], a09 = [];
 
-        // Zadania włączone: ostatni rozstrzygnięty wynik (Succeeded/Warning/Failed), aktywne uruchomienie, ostatnia nieuszkodzona kopia, harmonogram cron.
+        // Zadania włączone: ostatni rozstrzygnięty wynik KOPII (Succeeded/Warning/Failed; bez check/forget/prune/restore — udany check zamykał alert A01 po nieudanej kopii), aktywne uruchomienie, ostatnia nieuszkodzona kopia, harmonogram cron.
         using (var cmd = Cmd(c, tx, """
             SELECT j.job_id, j.name, j.time_zone, j.created_at,
-                   (SELECT r.state FROM run_runs r WHERE r.job_id = j.job_id AND r.finished_at IS NOT NULL AND r.state IN ('Succeeded','Warning','Failed') ORDER BY r.finished_at DESC, r.rowid DESC LIMIT 1),
-                   (SELECT r.attempt FROM run_runs r WHERE r.job_id = j.job_id AND r.finished_at IS NOT NULL AND r.state IN ('Succeeded','Warning','Failed') ORDER BY r.finished_at DESC, r.rowid DESC LIMIT 1),
-                   (SELECT r.finished_at FROM run_runs r WHERE r.job_id = j.job_id AND r.finished_at IS NOT NULL AND r.state IN ('Succeeded','Warning','Failed') ORDER BY r.finished_at DESC, r.rowid DESC LIMIT 1),
+                   (SELECT r.state FROM run_runs r WHERE r.job_id = j.job_id AND r.finished_at IS NOT NULL AND r.state IN ('Succeeded','Warning','Failed') AND NOT EXISTS (SELECT 1 FROM run_transitions x WHERE x.run_id = r.run_id AND x.reason IN ('verify','check','forget','prune','restore')) ORDER BY r.finished_at DESC, r.rowid DESC LIMIT 1),
+                   (SELECT r.attempt FROM run_runs r WHERE r.job_id = j.job_id AND r.finished_at IS NOT NULL AND r.state IN ('Succeeded','Warning','Failed') AND NOT EXISTS (SELECT 1 FROM run_transitions x WHERE x.run_id = r.run_id AND x.reason IN ('verify','check','forget','prune','restore')) ORDER BY r.finished_at DESC, r.rowid DESC LIMIT 1),
+                   (SELECT r.finished_at FROM run_runs r WHERE r.job_id = j.job_id AND r.finished_at IS NOT NULL AND r.state IN ('Succeeded','Warning','Failed') AND NOT EXISTS (SELECT 1 FROM run_transitions x WHERE x.run_id = r.run_id AND x.reason IN ('verify','check','forget','prune','restore')) ORDER BY r.finished_at DESC, r.rowid DESC LIMIT 1),
                    EXISTS (SELECT 1 FROM run_runs r WHERE r.job_id = j.job_id AND r.state IN ('Queued','Running','Paused')),
                    (SELECT s.time_utc FROM snap_snapshots s WHERE s.job_id = j.job_id AND s.forgotten_at IS NULL AND s.suspect = 0 ORDER BY s.time_utc DESC, s.rowid DESC LIMIT 1),
                    (SELECT t.spec FROM sched_triggers t WHERE t.job_id = j.job_id AND t.kind = 'cron' AND t.enabled = 1 ORDER BY t.trigger_id LIMIT 1)

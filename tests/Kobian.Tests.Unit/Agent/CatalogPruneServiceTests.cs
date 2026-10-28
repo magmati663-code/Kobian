@@ -76,6 +76,14 @@ public sealed class CatalogPruneServiceTests : IAsyncLifetime
         return Convert.ToInt64(cmd.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture);
     }
 
+    private string ScalarText(string sql)
+    {
+        using var c = CatalogBootstrap.Open(Catalog, readOnly: true);
+        using var cmd = c.CreateCommand();
+        cmd.CommandText = sql;
+        return (string)cmd.ExecuteScalar()!;
+    }
+
     private Dictionary<string, string> TargetState() =>
         Directory.GetFiles(P("repo"), "*", SearchOption.AllDirectories)
             .ToDictionary(f => Path.GetRelativePath(P("repo"), f), f => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(f))), StringComparer.Ordinal);
@@ -213,6 +221,27 @@ public sealed class CatalogPruneServiceTests : IAsyncLifetime
         var s4 = await Backup("e");
         Assert.Equal(1, Scalar($"SELECT mode FROM snap_snapshots WHERE snap_id='{s4}';"));
         Assert.Equal(CheckStatus.Succeeded, (await new CatalogCheckService(Catalog, _writer, _providers, TimeProvider.System).CheckAsync("Pliki", 100, null, _ct)).Status);
+    }
+
+    /// <summary>SEC-17.4: po skoku zegara prune (karencja liczona przesuniętym zegarem) nie może niczego oznaczać ani kasować do zwolnienia wstrzymania przez Administratora.</summary>
+    [Fact, Trait("BL", "BL-25"), Trait("SEC", "SEC-17.4"), Trait("KB", "KB-6117")]
+    public async Task Prune_does_nothing_while_retention_is_held_after_a_clock_jump()
+    {
+        var s1 = await Backup("b");
+        await Backup("c");
+        Exec("UPDATE snap_snapshots SET forgotten_at='2026-10-14T00:00:00Z' WHERE snap_id=$a;", ("$a", s1));
+        var t = new ManualTime(DateTimeOffset.UtcNow.AddHours(1));
+        var hold = new RetentionHoldService(Catalog, _writer, t);
+        Assert.True(await hold.ReportClockJumpAsync(TimeSpan.FromHours(30), _ct)); // skok o 30 h w przód → wstrzymanie
+        var svc = new CatalogPruneService(Catalog, _providers, t, _writer, new byte[16]) { Hold = hold };
+        var before = TargetState();
+
+        var r = await svc.PruneAsync("Pliki", _ct);
+
+        Assert.Equal(KbCode.AlertClockJump, r.Code);
+        Assert.Equal(0, Scalar("SELECT COUNT(*) FROM repo_prune_marks;"));
+        Assert.Equal(before, TargetState()); // cel nietknięty (nawet blokady przeterminowane)
+        Assert.Equal("Skipped", ScalarText("SELECT state FROM run_runs ORDER BY rowid DESC LIMIT 1;"));
     }
 
     [Fact, Trait("BL", "BL-25"), Trait("D", "D3.16"), Trait("PM", "PM-17")]

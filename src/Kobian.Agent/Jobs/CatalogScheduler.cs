@@ -134,13 +134,47 @@ public sealed class CatalogScheduler : IDisposable
     /// <summary>Czeka na zakończenie uruchomień w toku (zamknięcie Agenta, testy).</summary>
     public Task DrainAsync() => Task.WhenAll([.. _inFlight.Values, Verify?.DrainAsync() ?? Task.CompletedTask]);
 
+    /// <summary>Liczba taktów pętli, które zakończyły się wyjątkiem (diagnostyka/testy); pętla działa dalej.</summary>
+    public int TickFailures { get; private set; }
+
+    private bool TryReload()
+    {
+#pragma warning disable CA1031 // katalog chwilowo niedostępny przy starcie nie może wyłączyć harmonogramu na stałe
+        try
+        {
+            Reload();
+            return true;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            TickFailures++;
+            return false;
+        }
+#pragma warning restore CA1031
+    }
+
     public async Task RunAsync(CancellationToken ct)
     {
-        Reload();
+        // Wyjątek z Reload/Tick (pełny dysk, błąd I/O katalogu, uszkodzona data w wierszu) kończył całą pętlę po cichu: zadania z harmonogramu przestawały startować do restartu usługi,
+        // a API działało dalej, więc nic tego nie sygnalizowało. Teraz błąd = ten takt przepada, następny (za sekundę) próbuje ponownie.
+        var loaded = TryReload();
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1), _time);
         try
         {
-            while (await timer.WaitForNextTickAsync(ct).ConfigureAwait(false)) Tick(ct);
+            while (await timer.WaitForNextTickAsync(ct).ConfigureAwait(false))
+            {
+                if (!loaded && !(loaded = TryReload())) continue;
+#pragma warning disable CA1031 // pętla schedulera nie może zginąć od jednego wyjątku
+                try
+                {
+                    Tick(ct);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    TickFailures++;
+                }
+#pragma warning restore CA1031
+            }
         }
         catch (OperationCanceledException)
         {

@@ -98,6 +98,44 @@ public sealed class BackupPipelineTests : IDisposable
         Assert.True(allocated < 400L * 1024 * 1024, $"Allocated {allocated / (1024 * 1024)} MiB for 400 small files (regression: per-file 4 MiB buffer).");
     }
 
+    /// <summary>
+    /// Format dopuszcza 65 536 bloków w packu; zapis pilnował tylko rozmiaru, więc źródło z bardzo wieloma drobnymi plikami przy dużym packTargetSize kończyło się KB-1308 (Failed,
+    /// deterministycznie przy każdym uruchomieniu). Pack zamykany jest też po liczbie ramek.
+    /// </summary>
+    [Fact, Trait("BL", "BL-22"), Trait("Category", "Perf-regression")]
+    public async Task Pack_is_closed_at_the_frame_limit_even_when_the_size_target_is_far_away()
+    {
+        for (var d = 0; d < 66; d++)
+        {
+            var dir = Path.Combine(Src, "d" + d);
+            Directory.CreateDirectory(dir);
+            for (var i = 0; i < 1000; i++) File.WriteAllText(Path.Combine(dir, "f" + i), "plik " + d + "/" + i); // unikalna treść = osobny blok
+        }
+        await using var s = await Open();
+        var p = new BackupPipeline(_keys, new VerifiedUploader(s));
+        var r = await p.RunAsync(new BackupRequest(new FileSystemSource(Src), "job-many", _host, PackTargetSize: 512L * 1024 * 1024), _ct);
+
+        Assert.Equal(BackupStatus.Succeeded, r.Status);
+        Assert.Equal(66_000, r.Stats.Files);
+        Assert.True(r.Stats.PacksNew >= 2, "ponad 65 536 bloków nie mieści się w jednym packu");
+    }
+
+    /// <summary>Nazwa, której format drzewa nie przyjmie (tu: znak „\\” w nazwie na Linuksie), pomija TYLKO ten element z ostrzeżeniem, a nie całą kopię (wcześniej KB-1306 → Failed przy każdym biegu).</summary>
+    [Fact, Trait("BL", "BL-22"), Trait("AC", "AC-08.1")]
+    public async Task File_with_a_name_the_tree_format_rejects_is_skipped_not_fatal()
+    {
+        if (OperatingSystem.IsWindows()) return; // na Windows znak „\\” nie może wystąpić w nazwie
+        File.WriteAllText(Path.Combine(Src, "dobry.txt"), "ok");
+        File.WriteAllText(Path.Combine(Src, "zly\\plik.txt"), "nazwa z backslashem");
+        await using var s = await Open();
+        var r = await new BackupPipeline(_keys, new VerifiedUploader(s)).RunAsync(new BackupRequest(new FileSystemSource(Src), "job-name", _host), _ct);
+
+        Assert.NotEqual(BackupStatus.Failed, r.Status);
+        Assert.Equal(1, r.Stats.Files); // dobry.txt
+        Assert.Equal(1L, r.Skipped);
+        Assert.NotNull(r.SnapId);
+    }
+
     [Fact, Trait("BL", "BL-22"), Trait("AC", "AC-08.1")]
     public async Task Incremental_without_changes_uploads_no_new_packs()
     {

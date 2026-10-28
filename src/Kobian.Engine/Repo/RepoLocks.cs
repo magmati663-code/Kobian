@@ -39,6 +39,9 @@ public sealed record RepoLockScan(IReadOnlyList<RepoLockInfo> Live, IReadOnlyLis
 /// </summary>
 public static class RepoLocks
 {
+    /// <summary>Górna granica przeglądu <c>locks/</c> w sesji Maintenance (ochrona przed zalaniem katalogu, ale z zapasem na lata kopii bez prune).</summary>
+    public const int MaintenanceMaxLockFiles = 1_000_000;
+
     public static async Task<RepoLockScan> ScanAsync(IStorageSession session, RepoKeys keys, DateTimeOffset now, RepoLockOptions? options, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(session);
@@ -48,11 +51,14 @@ public static class RepoLocks
         var invalid = new List<string>();
         var expired = new List<string>();
         var seen = 0;
+        // Sesja Backup nie usuwa swoich plików blokad (D4.1) — przy kopiach co godzinę limit 4096 plików jest osiągany po kilku miesiącach bez prune. Gdyby limit obowiązywał też
+        // sesję Maintenance, prune (jedyny, który potrafi posprzątać locks/) sam dostawał KB-1202 i repozytorium blokowało się na stałe (backup też). Maintenance czyta wszystko.
+        var maxFiles = session.Role == CredentialRole.Maintenance ? Math.Max(options.MaxLockFiles, MaintenanceMaxLockFiles) : options.MaxLockFiles;
         await foreach (var o in session.ListAsync(RepoPaths.LocksDir, ct).ConfigureAwait(false))
         {
             if (o.IsDirectory || RepoPaths.TryParseId(o.Path, RepoPaths.LocksDir, ".lock") is not { } id) continue;
             // Limit plików (DoS przez zalanie locks/): nadmiar = repo traktowane jako zablokowane, bez czytania dalej.
-            if (++seen > options.MaxLockFiles) throw new KobianException(KbCode.RepoLocked, ErrorClass.Transient, "Too many lock files on the destination.");
+            if (++seen > maxFiles) throw new KobianException(KbCode.RepoLocked, ErrorClass.Transient, "Too many lock files on the destination.");
             if (o.Length is <= 0 or > RepoLockFile.MaxBytes) { invalid.Add(o.Path); continue; }
             byte[] raw;
             try { raw = await MetadataStore.ReadAllAsync(session, o.Path, RepoLockFile.MaxBytes, ct).ConfigureAwait(false); }

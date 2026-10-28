@@ -7,6 +7,7 @@ using Kobian.Engine.Backup;
 using Kobian.Engine.Repo;
 using Kobian.Engine.Restore;
 using Kobian.Format.Metadata;
+using Kobian.Format.Repo;
 using Kobian.Providers.Storage.Local;
 using Xunit;
 
@@ -43,11 +44,11 @@ public sealed class RestoreExecutorTests : IDisposable
         if (Directory.Exists(_tmp)) Directory.Delete(_tmp, recursive: true);
     }
 
-    private async Task<(IStorageSession S, RepoKeys K, SnapshotObject Snap)> Backup()
+    private async Task<(IStorageSession S, RepoKeys K, SnapshotObject Snap)> Backup(long packTarget = 2 * 1024 * 1024)
     {
         var keys = RepoKeys.Derive(_mk, _repoId);
         var s = await new LocalStorageProviderFactory().OpenAsync(new DestinationConfig("d", "local", Repo), CredentialRole.Backup, _ct);
-        var r = await new BackupPipeline(keys, new VerifiedUploader(s)).RunAsync(new BackupRequest(new FileSystemSource(Src), "job", new byte[16], PackTargetSize: 2 * 1024 * 1024), _ct);
+        var r = await new BackupPipeline(keys, new VerifiedUploader(s)).RunAsync(new BackupRequest(new FileSystemSource(Src), "job", new byte[16], PackTargetSize: packTarget), _ct);
         Assert.Equal(BackupStatus.Succeeded, r.Status);
         return (s, keys, await MetadataStore.LoadSnapshotAsync(s, keys, r.SnapId!, _ct));
     }
@@ -150,22 +151,61 @@ public sealed class RestoreExecutorTests : IDisposable
         public ValueTask FinishedAsync(string rel, RestoreFileState state) => ValueTask.CompletedTask;
     }
 
-    [Fact, Trait("SEC", "SEC-3.3"), Trait("KB", "KB-5202")]
-    public async Task Tampered_pack_fails_restore_without_leaving_partial_file()
+    private sealed class AllRestoredJournal : IRestoreJournal
+    {
+        public bool IsRestored(string rel) => true;
+
+        public bool WasStarted(string rel) => true;
+
+        public ValueTask StartedAsync(string rel, long size, int chunks) => ValueTask.CompletedTask;
+
+        public ValueTask FinishedAsync(string rel, RestoreFileState state) => ValueTask.CompletedTask;
+    }
+
+    /// <summary>Dziennik twierdzi „wszystko odtworzone”, ale folder docelowy został wyczyszczony: pliki muszą wrócić, a nie zostać zaliczone z pamięci.</summary>
+    [Fact, Trait("D", "D8.8")]
+    public async Task Journal_claim_of_restored_files_is_not_trusted_when_they_are_missing_on_disk()
     {
         var (s, keys, snap) = await Backup();
         await using (s)
         using (keys)
         {
-            var pack = Directory.GetFiles(Path.Combine(Repo, "data"), "*.pack", SearchOption.AllDirectories).OrderByDescending(f => new FileInfo(f).Length).First();
+            using var reader = new RepoReader(s, keys);
+            await reader.LoadIndexesAsync(snap, _ct);
+            var r = await new RestoreExecutor(reader) { Journal = new AllRestoredJournal() }.RestoreAsync(snap, Dst, null, _ct);
+            Assert.Equal(RestoreStatus.Succeeded, r.Status);
+            Assert.Equal(0, r.Resumed); // nic nie było na dysku → nic nie „wznowiono”
+            AssertSameTree(Src, Dst);
+        }
+    }
+
+    [Fact, Trait("SEC", "SEC-3.3"), Trait("KB", "KB-5202")]
+    public async Task Tampered_pack_fails_restore_without_leaving_partial_file()
+    {
+        var (s, keys, snap) = await Backup(packTarget: 1); // każdy blok we własnym packu — uszkodzenie dotyka tylko pliku, którego blok leży w tym packu
+        await using (s)
+        using (keys)
+        {
+            using var reader = new RepoReader(s, keys);
+            await reader.LoadIndexesAsync(snap, _ct);
+            // uszkadzamy pack z PIERWSZYM blokiem big.bin (pack bloku 4 MiB; drzewa i małe pliki leżą w innych packach)
+            var big = (await reader.ReadTreeAsync(snap.RootTreeId, _ct)).Single(x => x.Name == "big.bin");
+            Assert.True(reader.TryLocate(big.Chunks![0], out var loc));
+            var pack = Path.Combine(Repo, RepoPaths.Pack(loc!.PackId).Replace('/', Path.DirectorySeparatorChar));
             var b = File.ReadAllBytes(pack);
             b[200] ^= 0x01;
             File.WriteAllBytes(pack, b);
-            using var reader = new RepoReader(s, keys);
-            await reader.LoadIndexesAsync(snap, _ct);
-            var r = await new RestoreExecutor(reader).RestoreAsync(snap, Dst, null, _ct);
+            using var reader2 = new RepoReader(s, keys);
+            await reader2.LoadIndexesAsync(snap, _ct);
+            var r = await new RestoreExecutor(reader2).RestoreAsync(snap, Dst, null, _ct);
             Assert.Equal(RestoreStatus.Failed, r.Status);
             Assert.Empty(Directory.GetFiles(Dst, "*" + RestoreExecutor.PartialSuffix, SearchOption.AllDirectories)); // nazwa testu obiecuje to od początku; wcześniej nie była sprawdzana
+            // uszkodzony pack dotyczy tylko big.bin: pozostałe pliki (inne packi) mają wrócić, a nie zostać porzucone po pierwszym błędzie
+            Assert.Contains(r.Issues, i => i.RelativePath == "big.bin" && i.Code is KbCode.RestorePackMissing or KbCode.RestoreHashMismatch);
+            Assert.False(File.Exists(Path.Combine(Dst, "big.bin")));
+            Assert.True(File.Exists(Path.Combine(Dst, "docs", "notatka.txt")), string.Join("; ", r.Issues.Select(i => i.Code + ":" + i.RelativePath)) + " | " + string.Join(",", Directory.GetFiles(Dst, "*", SearchOption.AllDirectories)));
+            Assert.Equal("zażółć gęślą jaźń", await File.ReadAllTextAsync(Path.Combine(Dst, "docs", "notatka.txt"), _ct));
+            Assert.True(File.Exists(Path.Combine(Dst, "docs", "deep", "pusty")));
         }
     }
 

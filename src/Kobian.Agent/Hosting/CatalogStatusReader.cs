@@ -23,11 +23,13 @@ public static class CatalogStatusReader
         var worst = OverallState.Ok;
         using var c = CatalogBootstrap.Open(catalogPath, readOnly: true);
         using var cmd = c.CreateCommand();
+        // „Ostatni wynik” dotyczy WYŁĄCZNIE uruchomień kopii: udany check/forget/prune/restore (to też wiersze run_runs tego zadania) nie może zasłaniać nieudanej nocnej kopii,
+        // a pominięte wystąpienie (Skipped, np. KB-4103) nie jest wynikiem. Rodzaj poznajemy po powodzie przejścia (kopie go nie mają).
         cmd.CommandText = """
             SELECT j.name, j.enabled, j.type, j.definition, j.time_zone,
-                   (SELECT r.state FROM run_runs r WHERE r.job_id = j.job_id AND r.finished_at IS NOT NULL ORDER BY r.finished_at DESC, r.rowid DESC LIMIT 1),
-                   (SELECT r.finished_at FROM run_runs r WHERE r.job_id = j.job_id AND r.finished_at IS NOT NULL ORDER BY r.finished_at DESC, r.rowid DESC LIMIT 1),
-                   (SELECT r.kb_code FROM run_runs r WHERE r.job_id = j.job_id AND r.finished_at IS NOT NULL ORDER BY r.finished_at DESC, r.rowid DESC LIMIT 1),
+                   (SELECT r.state FROM run_runs r WHERE r.job_id = j.job_id AND r.finished_at IS NOT NULL AND r.state <> 'Skipped' AND NOT EXISTS (SELECT 1 FROM run_transitions x WHERE x.run_id = r.run_id AND x.reason IN ('verify','check','forget','prune','restore')) ORDER BY r.finished_at DESC, r.rowid DESC LIMIT 1),
+                   (SELECT r.finished_at FROM run_runs r WHERE r.job_id = j.job_id AND r.finished_at IS NOT NULL AND r.state <> 'Skipped' AND NOT EXISTS (SELECT 1 FROM run_transitions x WHERE x.run_id = r.run_id AND x.reason IN ('verify','check','forget','prune','restore')) ORDER BY r.finished_at DESC, r.rowid DESC LIMIT 1),
+                   (SELECT r.kb_code FROM run_runs r WHERE r.job_id = j.job_id AND r.finished_at IS NOT NULL AND r.state <> 'Skipped' AND NOT EXISTS (SELECT 1 FROM run_transitions x WHERE x.run_id = r.run_id AND x.reason IN ('verify','check','forget','prune','restore')) ORDER BY r.finished_at DESC, r.rowid DESC LIMIT 1),
                    (SELECT s.time_utc FROM snap_snapshots s WHERE s.job_id = j.job_id AND s.forgotten_at IS NULL AND s.suspect = 0 ORDER BY s.time_utc DESC, s.rowid DESC LIMIT 1),
                    (SELECT s.verify_level FROM snap_snapshots s WHERE s.job_id = j.job_id AND s.forgotten_at IS NULL AND s.suspect = 0 ORDER BY s.time_utc DESC, s.rowid DESC LIMIT 1),
                    (SELECT s.suspect FROM snap_snapshots s WHERE s.job_id = j.job_id AND s.forgotten_at IS NULL ORDER BY s.time_utc DESC, s.rowid DESC LIMIT 1),

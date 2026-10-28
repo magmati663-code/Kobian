@@ -156,7 +156,7 @@ Kobian.Agent.Notifications.AlertService? alertService = alertRules is not null &
     : null;
 var app = AgentHost.Create(new AgentHostOptions(ApiConventions.DefaultPipeName) { WindowsService = runningAsService, RestoreTargets = RestoreTargets(runningAsService) }, new CatalogAgentBackend(catalog, version, jobs, init, restore, new ScheduleService(catalog, writer),
     check, TimeProvider.System, probe, jobValidator,
-    retention, new CatalogPruneService(catalog, providers, TimeProvider.System, writer, CatalogJobService.HostIdFor(Environment.MachineName)), hold)
+    retention, new CatalogPruneService(catalog, providers, TimeProvider.System, writer, CatalogJobService.HostIdFor(Environment.MachineName)) { Hold = hold }, hold)
 {
     Discovery = discovery,
     // BL-40 cz. 5: zatwierdzanie certyfikatów SQL (TOFU z potwierdzeniem Operatora — PROWIZORYCZNIE Qb32) → pliki .cer w <stan>/certs.

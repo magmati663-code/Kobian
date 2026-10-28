@@ -142,7 +142,10 @@ public sealed class RestoreExecutor(RepoReader reader)
     private async Task FileAsync(TreeEntry e, string rel, string target, State st, CancellationToken ct)
     {
         var journal = Journal;
-        if (journal.IsRestored(rel) || (journal.WasStarted(rel) && await SameContentAsync(target, e, ct).ConfigureAwait(false)))
+        // Dziennik mówi „zweryfikowany w poprzedniej próbie”, ale folder docelowy mógł być w międzyczasie wyczyszczony (restore zakończony Failed bywa powtarzany po sprzątaniu celu):
+        // zaliczenie pliku bez sprawdzenia dysku dawało Succeeded z brakującymi plikami. Plik musi istnieć i mieć oczekiwany rozmiar — inaczej odtwarzamy go od nowa.
+        var onDiskAsRecorded = journal.IsRestored(rel) && File.Exists(target) && new FileInfo(target) is { LinkTarget: null } fi && fi.Length == e.Size;
+        if (onDiskAsRecorded || (journal.WasStarted(rel) && await SameContentAsync(target, e, ct).ConfigureAwait(false)))
         {
             // D8.8: wznowienie — plik zweryfikowany w poprzedniej próbie (albo zapisany tuż przed awarią, z identyczną treścią) nie jest konfliktem
             await journal.FinishedAsync(rel, RestoreFileState.Verified).ConfigureAwait(false);
@@ -217,10 +220,19 @@ public sealed class RestoreExecutor(RepoReader reader)
                 if (ok) await fs.FlushAsync(ct).ConfigureAwait(false);
             }
         }
+        catch (KobianException ex) when (ex.ErrorClass == ErrorClass.Integrity)
+        {
+            // Brakujący albo uszkodzony pack/blok TEGO pliku: plik jest raportowany i pomijany, a odtwarzanie idzie dalej — zdrowe pliki z innych packów mają wrócić
+            // (wcześniej pierwszy taki błąd przerywał cały restore, a reszta drzewa nie była nawet próbowana). Status końcowy i tak jest Failed.
+            DeletePartial(partial);
+            await journal.FinishedAsync(rel, RestoreFileState.Quarantined).ConfigureAwait(false);
+            st.Issues.Add(new RestoreIssue(ex.Code is KbCode.AuthenticationFailed or KbCode.BlockTooLarge or KbCode.PackCommitMismatch ? KbCode.RestoreHashMismatch : KbCode.RestorePackMissing, rel));
+            return;
+        }
         catch
         {
-            // Błąd odczytu bloku (brakujący/uszkodzony pack, anulowanie): strumień jest już zamknięty — nasz plik roboczy z niepełną treścią nie zostaje na dysku.
-            try { File.Delete(partial); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { /* sprzątanie best-effort; błąd oryginalny jest ważniejszy */ }
+            // Inny błąd odczytu (anulowanie, awaria celu): strumień jest już zamknięty — nasz plik roboczy z niepełną treścią nie zostaje na dysku.
+            DeletePartial(partial);
             throw;
         }
         if (!ok)
@@ -246,6 +258,18 @@ public sealed class RestoreExecutor(RepoReader reader)
         st.Files++;
         st.Bytes += written;
         Progress?.Invoke(st.Files, st.Bytes);
+    }
+
+    private static void DeletePartial(string partial)
+    {
+        try
+        {
+            File.Delete(partial);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // sprzątanie best-effort; błąd oryginalny jest ważniejszy
+        }
     }
 
     /// <summary>Plik docelowy istnieje i ma dokładnie treść z kopii (rozmiar + SHA-256) — wyłącznie przy wznowieniu, nie dowiązanie.</summary>

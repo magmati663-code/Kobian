@@ -205,7 +205,9 @@ public sealed class JobTransferService(string catalogPath, CatalogWriter writer,
     {
         var def = JobDefinition.Parse(j.Type, j.Definition);
         var refs = new[] { def.Remote?.SecretRef, def.MsSql?.SecretRef }.Where(r => r is not null);
-        var needs = SecretsDirectory is not null && refs.Any(r => !File.Exists(Path.Combine(SecretsDirectory, r!["file:".Length..] + ".json")));
+        // secretRef z importowanego pliku jest niezaufany: krótszy niż prefiks wyrzucał ArgumentOutOfRangeException (RPC kończył się błędem wewnętrznym także w dry-run),
+        // a „file:../../x” sondowało dowolną ścieżkę. Poprawny wpis ma kształt walidowany przez ValidSecretRef; niepoprawny liczy się jako brak poświadczeń.
+        var needs = SecretsDirectory is not null && refs.Any(r => !JobDestination.ValidSecretRef(r) || !File.Exists(Path.Combine(SecretsDirectory, r!["file:".Length..] + ".json")));
         var missing = new[] { def.KeyFile, def.PasswordFile, def.RepoHeader }.Any(p => p is not null && !File.Exists(p));
         return (needs, missing);
     }

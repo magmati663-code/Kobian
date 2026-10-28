@@ -92,6 +92,9 @@ public sealed class CatalogPruneService
         }
     }
 
+    /// <summary>Wstrzymanie retencji po skoku zegara (SEC-17.4); przy aktywnym wstrzymaniu <see cref="PruneAsync"/> nic nie usuwa.</summary>
+    public RetentionHoldService? Hold { get; init; }
+
     public async Task<PruneRunOutcome> PruneAsync(string job, CancellationToken ct)
     {
         if (_writer is null) return new PruneRunOutcome(KbCode.OperationNotAvailable, null, 0, 0, null, 0, null);
@@ -103,7 +106,11 @@ public sealed class CatalogPruneService
         PruneRunOutcome result;
         try
         {
-            result = await PruneCoreAsync(row.Value.Type, row.Value.Definition, runId, ct).ConfigureAwait(false);
+            // SEC-17.4: po skoku zegara retencja jest wstrzymana (nic nie jest zapominane), ale fizyczny prune mierzy 24-godzinną karencję przesuniętym zegarem — oznaczenia sprzed chwili
+            // spełniałyby ją i faza 2 kasowałaby dane, które wstrzymanie ma chronić. Do zwolnienia wstrzymania przez Administratora prune nie rusza niczego (KB-6117, przebieg Skipped).
+            result = Hold?.Current() is not null
+                ? new PruneRunOutcome(KbCode.AlertClockJump, null, 0, 0, null, 0, runId)
+                : await PruneCoreAsync(row.Value.Type, row.Value.Definition, runId, ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -130,7 +137,7 @@ public sealed class CatalogPruneService
         {
             null => RunState.Succeeded,
             KbCode.RepoLockInvalid or KbCode.PruneStoppedInconsistent or KbCode.IndexConsolidationIncomplete => RunState.Warning,
-            KbCode.RepoLocked => RunState.Skipped,
+            KbCode.RepoLocked or KbCode.AlertClockJump => RunState.Skipped,
             _ => RunState.Failed,
         };
         await RunRowAsync(runId, null, state, result.Code, CancellationToken.None).ConfigureAwait(false);

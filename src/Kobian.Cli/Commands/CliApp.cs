@@ -10,7 +10,7 @@ namespace Kobian.Cli.Commands;
 /// </summary>
 public static class CliApp
 {
-    public const int ExitOk = 0, ExitWarning = 1, ExitFailed = 2, ExitUnavailable = 3, ExitClientTooOld = 4, ExitUsage = 64;
+    public const int ExitOk = 0, ExitWarning = 1, ExitFailed = 2, ExitUnavailable = 3, ExitClientTooOld = 4, ExitUsage = 64, ExitCancelled = 130;
     public const string SchemaVersion = "1";
 
     public static async Task<int> RunAsync(string[] args, IAgentClient client, TextWriter stdout, TextWriter stderr, CancellationToken ct)
@@ -20,6 +20,11 @@ public static class CliApp
         ArgumentNullException.ThrowIfNull(stdout);
         ArgumentNullException.ThrowIfNull(stderr);
         var a = new Args(args);
+        if (a.OptionMissingValue() is { } missing)
+        {
+            await stderr.WriteLineAsync($"usage: option {missing} requires a value / opcja {missing} wymaga wartości").ConfigureAwait(false);
+            return ExitUsage;
+        }
         try
         {
             return a.Verb switch
@@ -50,7 +55,9 @@ public static class CliApp
                 "audit" when a.Positional(1) == "verify" => await AuditVerify(a, client, stdout, ct).ConfigureAwait(false),
                 "check" when a.Positional(1) is { } cj => await Check(a, client, cj, stdout, stderr, ct).ConfigureAwait(false),
                 "restore" when a.Option("--snapshot") is { } snap && a.Option("--to") is { } to =>
-                    await Restore(a, client, SnapshotRef(a, snap), a.Option("--path"), to, stdout, ct).ConfigureAwait(false),
+                    TryFullPath(to) is { } fullTo
+                        ? await Restore(a, client, SnapshotRef(a, snap), a.Option("--path"), fullTo, stdout, ct).ConfigureAwait(false)
+                        : Usage(stderr),
                 _ => Usage(stderr),
             };
         }
@@ -66,6 +73,12 @@ public static class CliApp
             await stderr.WriteLineAsync(text).ConfigureAwait(false);
             return ExitUnavailable;
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Ctrl+C (Program.cs anuluje token): czyste wyjście zamiast stosu wywołań; bieg w Agencie trwa dalej (`kobian watch` tylko obserwuje).
+            await stderr.WriteLineAsync("cancelled / przerwano").ConfigureAwait(false);
+            return ExitCancelled;
+        }
         catch (AgentInternalException)
         {
             await stderr.WriteLineAsync($"{KbCode.Internal}: internal service error / wewnętrzny błąd usługi").ConfigureAwait(false);
@@ -75,6 +88,19 @@ public static class CliApp
         {
             await stderr.WriteLineAsync($"{KbCode.ClientRevisionTooOld}: client too old / klient zbyt stary").ConfigureAwait(false);
             return ExitClientTooOld;
+        }
+    }
+
+    /// <summary>Ścieżka bezwzględna względem katalogu bieżącego CLI (jak <c>init</c>/<c>import</c>); Agent odrzuca względne jako KB-5001 „odmowa dostępu” — mylący komunikat dla <c>--to ./odtworzone</c>.</summary>
+    private static string? TryFullPath(string p)
+    {
+        try
+        {
+            return Path.GetFullPath(p);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return null;
         }
     }
 
@@ -100,7 +126,7 @@ public static class CliApp
                 {
                     w.WriteStartObject();
                     w.WriteString("name", j.Name);
-                    w.WriteString("lastResult", Name(j.LastResult));
+                    w.WriteString("lastResult", j.LastRunUtc is null ? "none" : Name(j.LastResult)); // zadanie bez przebiegu nie jest „ok” — skrypty monitoringu czytały to jako zdrowe
                     if (j.LastRunUtc is { } t) w.WriteString("lastRunUtc", t.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
                     else w.WriteNull("lastRunUtc");
                     if (j.LastCode is { } code) w.WriteString("code", code);
@@ -134,7 +160,7 @@ public static class CliApp
         else
         {
             await o.WriteLineAsync($"Kobian Backup {st.AgentVersion}: {Name(st.State)}").ConfigureAwait(false);
-            foreach (var j in st.Jobs) await o.WriteLineAsync($"  {j.Name}\t{Name(j.LastResult)}\t{j.LastCode}").ConfigureAwait(false);
+            foreach (var j in st.Jobs) await o.WriteLineAsync($"  {j.Name}\t{(j.LastRunUtc is null ? "none" : Name(j.LastResult))}\t{j.LastCode}").ConfigureAwait(false);
             if (st.Alerts is { Active: > 0 } al)
                 await o.WriteLineAsync(string.Create(CultureInfo.InvariantCulture,
                     $"  alerts {al.Active} active ({al.Unacknowledged} unacknowledged, {al.Critical} critical/security) — kobian alerts")).ConfigureAwait(false);
@@ -1060,6 +1086,28 @@ public static class CliApp
             return i >= 0 && i + 1 < args.Length && !args[i + 1].StartsWith("--", StringComparison.Ordinal) ? args[i + 1] : null;
         }
 
-        private static bool IsValued(string a) => a is "--job" or "--snapshot" or "--path" or "--to" or "--source" or "--dest" or "--password-file" or "--dest-scheme" or "--cron" or "--limit" or "--secret-ref" or "--host" or "--port" or "--host-key" or "--destination" or "--output" or "--on-conflict";
+        /// <summary>Opcje z wartością. Lista musi obejmować KAŻDĄ opcję czytaną przez <see cref="Option"/>: brak opcji tu powodował, że jej wartość była brana za nazwę zadania (<c>check --sample 50 moje</c>).</summary>
+        private static readonly HashSet<string> ValuedOptions = new(StringComparer.Ordinal)
+        {
+            "--job", "--snapshot", "--path", "--to", "--source", "--dest", "--password-file", "--dest-scheme", "--cron", "--limit", "--secret-ref", "--host", "--port",
+            "--host-key", "--destination", "--output", "--on-conflict", "--sample", "--rotation", "--as", "--anchor",
+        };
+
+        private static bool IsValued(string a) => ValuedOptions.Contains(a);
+
+        /// <summary>
+        /// Pierwsza opcja z wartością podana BEZ wartości (na końcu albo przed następną opcją). Wcześniej była cicho ignorowana: <c>restore --snapshot latest --job $JOB --to D</c> z pustym
+        /// <c>$JOB</c> odtwarzał najnowszą kopię DOWOLNEGO zadania, <c>--path</c> bez wartości — całą kopię, <c>export --job</c> — wszystkie zadania.
+        /// </summary>
+        public string? OptionMissingValue()
+        {
+            for (var i = 0; i < args.Length; i++)
+            {
+                if (!IsValued(args[i])) continue;
+                if (i + 1 >= args.Length || args[i + 1].StartsWith("--", StringComparison.Ordinal)) return args[i];
+                i++; // wartość nie jest opcją
+            }
+            return null;
+        }
     }
 }

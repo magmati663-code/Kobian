@@ -461,7 +461,7 @@ public sealed class CatalogAgentBackend(string catalogPath, string agentVersion,
             Result = o.Code switch
             {
                 null => OverallState.Ok,
-                KbCode.RepoLockInvalid or KbCode.PruneStoppedInconsistent or KbCode.RepoLocked or KbCode.IndexConsolidationIncomplete => OverallState.Warning,
+                KbCode.RepoLockInvalid or KbCode.PruneStoppedInconsistent or KbCode.RepoLocked or KbCode.IndexConsolidationIncomplete or KbCode.AlertClockJump => OverallState.Warning,
                 _ => OverallState.Failed,
             },
             GraceSeconds = (long)prune.Grace.TotalSeconds,

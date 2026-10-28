@@ -123,6 +123,7 @@ public sealed class RepoChecker(IStorageSession session, RepoKeys keys)
             catch (Exception ex) when (Code(ex) is { } code)
             {
                 st.Issue(code, "snapshot:" + snapHex, snapHex);
+                st.Damaged.Add(snapHex); // jak w CheckSnapshotAsync: nieczytelny snapshot jest uszkodzony (suspect w katalogu, ocena RepoDamageAssessor), a nie „zdrowy bez uwag”
                 continue;
             }
             snapshotsRead++;

@@ -61,6 +61,26 @@ public sealed class RetentionPlannerTests
         Assert.Equal(2, RetentionPlanner.Plan(s, new RetentionPolicy(KeepDaily: 5), Now, Warsaw).Keep.Count);
     }
 
+    /// <summary>
+    /// Podejrzana (V2 nie przeszło) nowsza w tym samym okresie nie może wypierać dobrej: dobra dostaje powód zachowania, podejrzana zostaje osobno do decyzji człowieka.
+    /// Wcześniej w dniu/tygodniu/miesiącu/roku „najnowsza” była podejrzana, a dobra nie miała żadnego powodu i była zapominana.
+    /// </summary>
+    [Fact, Trait("Plan", "D3.12")]
+    public void Suspect_snapshot_does_not_displace_a_good_one_from_the_same_period()
+    {
+        var s = new List<RetentionSnapshot>
+        {
+            new("bad-evening", Now.AddHours(-1), Suspect: true),
+            new("good-morning", Now.AddHours(-9)),
+            new("older", Now.AddDays(-40)),
+        };
+        var plan = RetentionPlanner.Plan(s, new RetentionPolicy(KeepLast: 1, KeepDaily: 1, KeepWeekly: 1, KeepMonthly: 1, KeepYearly: 1), Now, TimeZoneInfo.Utc);
+        Assert.True(plan.Keep["good-morning"].HasFlag(KeepReason.Last));
+        Assert.True(plan.Keep["good-morning"].HasFlag(KeepReason.Daily));
+        Assert.True(plan.Keep["bad-evening"].HasFlag(KeepReason.Suspect)); // podejrzana zachowana osobno
+        Assert.DoesNotContain("good-morning", plan.Forget);
+    }
+
     [Fact, Trait("Plan", "D3.12")]
     public void Always_keeps_newest_suspect_and_base_of_kept_differential_and_everything_when_paused_or_no_rule()
     {

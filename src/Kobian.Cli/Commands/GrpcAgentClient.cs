@@ -362,7 +362,11 @@ public sealed class GrpcAgentClient : IAgentClient, IDisposable
         {
             throw new AgentUnavailableException(KbCode.AgentUnreachable, e);
         }
-        catch (RpcException e) when (e.StatusCode != StatusCode.Cancelled)
+        catch (RpcException e) when (e.StatusCode == StatusCode.Cancelled)
+        {
+            throw new OperationCanceledException("The call was cancelled.", e); // Ctrl+C: wyjście obsługuje CliApp, nie nieobsłużony wyjątek gRPC
+        }
+        catch (RpcException e)
         {
             throw new AgentInternalException(KbCode.Internal, e); // Unknown (wyjątek w obsłudze), NotFound, ResourceExhausted…: czytelny błąd zamiast stosu wywołań
         }

@@ -178,6 +178,19 @@ public sealed class BackupPipeline
 
         public SnapshotStats Stats() => new(_files, _dirs, _raw, _new, _newPacks.Count);
 
+        private static bool NameAccepted(string name)
+        {
+            try
+            {
+                TreeCodec.ValidateName(name);
+                return true;
+            }
+            catch (KobianException)
+            {
+                return false;
+            }
+        }
+
         public async Task<byte[]> DirectoryAsync(string rel, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
@@ -193,9 +206,17 @@ public sealed class BackupPipeline
                 children = [];
             }
             var entries = new List<TreeEntry>(children.Count);
+            var names = new HashSet<string>(StringComparer.Ordinal);
             foreach (var c in children)
             {
                 var path = rel.Length == 0 ? c.Name : rel + "/" + c.Name;
+                // Nazwa, której format drzewa nie przyjmie (znak „\” lub NUL, niesparowany surogat UTF-16 — NTFS na to pozwala, > 1024 B UTF-8, duplikat po stratnym dekodowaniu nazw bajtowych):
+                // TreeCodec.Encode rzucałby KB-1306 i cały backup kończył się Failed przy każdym uruchomieniu. Taki element jest pomijany z ostrzeżeniem (KB-1405), reszta idzie dalej.
+                if (!NameAccepted(c.Name) || !names.Add(c.Name))
+                {
+                    Skipped.Add(path);
+                    continue;
+                }
                 switch (c.Kind)
                 {
                     case SourceKind.Directory:
@@ -271,7 +292,9 @@ public sealed class BackupPipeline
             var (alg, payload) = _zstd.Compress(raw);
             _pack!.AddBlob(id, type, alg, raw.Length, payload);
             _new += raw.Length;
-            if (_pack.Length >= _target) await FlushPackAsync(ct).ConfigureAwait(false);
+            // Pack zamykany też po liczbie ramek: format dopuszcza MaxFrames (65 536) bloków w packu, a ten sam zapis rzuciłby KB-1308 (Failed, deterministycznie przy każdym biegu)
+            // dla źródeł z dziesiątkami tysięcy bardzo małych bloków (puste katalogi, drobne pliki) przy dużym packTargetSize.
+            if (_pack.Length >= _target || _pack.BlobCount >= Kobian.Format.Pack.PackLayout.MaxFrames) await FlushPackAsync(ct).ConfigureAwait(false);
         }
 
         private void StartPack()

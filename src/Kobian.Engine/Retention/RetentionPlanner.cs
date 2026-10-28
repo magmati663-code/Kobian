@@ -53,11 +53,14 @@ public static class RetentionPlanner
             return new RetentionPlan(keep, []);
         }
 
-        foreach (var x in s.Take(Math.Max(0, policy.KeepLast))) Add(x, KeepReason.Last);
-        Bucket(s, policy.KeepDaily, zone, KeepReason.Daily, t => t.Year * 1000 + t.DayOfYear, Add);
-        Bucket(s, policy.KeepWeekly, zone, KeepReason.Weekly, t => ISOWeek.GetYear(t) * 100 + ISOWeek.GetWeekOfYear(t), Add);
-        Bucket(s, policy.KeepMonthly, zone, KeepReason.Monthly, t => t.Year * 100 + t.Month, Add);
-        Bucket(s, policy.KeepYearly, zone, KeepReason.Yearly, t => t.Year, Add);
+        // Reprezentantami okresów i „ostatnich N” są tylko kopie niepodejrzane: podejrzana (V2 nie przeszło) nowsza w tym samym dniu/tygodniu/miesiącu wypierała dobrą,
+        // która nie dostawała żadnego powodu zachowania i była zapominana — z okresu zostawała wyłącznie kopia uznana za uszkodzoną. Podejrzane są zachowywane osobno (niżej).
+        var good = s.Where(x => !x.Suspect).ToList();
+        foreach (var x in good.Take(Math.Max(0, policy.KeepLast))) Add(x, KeepReason.Last);
+        Bucket(good, policy.KeepDaily, zone, KeepReason.Daily, t => t.Year * 1000 + t.DayOfYear, Add);
+        Bucket(good, policy.KeepWeekly, zone, KeepReason.Weekly, t => ISOWeek.GetYear(t) * 100 + ISOWeek.GetWeekOfYear(t), Add);
+        Bucket(good, policy.KeepMonthly, zone, KeepReason.Monthly, t => t.Year * 100 + t.Month, Add);
+        Bucket(good, policy.KeepYearly, zone, KeepReason.Yearly, t => t.Year, Add);
         foreach (var x in s)
         {
             var age = now - x.TimeUtc;
