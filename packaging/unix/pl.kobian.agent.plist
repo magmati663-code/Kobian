@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Kobian Backup — Agent (launchd, demon systemowy). Instaluje install.sh do /Library/LaunchDaemons/. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>pl.kobian.agent</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Applications/Kobian.app/Contents/MacOS/Kobian.Agent</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>KOBIAN_SERVICE</key>
+    <string>1</string>
+    <key>DOTNET_CLI_TELEMETRY_OPTOUT</key>
+    <string>1</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>Umask</key>
+  <integer>63</integer>
+  <key>StandardErrorPath</key>
+  <string>/Library/Logs/Kobian/agent.log</string>
+  <key>StandardOutPath</key>
+  <string>/Library/Logs/Kobian/agent.log</string>
+</dict>
+</plist>

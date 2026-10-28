@@ -18,6 +18,11 @@
           "Kobian.Domain": "[1.0.0, )"
         }
       }
-    }
+    },
+    "net10.0-windows10.0.17763/linux-arm64": {},
+    "net10.0-windows10.0.17763/linux-x64": {},
+    "net10.0-windows10.0.17763/osx-arm64": {},
+    "net10.0-windows10.0.17763/osx-x64": {},
+    "net10.0-windows10.0.17763/win-x64": {}
   }
 }

@@ -197,7 +197,40 @@ public sealed class UnixRestoreTargetAuthorizer(Func<ServerCallContext, UnixPeer
 
     public RestoreTargetAccess Check(ServerCallContext context, string target) => Check(read(context), target);
 
-    public RestoreTargetAccess Check(UnixPeer? peer, string target)
+    public RestoreTargetAccess CheckDestination(ServerCallContext context, string root) => CheckDestination(read(context), root);
+
+    public RestoreTargetAccess CheckReadableFile(ServerCallContext context, string path) => CheckReadableFile(read(context), path);
+
+    /// <summary>Folder repozytorium: istniejący — jak folder odtwarzania; nieistniejący — najbliższy istniejący przodek musi być zapisywalny (tam powstanie).</summary>
+    public RestoreTargetAccess CheckDestination(UnixPeer? peer, string root)
+    {
+        if (peer is null || string.IsNullOrWhiteSpace(root) || !Path.IsPathFullyQualified(root)) return RestoreTargetAccess.Denied;
+        if (peer.Uid == 0) return RestoreTargetAccess.Allowed;
+        var p = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
+        while (_lstat(p) is null)
+        {
+            var parent = Path.GetDirectoryName(p);
+            if (parent is null || parent == p) return RestoreTargetAccess.Denied;
+            p = parent;
+        }
+        return Check(peer, p);
+    }
+
+    /// <summary>Plik: zwykły plik (nie dowiązanie), prawo przeszukiwania katalogów na ścieżce i odczytu pliku.</summary>
+    public RestoreTargetAccess CheckReadableFile(UnixPeer? peer, string path)
+    {
+        if (peer is null || string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path)) return RestoreTargetAccess.Denied;
+        if (peer.Uid == 0) return RestoreTargetAccess.Allowed;
+        var full = Path.GetFullPath(path);
+        var dir = Path.GetDirectoryName(full);
+        if (dir is null || Check(peer, dir, needWrite: false) != RestoreTargetAccess.Allowed) return RestoreTargetAccess.Denied;
+        if (_lstat(full) is not { Type: UnixFileType.Regular } st) return RestoreTargetAccess.Denied;
+        return Bits(peer, st) is var b && (b & 4) != 0 ? RestoreTargetAccess.Allowed : RestoreTargetAccess.Denied;
+    }
+
+    public RestoreTargetAccess Check(UnixPeer? peer, string target) => Check(peer, target, needWrite: true);
+
+    private RestoreTargetAccess Check(UnixPeer? peer, string target, bool needWrite)
     {
         if (peer is null || string.IsNullOrWhiteSpace(target) || !Path.IsPathFullyQualified(target)) return RestoreTargetAccess.Denied;
         if (peer.Uid == 0) return RestoreTargetAccess.Allowed;
@@ -209,15 +242,18 @@ public sealed class UnixRestoreTargetAuthorizer(Func<ServerCallContext, UnixPeer
             if (i > 0) path = path == "/" ? "/" + parts[i - 1] : path + "/" + parts[i - 1];
             if (_lstat(path) is not { Type: UnixFileType.Directory } st) return RestoreTargetAccess.Denied;
             var last = i == parts.Length;
-            if (!Has(peer, st, execute: true, write: last)) return RestoreTargetAccess.Denied;
+            if (!Has(peer, st, execute: true, write: last && needWrite)) return RestoreTargetAccess.Denied;
         }
         return RestoreTargetAccess.Allowed;
     }
 
     private bool Has(UnixPeer peer, UnixStat st, bool execute, bool write)
     {
-        // POSIX: właściciel → bity właściciela (bez przechodzenia do grupy/innych), członek grupy → bity grupy, reszta → bity innych.
-        var bits = st.Uid == peer.Uid ? (st.Mode >> 6) & 7 : accounts.IsMember(peer.Uid, peer.Gid, st.Gid) ? (st.Mode >> 3) & 7 : st.Mode & 7;
+        var bits = Bits(peer, st);
         return (!execute || (bits & 1) != 0) && (!write || (bits & 2) != 0);
     }
+
+    /// <summary>POSIX: właściciel → bity właściciela (bez przechodzenia do grupy/innych), członek grupy → bity grupy, reszta → bity innych.</summary>
+    private uint Bits(UnixPeer peer, UnixStat st) =>
+        st.Uid == peer.Uid ? (st.Mode >> 6) & 7 : accounts.IsMember(peer.Uid, peer.Gid, st.Gid) ? (st.Mode >> 3) & 7 : st.Mode & 7;
 }

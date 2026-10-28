@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- kobian-restore.exe bez Agenta i katalogu (US-43). -->
+  <!-- kobian-restore bez Agenta i katalogu (US-43): Windows oraz Linux/macOS (brak zależności od API Windows w kodzie narzędzia). -->
   <PropertyGroup>
-    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+    <TargetFrameworks>net10.0;net10.0-windows10.0.17763.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <AssemblyName>kobian-restore</AssemblyName>
     <RootNamespace>Kobian.Restore.Standalone</RootNamespace>
@@ -12,6 +12,8 @@
     <ProjectReference Include="..\Kobian.Crypto\Kobian.Crypto.csproj" />
     <ProjectReference Include="..\Kobian.Engine\Kobian.Engine.csproj" />
     <ProjectReference Include="..\Kobian.Providers.Storage\Kobian.Providers.Storage.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'net10.0'">
     <ProjectReference Include="..\Kobian.Platform.Windows\Kobian.Platform.Windows.csproj" />
   </ItemGroup>
 </Project>

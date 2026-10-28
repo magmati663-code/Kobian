@@ -10,6 +10,12 @@ public sealed class AgentGrpcService(IAgentBackend backend, ICallerRoleResolver 
     private string? DenyTarget(ServerCallContext context, string target) =>
         RestoreTargetGate.Deny(roles.ResolveCaller(context).Role, target, t => restoreTargets.Check(context, t));
 
+    /// <summary>Lokalny cel repozytorium: Operator tylko tam, gdzie sam może zapisywać (usługa Linux/macOS jako root — inaczej np. /etc). Inne schematy bez zmian.</summary>
+    private string? DenyDestination(ServerCallContext context, string? scheme, string? root) =>
+        scheme == "local"
+            ? RestoreTargetGate.DenyPath(roles.ResolveCaller(context).Role, root, r => restoreTargets.CheckDestination(context, r), Kobian.Domain.KbCode.AccessDenied)
+            : null;
+
     public override async Task<GetStatusResponse> GetStatus(GetStatusRequest request, ServerCallContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -50,10 +56,14 @@ public sealed class AgentGrpcService(IAgentBackend backend, ICallerRoleResolver 
         backend.ImportJobsAsync(request, context.CancellationToken);
 
     public override Task<UpsertJobReply> UpsertJob(UpsertJobArgs request, ServerCallContext context) =>
-        backend.UpsertJobAsync(request, context.CancellationToken);
+        DenyDestination(context, request.Destination?.Scheme, request.Destination?.Root) is { } denied
+            ? Task.FromResult(new UpsertJobReply { Result = OverallState.Failed, Code = denied })
+            : backend.UpsertJobAsync(request, context.CancellationToken);
 
     public override Task<InitRepositoryReply> InitRepository(InitRepositoryArgs request, ServerCallContext context) =>
-        backend.InitRepositoryAsync(request, context.CancellationToken);
+        DenyDestination(context, request.Destination?.Scheme, request.Destination?.Root) is { } denied
+            ? Task.FromResult(new InitRepositoryReply { Result = OverallState.Failed, Code = denied })
+            : backend.InitRepositoryAsync(request, context.CancellationToken);
 
     public override Task<ApplyRetentionReply> ApplyRetention(ApplyRetentionArgs request, ServerCallContext context) =>
         backend.ApplyRetentionAsync(request, context.CancellationToken);
@@ -133,7 +143,10 @@ public sealed class AgentGrpcService(IAgentBackend backend, ICallerRoleResolver 
                 : backend.PlanRestoreAsync(request, context.CancellationToken);
 
     public override Task<InitJobReply> InitJob(InitJobArgs request, ServerCallContext context) =>
-        backend.InitJobAsync(request, context.CancellationToken);
+        (DenyDestination(context, request.DestinationScheme, request.DestinationRoot)
+         ?? RestoreTargetGate.DenyPath(roles.ResolveCaller(context).Role, request.PasswordFile, p => restoreTargets.CheckReadableFile(context, p), Kobian.Domain.KbCode.AccessDenied)) is { } denied
+            ? Task.FromResult(new InitJobReply { Result = OverallState.Failed, Code = denied })
+            : backend.InitJobAsync(request, context.CancellationToken);
 
     public override Task<ListSchedulesResponse> ListSchedules(ListSchedulesRequest request, ServerCallContext context) =>
         backend.ListSchedulesAsync(request.HasJob ? request.Job : null, context.CancellationToken);

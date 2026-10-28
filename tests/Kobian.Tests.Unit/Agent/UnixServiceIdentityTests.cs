@@ -70,6 +70,32 @@ public sealed class UnixServiceIdentityTests
         Assert.Equal(RestoreTargetAccess.Denied, a.Check(new UnixPeer(1003, 1003), "/home/jan/odtw"));
     }
 
+    [Fact]
+    public void Destination_and_password_file_follow_the_callers_own_rights()
+    {
+        var acc = new FakeAccounts();
+        var fs = new Dictionary<string, UnixStat>(StringComparer.Ordinal)
+        {
+            ["/"] = UnixFileStat.Make(0x41ED, 0, 0),
+            ["/etc"] = UnixFileStat.Make(0x41ED, 0, 0),
+            ["/etc/shadow"] = UnixFileStat.Make(0x81A0, 0, 42), // 0640
+            ["/home"] = UnixFileStat.Make(0x41ED, 0, 0),
+            ["/home/jan"] = UnixFileStat.Make(0x41C0, 1002, 1002),
+            ["/home/jan/haslo.txt"] = UnixFileStat.Make(0x8180, 1002, 1002), // 0600
+            ["/home/jan/link.txt"] = UnixFileStat.Make(0xA1FF, 1002, 1002),
+        };
+        var a = new UnixRestoreTargetAuthorizer(_ => null, acc, p => fs.TryGetValue(p, out var st) ? st : null);
+        var jan = new UnixPeer(1002, 1002);
+        Assert.Equal(RestoreTargetAccess.Allowed, a.CheckDestination(jan, "/home/jan/kopie/nowe")); // nie istnieje — powstanie w /home/jan
+        Assert.Equal(RestoreTargetAccess.Denied, a.CheckDestination(jan, "/etc/cron.d"));
+        Assert.Equal(RestoreTargetAccess.Allowed, a.CheckReadableFile(jan, "/home/jan/haslo.txt"));
+        Assert.Equal(RestoreTargetAccess.Denied, a.CheckReadableFile(jan, "/etc/shadow"));
+        Assert.Equal(RestoreTargetAccess.Denied, a.CheckReadableFile(jan, "/home/jan/link.txt"));
+        Assert.Equal(RestoreTargetAccess.Allowed, a.CheckReadableFile(new UnixPeer(0, 0), "/etc/shadow"));
+        Assert.Null(RestoreTargetGate.DenyPath(AgentRole.Administrator, "/etc", _ => RestoreTargetAccess.Denied, KbCode.AccessDenied));
+        Assert.Equal(KbCode.AccessDenied, RestoreTargetGate.DenyPath(AgentRole.Operator, "/etc", _ => throw new IOException(), KbCode.AccessDenied));
+    }
+
     [Fact, Trait("Category", "Unix")]
     public async Task Kernel_reports_the_peer_uid_of_a_unix_socket_client()
     {

@@ -19,6 +19,15 @@ public enum RestoreTargetAccess
 public interface IRestoreTargetAuthorizer
 {
     RestoreTargetAccess Check(ServerCallContext context, string target);
+
+    /// <summary>
+    /// Lokalny folder docelowy repozytorium (może jeszcze nie istnieć): czy KLIENT mógłby go utworzyć/zapisać. Domyślnie bez kontroli (Windows: konto usługi ma
+    /// własne, wąskie prawa; konsola: ten sam użytkownik). Usługa Linux/macOS działa jako root — tam Operator nie może kazać zapisać repozytorium np. w /etc.
+    /// </summary>
+    RestoreTargetAccess CheckDestination(ServerCallContext context, string root) => RestoreTargetAccess.Allowed;
+
+    /// <summary>Plik czytany przez Agenta w imieniu klienta (plik hasła w InitJob): czy klient sam mógłby go przeczytać. Domyślnie bez kontroli (jak wyżej).</summary>
+    RestoreTargetAccess CheckReadableFile(ServerCallContext context, string path) => RestoreTargetAccess.Allowed;
 }
 
 /// <summary>Tryb konsoli (dev): proces działa na koncie klienta — brak dodatkowej kontroli.</summary>
@@ -36,6 +45,26 @@ public sealed class SameUserRestoreTargets : IRestoreTargetAuthorizer
 /// </summary>
 public static class RestoreTargetGate
 {
+    /// <summary>Ta sama zasada dla ścieżek innych niż folder odtwarzania (cel repozytorium, plik hasła): Administrator bez kontroli, Operator — wynik adaptera, błąd = odmowa.</summary>
+    public static string? DenyPath(AgentRole role, string? path, Func<string, RestoreTargetAccess> check, string deniedCode)
+    {
+        ArgumentNullException.ThrowIfNull(check);
+        if (role >= AgentRole.Administrator) return null;
+        if (string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path)) return null; // kształt ścieżki waliduje backend (KB-0103/KB-2106)
+        RestoreTargetAccess access;
+        try
+        {
+            access = check(path);
+        }
+#pragma warning disable CA1031 // fail-closed
+        catch (Exception)
+#pragma warning restore CA1031
+        {
+            access = RestoreTargetAccess.Denied;
+        }
+        return access == RestoreTargetAccess.Allowed ? null : deniedCode;
+    }
+
     public static string? Deny(AgentRole role, string? target, Func<string, RestoreTargetAccess> check)
     {
         ArgumentNullException.ThrowIfNull(check);

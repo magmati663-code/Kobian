@@ -21,6 +21,11 @@
     <Product>Kobian Backup</Product>
     <Copyright>Apache-2.0 (D10.4)</Copyright>
   </PropertyGroup>
+  <!-- Paczki: Windows (MSI) oraz Linux/macOS (tools/package-unix.sh). Publikacja z RID przywraca też biblioteki per RID, więc RID-y są w plikach blokady
+       wszystkich projektów produktu — publikacja działa w trybie RestoreLockedMode (te same, sprawdzone wersje pakietów na każdej platformie). -->
+  <PropertyGroup Condition="'$(IsTestProject)' != 'true' And !$(MSBuildProjectName.StartsWith('Kobian.Tests.'))">
+    <RuntimeIdentifiers>win-x64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(IsTestProject)' == 'true' Or $(MSBuildProjectName.StartsWith('Kobian.Tests.'))">
     <!-- testy: podkreślenia w nazwach (CA1707), brak ConfigureAwait (CA2007), typy publiczne (CA1515) -->
     <NoWarn>$(NoWarn);CA1707;CA2007;CA1515;CA1861</NoWarn>

@@ -607,3 +607,11 @@ Odłożone (opis w raporcie sesji): wznowienie po uśpieniu/misfire (SchedulerCo
 - Agent (rejestr, definicja zadania `webdav`, katalog tożsamości, probe), CLI `--dest-scheme webdav`, `kobian-restore`, kreator (wspólne pola z FTPS, port 443), karta celu. KB-2116, KB-2117; KB-2109/2110/2115 uogólnione.
 - Testy: serwer WebDAV w procesie (TLS, wyścigi, błędy HTTP, serwery ignorujące Range/If-None-Match, przekierowania kolekcji), backup → restore przez WebDAV. Docs: `docs/admin/cel-webdav.md`.
 - Do zrobienia: test na prawdziwych serwerach (Nextcloud, Synology, Apache, nginx, IIS); Digest/NTLM; wersja EN przewodnika; SFTP: limit czasu i keep-alive (zrobione).
+
+## Linux i macOS
+- Usługa: `KOBIAN_SERVICE=1` (systemd `packaging/unix/kobian-agent.service`, launchd `pl.kobian.agent.plist`), dane /var/lib/kobian | /Library/Application Support/Kobian, gniazdo /run/kobian/agent.sock (0666).
+- Role z SO_PEERCRED/LOCAL_PEERCRED: root/kobian-admins → Administrator, kobian-operators → Operator, reszta → Reader. Operator: folder odtwarzania, lokalny cel repozytorium i plik hasła sprawdzane prawami POSIX klienta (Agent = root).
+- Kopia: FIFO/gniazda/urządzenia pomijane (wcześniej FIFO wieszał kopię), uprawnienia rwx w drzewie (klucz CBOR 16), odtwarzane bez setuid/setgid; pliki odtworzone dziedziczą właściciela folderu docelowego.
+- `kobian-restore` wieloplatformowy; RID-y w plikach blokady (Directory.Build.props); `tools/package-unix.sh` → dist/kobian-<wersja>-<rid>.tar.gz; install.sh/uninstall.sh.
+- Test e2e: paczka linux-x64 zainstalowana w kontenerze (systemctl zaślepką — brak systemd jako PID 1), użytkownicy root/admin/operator/zwykły — wszystkie bramki zgodnie z założeniem.
+- Do zrobienia: test na prawdziwym systemd i macOS (launchd, podpis, Gatekeeper, LOCAL_PEERCRED, lstat$INODE64 na x64); UI na pulpicie Linux/macOS; właściciel/ACL/xattr w kopii; podpis Developer ID + notaryzacja.
