@@ -99,10 +99,13 @@ public static class JobValidator
     {
         var unc = s.StartsWith(@"\\", StringComparison.Ordinal);
         var parts = new List<string>();
-        foreach (var seg in s.Split('\\', StringSplitOptions.RemoveEmptyEntries))
+        var segs = s.Split('\\', StringSplitOptions.RemoveEmptyEntries);
+        // „..” nie wychodzi ponad korzeń: UNC zachowuje serwer i udział (2 segmenty), litera dysku „X:” — jeden, ścieżka bez dysku — nic ponad pierwszy segment (jak Windows).
+        var floor = unc ? 2 : segs.Length > 0 && segs[0].EndsWith(':') ? 1 : 0;
+        foreach (var seg in segs)
         {
             if (seg == ".") continue;
-            if (seg == ".." && parts.Count > 1) parts.RemoveAt(parts.Count - 1);
+            if (seg == ".." && parts.Count > floor) parts.RemoveAt(parts.Count - 1);
             else if (seg != "..") parts.Add(seg);
         }
         return (unc ? @"\\" : "") + string.Join('\\', parts);

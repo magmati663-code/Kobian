@@ -57,6 +57,9 @@ public sealed class CatalogWriter : IAsyncDisposable
 
     private static Func<SqliteConnection, SqliteTransaction, object?> Wrap<T>(Func<SqliteConnection, SqliteTransaction, T> op) => (c, t) => op(c, t);
 
+    /// <summary>Liczba partii masowych, które zakończyły się wyjątkiem (diagnostyka/testy).</summary>
+    public int BulkFailures { get; private set; }
+
     private async Task LoopAsync()
     {
         var ct = _stop.Token;
@@ -71,7 +74,16 @@ public sealed class CatalogWriter : IAsyncDisposable
                 // domknięcie: opróżnij kolejki
             }
             DrainControl();
-            DrainBulkBatch();
+#pragma warning disable CA1031
+            try
+            {
+                DrainBulkBatch();
+            }
+            catch (Exception)
+            {
+                BulkFailures++; // wiersze tej partii przepadły (transakcja wycofana); pętla pisarza żyje dalej
+            }
+#pragma warning restore CA1031
             if (ct.IsCancellationRequested && !_controlWork.Reader.TryPeek(out _) && !_bulkQ.Reader.TryPeek(out _)) return;
         }
     }
@@ -80,8 +92,18 @@ public sealed class CatalogWriter : IAsyncDisposable
     {
         while (_controlWork.Reader.TryRead(out var item))
         {
-            // Flush semantyka: przed operacją sterowania zatwierdź zaległe wiersze masowe zlecone wcześniej.
-            if (_bulkQ.Reader.TryPeek(out _)) DrainBulkBatch(unlimited: true);
+            // Flush semantyka: przed operacją sterowania zatwierdź zaległe wiersze masowe zlecone wcześniej. Błąd flushu (pełny dysk, SQLITE_BUSY) nie może wyciec z pętli pisarza:
+            // item został już zdjęty z kolejki i nigdy nie dostałby wyniku, a wszystkie kolejne ExecuteControlAsync wisiałyby bez końca.
+#pragma warning disable CA1031
+            try
+            {
+                if (_bulkQ.Reader.TryPeek(out _)) DrainBulkBatch(unlimited: true);
+            }
+            catch (Exception)
+            {
+                BulkFailures++;
+            }
+#pragma warning restore CA1031
             try
             {
                 using var tx = _conn.BeginTransaction();

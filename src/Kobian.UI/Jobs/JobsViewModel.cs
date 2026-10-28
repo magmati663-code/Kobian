@@ -171,7 +171,9 @@ public sealed partial class JobsViewModel : ObservableObject, IRefreshablePage
     private async Task RunAsync(JobRowViewModel? row, CancellationToken ct)
     {
         if (row is null) return;
-        await Act(() => _source.StartJobAsync(row.Job.JobId, ct), string.Format(CultureInfo.CurrentCulture, Strings.Get("Jobs.Started"), row.Name), ct).ConfigureAwait(true);
+        // Po przyjęciu odświeżamy listę: pigułka „W kolejce/W toku” (BL-76) pojawia się od razu i nie zachęca do drugiego kliknięcia (drugie uruchomienie).
+        if (await Act(() => _source.StartJobAsync(row.Job.JobId, ct), string.Format(CultureInfo.CurrentCulture, Strings.Get("Jobs.Started"), row.Name), ct).ConfigureAwait(true))
+            await RefreshAsync(ct).ConfigureAwait(true);
     }
 
     /// <summary>Wstrzymanie (SetSchedule bez cron — wyrażenie zostaje) albo wznowienie zachowanym wyrażeniem. Bez harmonogramu: brak akcji.</summary>

@@ -1587,3 +1587,14 @@
   action.en: "Grant the SQL Server service account read/write access to the staging folder and check the path and free space."
   source: "R2.5.7 (przegląd logiki it. 139)"
   since: "0.1"
+
+- code: KB-9001
+  name: AgentOffline
+  class: transient
+  severity: error
+  message.pl: "Usługa Kobian jest niedostępna."
+  message.en: "The Kobian service is unavailable."
+  action: "Uruchom usługę Kobian i spróbuj ponownie."
+  action.en: "Start the Kobian service and try again."
+  source: "R2.6.4"
+  since: "0.1"

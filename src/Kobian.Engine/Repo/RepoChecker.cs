@@ -123,7 +123,7 @@ public sealed class RepoChecker(IStorageSession session, RepoKeys keys)
             catch (Exception ex) when (Code(ex) is { } code)
             {
                 st.Issue(code, "snapshot:" + snapHex, snapHex);
-                st.Damaged.Add(snapHex); // jak w CheckSnapshotAsync: nieczytelny snapshot jest uszkodzony (suspect w katalogu, ocena RepoDamageAssessor), a nie „zdrowy bez uwag”
+                if (!IsTransient(ex)) st.Damaged.Add(snapHex); // jak w CheckSnapshotAsync: nieczytelny snapshot jest uszkodzony (suspect w katalogu, ocena RepoDamageAssessor); chwilowa awaria sieci — nie
                 continue;
             }
             snapshotsRead++;
@@ -273,7 +273,7 @@ public sealed class RepoChecker(IStorageSession session, RepoKeys keys)
         catch (Exception ex) when (Code(ex) is { } code)
         {
             st.Issue(code, "snapshot:" + snapHex, snapHex);
-            st.Damaged.Add(snapHex);
+            if (!IsTransient(ex)) st.Damaged.Add(snapHex);
             return new CheckReport(CheckStatus.Failed, 2, 0, 0, 0, 0, 0, [snapHex], st.Issues, st.Truncated);
         }
         var indexCache = new Dictionary<string, (IndexObject Index, byte[] Sha)?>(StringComparer.Ordinal);
@@ -412,6 +412,9 @@ public sealed class RepoChecker(IStorageSession session, RepoKeys keys)
     }
 
     /// <summary>Kod KB błędu odczytu obiektu z celu; null = błąd nieoczekiwany (propaguje, nie jest maskowany jako „uszkodzenie”).</summary>
+    /// <summary>Awaria przejściowa (timeout, utrata połączenia) nie dowodzi uszkodzenia snapshotu — nie oznaczamy go jako uszkodzonego/suspect.</summary>
+    private static bool IsTransient(Exception ex) => ex is KobianException { ErrorClass: ErrorClass.Transient } or StorageException { IsTransient: true };
+
     private static string? Code(Exception ex) => ex switch
     {
         KobianException k => k.Code,

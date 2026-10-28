@@ -77,16 +77,16 @@ public sealed class CatalogMaintenanceTests : IAsyncLifetime
         {
             var d = Path.Combine(staging, name);
             Directory.CreateDirectory(d);
-            if (withBak) File.WriteAllBytes(Path.Combine(d, "x.bak"), [1, 2, 3]);
+            if (withBak) File.WriteAllBytes(Path.Combine(d, new string('e', 32) + ".bak"), [1, 2, 3]);
             Directory.SetCreationTimeUtc(d, ageUtc);
             Directory.SetLastWriteTimeUtc(d, ageUtc);
             return d;
         }
         var old = DateTime.UtcNow.AddDays(-2);
-        var stale = Dir("aaaaaaaa11111111", old);
-        var staleRestore = Dir("restore-bbbbbbbb22222222", old);
-        var active = Dir("cccccccc33333333", old);
-        var young = Dir("dddddddd44444444", DateTime.UtcNow.AddMinutes(-5));
+        var stale = Dir("aaaaaaaa111111110000000000000000", old);
+        var staleRestore = Dir("restore-bbbbbbbb222222220000000000000000", old);
+        var active = Dir("cccccccc333333330000000000000000", old);
+        var young = Dir("dddddddd444444440000000000000000", DateTime.UtcNow.AddMinutes(-5));
         var foreign = Dir("Moje Dokumenty", old);
         using (var c = CatalogBootstrap.Open(Catalog))
         {
@@ -96,7 +96,7 @@ public sealed class CatalogMaintenanceTests : IAsyncLifetime
             job.Parameters.AddWithValue("$d", System.Text.Encoding.UTF8.GetBytes(def));
             job.ExecuteNonQuery();
             using var run = c.CreateCommand();
-            run.CommandText = "INSERT INTO run_runs(run_id,job_id,cause,state,started_at) VALUES ('cccccccc33333333','j1','manual','Running','2026-10-17T11:00:00.000Z');";
+            run.CommandText = "INSERT INTO run_runs(run_id,job_id,cause,state,started_at) VALUES ('cccccccc333333330000000000000000','j1','manual','Running','2026-10-17T11:00:00.000Z');";
             run.ExecuteNonQuery();
         }
 

@@ -98,6 +98,7 @@ public sealed class JobValidatorTests
     [InlineData(@"C:\Data\.|C:\Data\sub")]
     [InlineData(@"\\?\C:\Data|C:\Data\sub")] // prefiks długich ścieżek Windows
     [InlineData(@"\\srv\share|\\?\UNC\srv\share\dir")]
+    [InlineData(@"\\srv\a\..\b|\\srv\a\b\sub")] // „..” nie kasuje udziału UNC (jak w Windows: \\srv\a\b)
     public void Overlapping_sources_are_rejected(string sources)
     {
         var issues = JobValidator.ValidateSources(sources.Split('|'));

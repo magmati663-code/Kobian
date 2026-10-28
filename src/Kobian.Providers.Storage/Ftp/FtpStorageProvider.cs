@@ -124,12 +124,20 @@ internal sealed class FtpStorageSession : StorageSessionBase
                 {
                     await _t.CreateDirectoryAsync(Full(current), ct).ConfigureAwait(false);
                 }
-                catch (StorageException)
+                catch (StorageException original)
                 {
                     // Dwie równoległe sesje (Parallelism = 2) tworzą ten sam katalog: druga dostaje 550 „exists”, które klasyfikator czyta jako brak uprawnień (trwały).
-                    // Jeśli katalog już jest (utworzony przez drugą sesję) — to nie błąd; w przeciwnym razie oryginalny wyjątek.
-                    var again = await _t.StatAsync(Full(current), ct).ConfigureAwait(false);
-                    if (again is null || again.Kind != FtpEntryKind.Directory) throw;
+                    // Jeśli katalog już jest (utworzony przez drugą sesję) — to nie błąd; w przeciwnym razie oryginalny wyjątek (także gdy sam Stat zawiedzie, np. po rozłączeniu).
+                    FtpEntry? again = null;
+                    try
+                    {
+                        again = await _t.StatAsync(Full(current), ct).ConfigureAwait(false);
+                    }
+                    catch (StorageException)
+                    {
+                        System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(original).Throw();
+                    }
+                    if (again is null || again.Kind != FtpEntryKind.Directory) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(original).Throw();
                 }
             }
             else if (st.Kind == FtpEntryKind.Link)

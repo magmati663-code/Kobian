@@ -39,15 +39,43 @@ public sealed class StagingTests : IDisposable
     [Fact, Trait("D", "D5.10")]
     public void Cleanup_removes_only_stale_inactive_run_directories()
     {
-        MakeRun("oldrun0001", TimeSpan.FromHours(3));
-        MakeRun("activerun01", TimeSpan.FromHours(3));
-        MakeRun("freshrun001", TimeSpan.FromMinutes(5));
+        var old = new string('a', 32);
+        var active = new string('b', 32);
+        var fresh = new string('c', 32);
+        MakeRun(old, TimeSpan.FromHours(3));
+        MakeRun(active, TimeSpan.FromHours(3));
+        MakeRun(fresh, TimeSpan.FromMinutes(5));
         Directory.CreateDirectory(Path.Combine(_root, "Inny Folder"));
-        var removed = Staging.CleanupStale(_root, new HashSet<string> { "activerun01" }, DateTimeOffset.UtcNow);
-        Assert.Equal(["oldrun0001"], removed);
-        Assert.True(Directory.Exists(Path.Combine(_root, "activerun01")));
-        Assert.True(Directory.Exists(Path.Combine(_root, "freshrun001")));
+        var removed = Staging.CleanupStale(_root, new HashSet<string> { active }, DateTimeOffset.UtcNow);
+        Assert.Equal([old], removed);
+        Assert.True(Directory.Exists(Path.Combine(_root, active)));
+        Assert.True(Directory.Exists(Path.Combine(_root, fresh)));
         Assert.True(Directory.Exists(Path.Combine(_root, "Inny Folder")));
+    }
+
+    /// <summary>
+    /// Katalog stagingu z definicji zadania bywa dowolną ścieżką (np. korzeń dysku z dokumentami): sprzątanie nie może ruszyć folderów o „podobnych” nazwach
+    /// (documents, downloads), ani katalogu z cudzymi plikami w środku, nawet gdy nazwa wygląda jak runId.
+    /// </summary>
+    [Fact, Trait("SEC", "SEC-5.2")]
+    public void Cleanup_never_touches_foreign_folders_even_with_lookalike_names_or_foreign_content()
+    {
+        foreach (var name in new[] { "documents", "downloads", "backup2026", "restore-backups" })
+        {
+            var d = Directory.CreateDirectory(Path.Combine(_root, name));
+            File.WriteAllText(Path.Combine(d.FullName, "wazne.docx"), "x");
+            Directory.SetCreationTimeUtc(d.FullName, DateTime.UtcNow.AddDays(-30));
+            Directory.SetLastWriteTimeUtc(d.FullName, DateTime.UtcNow.AddDays(-30));
+        }
+        var mixed = MakeRun(new string('d', 32), TimeSpan.FromHours(5)); // nazwa jak runId, ale jest w środku cudzy plik
+        File.WriteAllText(Path.Combine(mixed, "notatki.txt"), "x");
+
+        var removed = Staging.CleanupStale(_root, new HashSet<string>(), DateTimeOffset.UtcNow);
+
+        Assert.Empty(removed);
+        Assert.True(File.Exists(Path.Combine(_root, "documents", "wazne.docx")));
+        Assert.True(File.Exists(Path.Combine(_root, "restore-backups", "wazne.docx")));
+        Assert.True(File.Exists(Path.Combine(mixed, "notatki.txt")));
     }
 
     [Fact, Trait("SEC", "SEC-5.2")]

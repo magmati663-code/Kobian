@@ -81,6 +81,7 @@ public sealed partial class WizardViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(NextCommand))]
+    [NotifyPropertyChangedFor(nameof(CanGoBack), nameof(CanCancel))]
     public partial bool IsBusy { get; private set; }
 
     public ObservableCollection<string> Messages { get; } = [];
@@ -89,9 +90,11 @@ public sealed partial class WizardViewModel : ObservableObject
 
     public int StepNumber => WizardFlow.StepNumber(State);
 
-    public bool CanGoBack => WizardFlow.CanGoBack(State, Context(true));
+    // W trakcie operacji usługi (IsBusy) Wstecz/Anuluj są zablokowane: „Anuluj” podczas zapisu zostawiało zadanie utworzone przez Agenta mimo komunikatu, że nie powstaje,
+    // a „Wstecz” w trakcie walidacji pozwalało spóźnionej odpowiedzi przesunąć kreator z powrotem do przodu.
+    public bool CanGoBack => !IsBusy && WizardFlow.CanGoBack(State, Context(true));
 
-    public bool CanCancel => !IsFinal && State != WizardState.Cancelled;
+    public bool CanCancel => !IsBusy && !IsFinal && State != WizardState.Cancelled;
 
     public string Title { get; } = Strings.Get("Nav.NewJob");
 
@@ -380,7 +383,8 @@ public sealed partial class WizardViewModel : ObservableObject
         catch (Exception ex) when (Kobian.UI.Services.UiFailure.IsServiceFailure(ex))
         {
             // Awaria usługi w trakcie kroku (zerwany pipe, przekroczony termin InitRepository 5 min, odmowa roli, starszy Agent): komunikat KB zamiast zamknięcia aplikacji.
-            // Po S4 usługa mogła już utworzyć repozytorium — kreator zostaje na tym kroku, a ponowienie jest idempotentne po stronie Agenta (KB-0105 istniejące repo).
+            // Po przekroczeniu terminu InitRepository/Upsert Agent mógł już dokończyć operację — kreator zostaje na tym kroku, a kolejne „Dalej” może zwrócić „repozytorium istnieje”
+            // albo „nazwa zajęta” (to NIE jest ponowienie idempotentne); wtedy zadanie jest już na liście zadań (SCR-02).
             ShowText(KbText.Full(Kobian.UI.Services.UiFailure.CodeOf(ex)));
         }
         finally
@@ -392,6 +396,7 @@ public sealed partial class WizardViewModel : ObservableObject
     [RelayCommand]
     private void Back()
     {
+        if (IsBusy) return;
         ClearMessages();
         Apply(WizardEvent.Back);
     }

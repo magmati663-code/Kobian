@@ -292,4 +292,6 @@
   <data name="KB_7015_Action" xml:space="preserve"><value>Zainstaluj ponownie Kobian Backup z oficjalnego instalatora; zgłoś incydent.</value></data>
   <data name="KB_7016_Message" xml:space="preserve"><value>Nie udało się uruchomić procesu pomocniczego Kobian.Worker.</value></data>
   <data name="KB_7016_Action" xml:space="preserve"><value>Sprawdź instalację (plik Kobian.Worker.exe obok usługi) i dziennik zdarzeń.</value></data>
+  <data name="KB_9001_Message" xml:space="preserve"><value>Usługa Kobian jest niedostępna.</value></data>
+  <data name="KB_9001_Action" xml:space="preserve"><value>Uruchom usługę Kobian i spróbuj ponownie.</value></data>
 </root>

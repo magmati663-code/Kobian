@@ -78,13 +78,15 @@
         </Grid>
       </Border>
 
+      <!-- Wynik akcji (Uruchom, potwierdzenie alertu): poza panelem alertów — bez aktywnych alertów komunikat po „Uruchom” (powodzenie, odmowa roli, brak połączenia) był niewidoczny -->
+      <Border IsVisible="{Binding HasAlertMessage}" Background="{DynamicResource Kb.Brush.Sunken}" CornerRadius="{StaticResource Kb.Radius.Control}" Padding="16,10"
+              AutomationProperties.AutomationId="SCR-01.AlertMessage" AutomationProperties.LiveSetting="Polite">
+        <TextBlock Text="{Binding AlertMessage}" Foreground="{DynamicResource Kb.Brush.Text}" TextWrapping="Wrap" />
+      </Border>
+
       <!-- BL-45/BL-82 (D9.7): aktywne alerty — tytuł z kodu reguły, waga słownie (kolor nie jest jedyną informacją), potwierdzenie (Operator) i wyciszenie (Administrator) -->
       <StackPanel Spacing="12" IsVisible="{Binding HasAlerts}" AutomationProperties.AutomationId="SCR-01.Alerts">
         <TextBlock Classes="title" Text="{l:T Dashboard.Alerts}" />
-        <Border IsVisible="{Binding HasAlertMessage}" Background="{DynamicResource Kb.Brush.Sunken}" CornerRadius="{StaticResource Kb.Radius.Control}" Padding="16,10"
-                AutomationProperties.AutomationId="SCR-01.AlertMessage" AutomationProperties.LiveSetting="Polite">
-          <TextBlock Text="{Binding AlertMessage}" Foreground="{DynamicResource Kb.Brush.Text}" TextWrapping="Wrap" />
-        </Border>
         <Border Classes="card">
           <ItemsControl ItemsSource="{Binding Alerts}">
             <ItemsControl.ItemTemplate>

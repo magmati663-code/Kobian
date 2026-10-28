@@ -337,7 +337,10 @@ public sealed partial class DashboardViewModel : ObservableObject, Shell.IRefres
     private Task PrimaryAsync(CancellationToken ct)
     {
         if (IsOffline) return RefreshAsync(ct);
-        if (Jobs.Count > 0) return ActAsync(Jobs[0], ct);
+        // Duży przycisk nie może omijać roli: Podgląd (Viewer) ma akcje wyszarzone, a ten przycisk wysyłał RunJob / otwierał kreator, który zawodził dopiero przy zapisie.
+        // Przejście do ekranu naprawy (akcja bez uruchomienia) jest tylko nawigacją i zostaje dostępne.
+        if (Jobs.Count > 0) return Jobs[0].RunsJob && !CanRun ? Task.CompletedTask : ActAsync(Jobs[0], ct);
+        if (!CanRun) return Task.CompletedTask;
         CreateJobRequested?.Invoke(this, EventArgs.Empty); // pusty pulpit → kreator SCR-03
         return Task.CompletedTask;
     }

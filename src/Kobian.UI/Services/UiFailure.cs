@@ -15,7 +15,7 @@ public static class UiFailure
     public const string Offline = "KB-9001";
 
     /// <summary>Wyjątki, które adapter zgłasza dla awarii usługi/transportu (reszta to błędy programistyczne i mają wychodzić).</summary>
-    public static bool IsServiceFailure(Exception ex) => ex is IOException or TimeoutException or InvalidOperationException;
+    public static bool IsServiceFailure(Exception ex) => ex is IOException or TimeoutException or InvalidOperationException { InnerException: RpcException };
 
     public static string CodeOf(Exception ex)
     {

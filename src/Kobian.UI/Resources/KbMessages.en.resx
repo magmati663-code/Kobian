@@ -292,4 +292,6 @@
   <data name="KB_7015_Action" xml:space="preserve"><value>Reinstall Kobian Backup from the official installer; report an incident.</value></data>
   <data name="KB_7016_Message" xml:space="preserve"><value>The Kobian.Worker helper process could not be started.</value></data>
   <data name="KB_7016_Action" xml:space="preserve"><value>Check the installation (Kobian.Worker.exe next to the service) and the event log.</value></data>
+  <data name="KB_9001_Message" xml:space="preserve"><value>The Kobian service is unavailable.</value></data>
+  <data name="KB_9001_Action" xml:space="preserve"><value>Start the Kobian service and try again.</value></data>
 </root>

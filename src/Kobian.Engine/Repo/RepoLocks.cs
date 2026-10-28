@@ -58,6 +58,14 @@ public static class RepoLocks
         {
             if (o.IsDirectory || RepoPaths.TryParseId(o.Path, RepoPaths.LocksDir, ".lock") is not { } id) continue;
             // Limit plików (DoS przez zalanie locks/): nadmiar = repo traktowane jako zablokowane, bez czytania dalej.
+            // Maintenance z nagromadzonymi setkami tysięcy blokad: odczyt każdej osobno (cel zdalny) zawieszałby prune. Ponad zwykły limit plik, którego czas modyfikacji na celu jest dawno
+            // ponad TTL, jest przeterminowany bez czytania (zapis blokady następuje w chwili odnowienia, więc mtime ≈ renewedAt; zapas doby na różnice zegarów).
+            if (session.Role == CredentialRole.Maintenance && seen >= options.MaxLockFiles && o.Modified is { } mtime && now - mtime > TimeSpan.FromSeconds(options.TtlSec) + TimeSpan.FromDays(1))
+            {
+                seen++;
+                expired.Add(o.Path);
+                continue;
+            }
             if (++seen > maxFiles) throw new KobianException(KbCode.RepoLocked, ErrorClass.Transient, "Too many lock files on the destination.");
             if (o.Length is <= 0 or > RepoLockFile.MaxBytes) { invalid.Add(o.Path); continue; }
             byte[] raw;

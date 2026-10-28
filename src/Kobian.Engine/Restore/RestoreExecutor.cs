@@ -61,7 +61,7 @@ public sealed class RestoreExecutor(RepoReader reader)
             return new RestoreResult(RestoreStatus.Failed, st.Files, st.Bytes, st.Issues);
         }
         if (st.Exact is not null && st.Exact.Matched.Count == 0)
-            return new RestoreResult(RestoreStatus.Failed, 0, 0, [new RestoreIssue(KbCode.SnapshotPathNotFound, "")]);
+            return new RestoreResult(RestoreStatus.Failed, 0, 0, [new RestoreIssue(KbCode.SnapshotPathNotFound, ""), .. st.Issues]); // uszkodzone drzewo w drodze do ścieżki wyjaśnia, czemu jej „nie ma”
         var failed = st.Issues.Any(i => i.Code is KbCode.RestoreHashMismatch or KbCode.RestorePackMissing);
         var status = failed ? RestoreStatus.Failed : st.Issues.Count > 0 ? RestoreStatus.Warning : RestoreStatus.Succeeded;
         return new RestoreResult(status, st.Files, st.Bytes, st.Issues, st.Resumed);

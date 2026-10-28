@@ -437,6 +437,9 @@ public static class KbCode
     /// <summary>Nie udało się uruchomić procesu pomocniczego Kobian.Worker.</summary>
     public const string WorkerStartFailed = "KB-7016";
 
+    /// <summary>Usługa Kobian jest niedostępna.</summary>
+    public const string AgentOffline = "KB-9001";
+
     private static readonly System.Collections.Generic.HashSet<string> AllCodes = new(System.StringComparer.Ordinal)
     {
         Internal,
@@ -583,6 +586,7 @@ public static class KbCode
         WorkerProtocolViolation,
         WorkerSignatureInvalid,
         WorkerStartFailed,
+        AgentOffline,
     };
 
     /// <summary>Czy kod jest w rejestrze (porównanie porządkowe).</summary>

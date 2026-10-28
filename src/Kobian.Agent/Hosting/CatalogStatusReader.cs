@@ -259,9 +259,18 @@ public static class CatalogStatusReader
         try
         {
             var schedule = CronSchedule.Parse(CatalogScheduler.ParseCron(spec), timeZone);
-            var next = schedule.Preview(nowUtc, 2);
+            var next = schedule.Preview(nowUtc, 1);
             if (next.Count == 0) return null;
-            return (next[0], next.Count == 2 ? next[1] - next[0] : null);
+            // Cykl = NAJDŁUŻSZY odstęp w najbliższych 8 dniach: dla „dni robocze” różnica dwóch najbliższych wystąpień w weekend dawała 24 h
+            // i fałszywe A03 (1,5 × interwał) w niedzielę. Reguła S3 gwarantuje ≥ 5 min, więc okno ma ≤ ok. 2300 wystąpień.
+            TimeSpan? interval = null;
+            var prev = next[0];
+            foreach (var o in schedule.Between(next[0], nowUtc.AddDays(8)))
+            {
+                if (interval is null || o - prev > interval) interval = o - prev;
+                prev = o;
+            }
+            return (next[0], interval);
         }
         catch (KobianException)
         {

@@ -111,25 +111,35 @@ internal sealed class LocalStorageSession : StorageSessionBase
         while (true)
         {
             ct.ThrowIfCancellationRequested();
-            StatResult? item = null;
+            string f;
             try
             {
+                // Wyjątek z MoveNext (podkatalog zniknął w trakcie rekursji, odłączony nośnik) NIE jest „plik zniknął”: enumerator po nim jest zwolniony, a ciche pominięcie kończyłoby
+                // listę bez błędu i niepełną — RepoChecker/prune uznałyby istniejące obiekty za nieistniejące. Zawsze błąd magazynu.
                 if (!en.MoveNext()) break;
-                var f = en.Current;
-                var rel = Path.GetRelativePath(_root, f).Replace(Path.DirectorySeparatorChar, '/');
-                if (!StoragePath.IsValid(rel)) continue; // obce pliki (nie-repo) pomijane
-                var fi = new FileInfo(f);
-                item = new StatResult(rel, fi.Length, fi.LastWriteTimeUtc, false);
-            }
-            catch (FileNotFoundException)
-            {
-                continue; // zniknął między wyliczeniem a odczytem rozmiaru (np. tymczasowy plik po rename)
+                f = en.Current;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 throw LocalErrorMap.Map(ex);
             }
-            if (item is not null) yield return item;
+            var rel = Path.GetRelativePath(_root, f).Replace(Path.DirectorySeparatorChar, '/');
+            if (!StoragePath.IsValid(rel)) continue; // obce pliki (nie-repo) pomijane
+            StatResult item;
+            try
+            {
+                var fi = new FileInfo(f);
+                item = new StatResult(rel, fi.Length, fi.LastWriteTimeUtc, false);
+            }
+            catch (FileNotFoundException)
+            {
+                continue; // ten jeden plik zniknął między wyliczeniem a odczytem rozmiaru (np. tymczasowy plik po rename)
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                throw LocalErrorMap.Map(ex);
+            }
+            yield return item;
         }
         await Task.CompletedTask.ConfigureAwait(false);
     }

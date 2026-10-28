@@ -20,12 +20,22 @@ public static partial class Staging
     /// <summary>Prefiks katalogu odtworzenia bazy (<c>restore-&lt;runId&gt;</c>, CatalogRestoreService): też zawiera pełny plik .bak i też wymaga sprzątania po awarii.</summary>
     public const string RestoreDirPrefix = "restore-";
 
-    /// <summary>runId z nazwy katalogu uruchomienia (kopia: <c>&lt;runId&gt;</c>, odtworzenie: <c>restore-&lt;runId&gt;</c>); null = nazwa spoza wzorca (nie nasz katalog — nie ruszamy).</summary>
+    [GeneratedRegex("^[0-9a-f]{32}$")]
+    private static partial Regex OwnedRunIdPattern();
+
+    [GeneratedRegex(@"^([0-9a-f]{32}|database)\.bak$")]
+    private static partial Regex OwnedFilePattern();
+
+    /// <summary>
+    /// runId z nazwy katalogu uruchomienia (kopia: <c>&lt;runId&gt;</c>, odtworzenie: <c>restore-&lt;runId&gt;</c>), ale TYLKO dla nazwy, jaką tworzy Agent: dokładnie 32 znaki hex
+    /// (run_id = 16 B). null = cudza nazwa — nie ruszamy. Luźny wzorzec <see cref="IsValidRunId"/> (8–40 znaków a-z0-9) pasuje do zwykłych folderów typu „documents”,
+    /// a katalog stagingu z definicji zadania bywa dowolną ścieżką (np. korzeń dysku), więc sprzątanie nim mogło kasować cudze pliki.
+    /// </summary>
     public static string? RunIdOfDirectory(string directoryName)
     {
         if (directoryName is null) return null;
         var id = directoryName.StartsWith(RestoreDirPrefix, StringComparison.Ordinal) ? directoryName[RestoreDirPrefix.Length..] : directoryName;
-        return IsValidRunId(id) ? id : null;
+        return OwnedRunIdPattern().IsMatch(id) ? id : null;
     }
 
     /// <summary>Ścieżka pliku .bak w katalogu uruchomienia; nazwa pliku losowa (Guid) — nie ujawnia nazwy bazy.</summary>
@@ -51,11 +61,10 @@ public static partial class Staging
             if (dir.LinkTarget is not null || (dir.Attributes & FileAttributes.ReparsePoint) != 0) continue;
             if (RunIdOfDirectory(dir.Name) is not { } runId || activeRunIds.Contains(runId)) continue;
             if (nowUtc - dir.CreationTimeUtc < StaleAfter && nowUtc - dir.LastWriteTimeUtc < StaleAfter) continue;
-            foreach (var f in dir.EnumerateFileSystemInfos())
-            {
-                if (f is DirectoryInfo || f.LinkTarget is not null) continue; // tylko pliki .bak w katalogu uruchomienia
-                f.Delete();
-            }
+            // Usuwamy wyłącznie katalog, w którym są SAME nasze pliki (<guid>.bak / database.bak): cokolwiek innego w środku = to nie jest katalog uruchomienia Kobian.
+            var entries = dir.EnumerateFileSystemInfos().ToList();
+            if (entries.Any(f => f is DirectoryInfo || f.LinkTarget is not null || !OwnedFilePattern().IsMatch(f.Name))) continue;
+            foreach (var f in entries) f.Delete();
             if (!dir.EnumerateFileSystemInfos().Any())
             {
                 dir.Delete();
@@ -109,7 +118,7 @@ public static class ControlComparison
 {
     public static bool Matches(string tolerance, long before, long after, long restored) => tolerance switch
     {
-        "range" => restored >= before && restored <= Math.Max(before, after),
+        "range" => restored >= Math.Min(before, after) && restored <= Math.Max(before, after),
         "exact" => restored == before && before == after,
         "approx" => Math.Abs(restored - before) <= Math.Max(1, (long)Math.Ceiling(Math.Abs(before) * 0.001)),
         _ => throw new ArgumentException("Unknown tolerance.", nameof(tolerance)),

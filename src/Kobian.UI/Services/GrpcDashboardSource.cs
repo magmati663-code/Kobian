@@ -54,9 +54,7 @@ public sealed class GrpcDashboardSource : IDashboardSource, IJobsSource, IHistor
 
     public async Task<DashboardData> LoadAsync(CancellationToken ct)
     {
-        var status = await Call(() => _client.GetStatusAsync(new GetStatusRequest(), _headers, Deadline(), ct).ResponseAsync).ConfigureAwait(false);
-        var snaps = await Call(() => _client.ListSnapshotsAsync(new ListSnapshotsRequest(), _headers, Deadline(), ct).ResponseAsync).ConfigureAwait(false);
-        var data = Map(status, snaps, _time.GetUtcNow());
+        var data = await LoadCoreAsync(ct).ConfigureAwait(false);
         try
         {
             var sched = await Call(() => _client.ListSchedulesAsync(new ListSchedulesRequest(), _headers, Deadline(), ct).ResponseAsync).ConfigureAwait(false);
@@ -66,6 +64,13 @@ public sealed class GrpcDashboardSource : IDashboardSource, IJobsSource, IHistor
         {
             return data; // starszy Agent bez ListSchedules / odmowa roli: pulpit z samego GetStatus, jak dotąd
         }
+    }
+
+    private async Task<DashboardData> LoadCoreAsync(CancellationToken ct)
+    {
+        var status = await Call(() => _client.GetStatusAsync(new GetStatusRequest(), _headers, Deadline(), ct).ResponseAsync).ConfigureAwait(false);
+        var snaps = await Call(() => _client.ListSnapshotsAsync(new ListSnapshotsRequest(), _headers, Deadline(), ct).ResponseAsync).ConfigureAwait(false);
+        return Map(status, snaps, _time.GetUtcNow());
     }
 
     /// <summary>
@@ -118,7 +123,8 @@ public sealed class GrpcDashboardSource : IDashboardSource, IJobsSource, IHistor
     /// <summary>SCR-02: stan jak na pulpicie + harmonogramy (ListSchedules — także wyłączone, z zachowanym wyrażeniem).</summary>
     public async Task<JobsData> LoadJobsAsync(CancellationToken ct)
     {
-        var dash = await LoadAsync(ct).ConfigureAwait(false);
+        // Surowe dane (bez ApplyPausedSchedules): SCR-02 sam rozróżnia „zadanie wyłączone” od „harmonogram wstrzymany” (Reason.SchedulePaused) i jedno ListSchedules wystarcza.
+        var dash = await LoadCoreAsync(ct).ConfigureAwait(false);
         var sched = await Call(() => _client.ListSchedulesAsync(new ListSchedulesRequest(), _headers, Deadline(), ct).ResponseAsync).ConfigureAwait(false);
         return new JobsData(dash.Jobs, MapSchedules(sched), dash.Role, dash.AsOfUtc);
     }

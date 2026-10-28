@@ -65,7 +65,17 @@ public sealed class CatalogRestoreService : IDisposable
 
     public void Dispose()
     {
+        // Najpierw anulowanie i krótkie oczekiwanie na zadania w tle: zwolnienie CTS/semafora spod działającego zadania dawało ObjectDisposedException poza ścieżką Cancelled
+        // (wiersz run_runs zostawał Running do restartu), a Release na zwolnionym semaforze psuł WhenDetachedIdleAsync.
         _shutdown.Cancel();
+        try
+        {
+            WhenDetachedIdleAsync().Wait(TimeSpan.FromSeconds(10));
+        }
+        catch (AggregateException)
+        {
+            // zadania w tle same zapisują wynik w katalogu; błąd któregoś nie może przeszkodzić zwolnieniu zasobów
+        }
         _shutdown.Dispose();
         if (_slots.IsValueCreated) _slots.Value.Dispose();
     }

@@ -73,11 +73,18 @@ public static class CliApp
             await stderr.WriteLineAsync(text).ConfigureAwait(false);
             return ExitUnavailable;
         }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
-            // Ctrl+C (Program.cs anuluje token): czyste wyjście zamiast stosu wywołań; bieg w Agencie trwa dalej (`kobian watch` tylko obserwuje).
-            await stderr.WriteLineAsync("cancelled / przerwano").ConfigureAwait(false);
-            return ExitCancelled;
+            if (ct.IsCancellationRequested)
+            {
+                // Ctrl+C (Program.cs anuluje token): czyste wyjście zamiast stosu wywołań; bieg w Agencie trwa dalej (`kobian watch` tylko obserwuje).
+                await stderr.WriteLineAsync("cancelled / przerwano").ConfigureAwait(false);
+                return ExitCancelled;
+            }
+
+            // Status Cancelled przysłał SERWER (zamykanie Agenta, zerwane połączenie), a użytkownik nie przerywał — to „usługa niedostępna”, nie przerwanie przez użytkownika.
+            await stderr.WriteLineAsync($"{KbCode.AgentUnreachable}: service unavailable / brak połączenia z usługą").ConfigureAwait(false);
+            return ExitUnavailable;
         }
         catch (AgentInternalException)
         {
