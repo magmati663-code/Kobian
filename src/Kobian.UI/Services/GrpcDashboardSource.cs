@@ -245,6 +245,27 @@ public sealed class GrpcDashboardSource : IDashboardSource, IJobsSource, IHistor
         }
     }
 
+    /// <summary>
+    /// RD-81: RPC Restore z detach=true (Operator) — Agent zwraca od razu run_id, odtwarzanie idzie w tle. Odmowa roli → KB-7011; starszy Agent (bez pola detach)
+    /// odpowiedziałby po całym odtworzeniu bez run_id — wtedy zwracamy jego wynik jako gotowy (bez śledzenia), więc nic nie jest odtwarzane dwa razy.
+    /// </summary>
+    public async Task<Kobian.UI.Restore.DetachedRestoreStart?> StartDetachedAsync(string snapshotId, string? exactPath, string target, CancellationToken ct)
+    {
+        var req = new RestoreRequest { Snapshot = snapshotId, Target = target, Detach = true };
+        if (exactPath is not null) req.ExactPaths.Add(exactPath);
+        try
+        {
+            var r = await Call(() => _client.RestoreAsync(req, _headers, DateTime.UtcNow.AddMinutes(5), ct).ResponseAsync).ConfigureAwait(false);
+            return r.HasRunId && r.RunId.Length > 0
+                ? new(r.RunId, null)
+                : new(null, MapRestore(r));
+        }
+        catch (InvalidOperationException ex) when (ex.InnerException is RpcException { StatusCode: StatusCode.PermissionDenied or StatusCode.Unauthenticated })
+        {
+            return new(null, new(Kobian.UI.Restore.RestoreRunState.Failed, Kobian.Domain.KbCode.ApiAccessDenied));
+        }
+    }
+
     /// <summary>SCR-07 podgląd (it. 98): RPC PlanRestore (Operator; termin 1 h). Starszy Agent bez metody → null (ekran odtwarza bez podglądu); odmowa roli → KB-7011.</summary>
     public async Task<Kobian.UI.Restore.RestorePreview?> PlanAsync(string snapshotId, string? exactPath, string target, CancellationToken ct)
     {

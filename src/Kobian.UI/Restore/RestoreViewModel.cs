@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Kobian.UI.History;
 using Kobian.UI.Localization;
 using Kobian.UI.Wizard;
+using Prog = Kobian.UI.Progress;
 
 namespace Kobian.UI.Restore;
 
@@ -26,9 +27,18 @@ public sealed record RestorePreview(string? Code, long Files, long Bytes, long C
     public bool Blocks => Code is not null || BlockingCode is not null;
 }
 
+/// <summary>Wynik startu odtworzenia w tle (RD-81): <see cref="RunId"/> do śledzenia w <see cref="Prog.IRunProgressSource"/> albo <see cref="Failure"/> (odmowa/walidacja, bez uruchomienia).</summary>
+public sealed record DetachedRestoreStart(string? RunId, RestoreRunResult? Failure);
+
 /// <summary>Port SCR-07 do usługi: odtworzenie kopii (RPC Restore, rola Operator).</summary>
 public interface IRestoreService
 {
+    /// <summary>
+    /// RD-81: start odtworzenia BEZ czekania na wynik (RPC Restore z detach=true) → run_id do śledzenia postępu. null = usługa nie wspiera trybu w tle
+    /// (starszy Agent) — ekran odtwarza jak dotąd, czekając na wynik.
+    /// </summary>
+    Task<DetachedRestoreStart?> StartDetachedAsync(string snapshotId, string? exactPath, string target, CancellationToken ct) => Task.FromResult<DetachedRestoreStart?>(null);
+
     /// <summary><paramref name="exactPath"/>: plik albo folder z zawartością (dokładnie, bez wzorców — Qb34); null = cała kopia.</summary>
     Task<RestoreRunResult> RestoreAsync(string snapshotId, string? exactPath, string target, CancellationToken ct);
 
@@ -55,10 +65,13 @@ public sealed partial class RestoreViewModel : ObservableObject
 {
     private readonly IRestoreService _service;
     private readonly Func<string, bool> _isAbsolute;
+    private readonly Prog.IRunProgressSource? _progressSource;
 
-    public RestoreViewModel(IRestoreService service, RestoreSelection selection, TimeZoneInfo? zone = null, Func<string, bool>? isAbsolutePath = null)
+    public RestoreViewModel(IRestoreService service, RestoreSelection selection, TimeZoneInfo? zone = null, Func<string, bool>? isAbsolutePath = null,
+        Prog.IRunProgressSource? progressSource = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
+        _progressSource = progressSource;
         Selection = selection ?? throw new ArgumentNullException(nameof(selection));
         _isAbsolute = isAbsolutePath ?? Path.IsPathFullyQualified;
         var c = CultureInfo.CurrentUICulture;
@@ -165,6 +178,15 @@ public sealed partial class RestoreViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(ResultTitle), nameof(ResultDetail), nameof(IsSuccess), nameof(IsWarning), nameof(IsFailure), nameof(HasResultDetail))]
     public partial RestoreRunResult? Result { get; private set; }
 
+    /// <summary>RD-81: widok postępu odtwarzania w tle (WatchRun); null = odtworzenie czeka na wynik jak dotąd (bez paska postępu z liczników).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasRunProgress), nameof(HasNoRunProgress))]
+    public partial Prog.RunProgressViewModel? RunProgress { get; private set; }
+
+    public bool HasRunProgress => RunProgress is not null;
+
+    public bool HasNoRunProgress => RunProgress is null;
+
     public bool IsForm => Stage == RestoreStage.Form;
 
     public bool IsRunning => Stage == RestoreStage.Running;
@@ -251,7 +273,22 @@ public sealed partial class RestoreViewModel : ObservableObject
         Stage = RestoreStage.Running;
         try
         {
-            Result = await _service.RestoreAsync(Selection.Snapshot.Id, ExactPath, Target.Trim(), ct).ConfigureAwait(true);
+            var started = _progressSource is null
+                ? null
+                : await _service.StartDetachedAsync(Selection.Snapshot.Id, ExactPath, Target.Trim(), ct).ConfigureAwait(true);
+            if (started is null)
+            {
+                // starszy Agent albo UI bez źródła postępu: odtworzenie czeka na wynik (jak przed RD-81)
+                Result = await _service.RestoreAsync(Selection.Snapshot.Id, ExactPath, Target.Trim(), ct).ConfigureAwait(true);
+            }
+            else if (started.RunId is null)
+            {
+                Result = started.Failure ?? new RestoreRunResult(RestoreRunState.Failed, "KB-0001");
+            }
+            else if (!await WatchAsync(started.RunId, ct).ConfigureAwait(true))
+            {
+                return; // użytkownik przestał obserwować — odtwarzanie trwa w usłudze (wynik w historii)
+            }
         }
         catch (Exception ex) when (ex is IOException or TimeoutException)
         {
@@ -262,6 +299,34 @@ public sealed partial class RestoreViewModel : ObservableObject
             Result = new RestoreRunResult(RestoreRunState.Failed, "KB-7011");
         }
         Stage = RestoreStage.Done;
+    }
+
+    /// <summary>
+    /// RD-81: śledzi odtwarzanie w tle przez WatchRun i zamienia stan końcowy na <see cref="Result"/>. false = obserwację przerwał użytkownik
+    /// (wracamy do formularza; odtwarzanie w usłudze NIE jest przerywane).
+    /// </summary>
+    private async Task<bool> WatchAsync(string runId, CancellationToken ct)
+    {
+        var watch = new Prog.RunProgressViewModel(_progressSource!, runId);
+        RunProgress = watch;
+        await watch.RunAsync(ct).ConfigureAwait(true);
+        if (watch.Stage == Prog.ProgressStage.Stopped)
+        {
+            RunProgress = null;
+            Plan = null; // stan folderu po częściowym odtworzeniu jest inny — ponowny podgląd
+            Stage = RestoreStage.Form;
+            return false;
+        }
+        Result = watch.Stage == Prog.ProgressStage.Done
+            ? new RestoreRunResult(watch.Outcome switch
+            {
+                Prog.RunOutcomeKind.Ok => RestoreRunState.Succeeded,
+                Prog.RunOutcomeKind.Warning => RestoreRunState.Warning,
+                _ => RestoreRunState.Failed,
+            }, watch.FinalCode)
+            : new RestoreRunResult(RestoreRunState.Failed, watch.FinalCode ?? "KB-9001"); // utracony strumień: wynik nieznany, odtwarzanie mogło się zakończyć — szczegóły w historii
+        RunProgress = null;
+        return true;
     }
 
     /// <summary>Po błędzie „Spróbuj ponownie” wraca do formularza z zachowanym folderem.</summary>

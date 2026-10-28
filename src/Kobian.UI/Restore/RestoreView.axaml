@@ -1,5 +1,5 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:r="using:Kobian.UI.Restore" xmlns:c="using:Kobian.UI.Controls" xmlns:l="using:Kobian.UI.Localization"
+             xmlns:r="using:Kobian.UI.Restore" xmlns:vp="using:Kobian.UI.Progress" xmlns:c="using:Kobian.UI.Controls" xmlns:l="using:Kobian.UI.Localization"
              x:Class="Kobian.UI.Restore.RestoreView" x:DataType="r:RestoreViewModel">
   <!-- SCR-07 Odtwarzanie plików (R2.6.1, BL-64): co → dokąd → wynik. Kolory z tokenów; AutomationId „SCR-07.*”. -->
   <ScrollViewer HorizontalScrollBarVisibility="Disabled">
@@ -72,9 +72,16 @@
           </StackPanel>
 
           <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding IsRunning}" AutomationProperties.AutomationId="SCR-07.Running" AutomationProperties.LiveSetting="Polite">
-            <ProgressBar IsIndeterminate="True" Width="160" VerticalAlignment="Center" />
-            <TextBlock Classes="body" Text="{Binding RunningText}" VerticalAlignment="Center" TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-07.RunningText" />
+            <ProgressBar IsIndeterminate="True" Width="160" VerticalAlignment="Center" IsVisible="{Binding HasNoRunProgress}" />
+            <TextBlock Classes="body" Text="{Binding RunningText}" VerticalAlignment="Center" TextWrapping="Wrap" IsVisible="{Binding HasNoRunProgress}" AutomationProperties.AutomationId="SCR-07.RunningText" />
           </StackPanel>
+
+          <!-- RD-81: odtwarzanie w tle — liczniki i stan z WatchRun (widok postępu SCR-07); „Przestań obserwować” nie przerywa odtwarzania w usłudze. -->
+          <ContentControl Content="{Binding RunProgress}" IsVisible="{Binding HasRunProgress}" AutomationProperties.AutomationId="SCR-07.RunProgress">
+            <ContentControl.DataTemplates>
+              <DataTemplate DataType="vp:RunProgressViewModel"><vp:RunProgressView /></DataTemplate>
+            </ContentControl.DataTemplates>
+          </ContentControl>
 
           <StackPanel Spacing="12" IsVisible="{Binding IsDone}" AutomationProperties.AutomationId="SCR-07.Result" AutomationProperties.LiveSetting="Assertive">
             <StackPanel Orientation="Horizontal" Spacing="10">

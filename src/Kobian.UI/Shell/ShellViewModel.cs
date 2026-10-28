@@ -117,7 +117,7 @@ public sealed partial class ShellViewModel : ObservableObject
             CurrentPage = new PlaceholderPage(Strings.Get("Restore.Title"));
             return;
         }
-        var vm = new RestoreViewModel(_restoreService, selection);
+        var vm = new RestoreViewModel(_restoreService, selection, progressSource: _restoreService as Progress.IRunProgressSource);
         vm.Closed += (_, _) =>
         {
             if (ReferenceEquals(CurrentPage, vm)) CurrentPage = Selected.Page;

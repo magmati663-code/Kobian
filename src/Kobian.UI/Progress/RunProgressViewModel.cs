@@ -69,6 +69,9 @@ public sealed partial class RunProgressViewModel : ObservableObject
     [ObservableProperty]
     public partial RunOutcomeKind Outcome { get; private set; } = RunOutcomeKind.Unknown;
 
+    /// <summary>Kod KB ze stanu końcowego (albo z utraty strumienia); null = brak. Dla wywołującego, który zamienia wynik na własny model (RD-81: SCR-07 odtwarzanie).</summary>
+    public string? FinalCode { get; private set; }
+
     public bool IsActive => Stage is ProgressStage.Connecting or ProgressStage.Running or ProgressStage.Reconnecting;
 
     public bool IsFinished => Stage is ProgressStage.Done or ProgressStage.Lost or ProgressStage.Stopped;
@@ -169,6 +172,7 @@ public sealed partial class RunProgressViewModel : ObservableObject
         Outcome = u.Result;
         if (u.Final)
         {
+            FinalCode = u.Code is { Length: > 0 } ? u.Code : null;
             ProblemText = u.Code is { Length: > 0 } code && u.Result != RunOutcomeKind.Ok ? KbText.Full(code) : "";
             OnPropertyChanged(nameof(IsSuccess));
             OnPropertyChanged(nameof(IsWarning));
@@ -180,6 +184,7 @@ public sealed partial class RunProgressViewModel : ObservableObject
     private void Fail(string code)
     {
         Stage = ProgressStage.Lost;
+        FinalCode = code;
         StateText = Strings.Get("Progress.Lost");
         ProblemText = KbText.Full(code);
     }

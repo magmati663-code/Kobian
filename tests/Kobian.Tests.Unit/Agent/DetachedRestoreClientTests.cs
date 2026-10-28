@@ -128,7 +128,9 @@ public sealed class DetachedRestoreClientTests : IAsyncLifetime
     [Fact, Trait("BL", "BL-64")]
     public async Task Clients_without_support_report_agent_unavailable()
     {
+#pragma warning disable CA1859 // typ interfejsu celowo: metoda jest domyślną implementacją interfejsu, niedostępną przez typ klasy
         AgentCli.IAgentClient client = new AgentCli.UnavailableAgentClient();
+#pragma warning restore CA1859
         await Assert.ThrowsAsync<AgentCli.AgentUnavailableException>(() => client.RestoreDetachedAsync("latest", null, Abs, _ct));
     }
 }
