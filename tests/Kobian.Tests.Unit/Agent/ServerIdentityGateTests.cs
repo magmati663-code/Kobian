@@ -56,6 +56,24 @@ public sealed class ServerIdentityGateTests : IAsyncLifetime
 
     private static DestinationRequest SftpReq(string? hostKey) => new("sftp", FakeSftpServer.Root, "backup.example.test", null, "file:s1", hostKey);
 
+    [Fact, Trait("D", "D4.11")]
+    public async Task Wrong_pin_in_a_failed_first_attempt_is_not_stored_so_the_corrected_definition_works()
+    {
+        // Znalezione testem na żywym serwerze WebDAV: pomyłka w odcisku przy pierwszym „init” zapisywała zły pin jako zatwierdzony i blokowała cel.
+        var k1 = ServerIdentityMachineTests.Fp();
+        var wrong = ServerIdentityMachineTests.Fp();
+        var srv = new FakeSftpServer { VerifyHostKey = true, HostIdentity = Ssh(k1) };
+        var gate = new ServerIdentityGate(new SftpStorageProviderFactory(srv), _store);
+        var dest = JobDestination.Id("sftp", SftpReq(k1).Root, JobDestination.Options(SftpReq(k1)));
+
+        var ex = await Assert.ThrowsAsync<StorageException>(async () => await gate.OpenAsync(JobDestination.ToConfig("job-1", SftpReq(wrong)), CredentialRole.Backup, _ct));
+        Assert.Equal(KbCode.HostKeyMismatch, ex.Code);
+        Assert.DoesNotContain(_store.Load(dest), r => r.IsEffectivePin);
+
+        await (await gate.OpenAsync(JobDestination.ToConfig("job-1", SftpReq(k1)), CredentialRole.Backup, _ct)).DisposeAsync();
+        Assert.Contains(_store.Load(dest), r => r.IsEffectivePin && r.Fingerprint == k1);
+    }
+
     [Fact, Trait("D", "D4.11"), Trait("KB", "KB-2104"), Trait("AC", "AC-04.1")]
     public async Task Sftp_key_change_stops_the_session_until_an_administrator_approves_the_exact_new_key()
     {

@@ -49,11 +49,12 @@ public sealed class ServerIdentityGate(IStorageProviderFactory inner, ServerIden
         var probe = string.Equals(config.Id, ProbeConfigId, StringComparison.Ordinal);
 
         var rows = _store.Load(destId);
-        if (!probe && requested is not null && !rows.Any(r => r.IsEffectivePin))
-            rows = (await _store.ApplyAsync(destId, new ServerIdentityEvent.SeedFromDefinition(kind, requested, endpoint), ct).ConfigureAwait(false)).Rows;
+        // Pin z definicji dla celu bez pinu jest zapisywany w katalogu DOPIERO po udanym połączeniu: wcześniej pomyłka (zły odcisk, literówka)
+        // od razu stawała się „zatwierdzonym” pinem i blokowała cel także po poprawieniu definicji (do interwencji Administratora).
+        var seed = !probe && requested is not null && !rows.Any(r => r.IsEffectivePin);
 
-        // Probe z odciskiem w żądaniu sprawdza dokładnie ten odcisk (bez zapisu); w pozostałych przypadkach — wyłącznie piny z katalogu.
-        IReadOnlyList<string> pins = probe && requested is not null ? [requested] : ServerIdentityMachine.EffectivePins(rows);
+        // Probe z odciskiem w żądaniu i pierwsze połączenie z pinem z definicji sprawdzają dokładnie ten odcisk; w pozostałych przypadkach — wyłącznie piny z katalogu.
+        IReadOnlyList<string> pins = (probe || seed) && requested is not null ? [requested] : ServerIdentityMachine.EffectivePins(rows);
         var requirePin = !sftp && _store.RequiresPin(destId);
         var options = new Dictionary<string, string>(src, StringComparer.Ordinal);
         options.Remove(pinKey);
@@ -80,6 +81,7 @@ public sealed class ServerIdentityGate(IStorageProviderFactory inner, ServerIden
             await TryApplyAsync(destId, new ServerIdentityEvent.Observed(kind, id.Fingerprint, endpoint, id.Display)).ConfigureAwait(false);
             throw;
         }
+        if (seed) await TryApplyAsync(destId, new ServerIdentityEvent.SeedFromDefinition(kind, requested!, endpoint)).ConfigureAwait(false);
         if (!sftp && !requirePin && session.PresentedIdentity is { Fingerprint.Length: > 0 } presented && !pins.Contains(presented.Fingerprint, StringComparer.Ordinal))
             await TryApplyAsync(destId, new ServerIdentityEvent.TrustedByCa(presented.Fingerprint, endpoint, presented.Display)).ConfigureAwait(false);
         return session;
