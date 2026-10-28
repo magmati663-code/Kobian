@@ -356,6 +356,10 @@ public sealed class GrpcAgentClient : IAgentClient, IDisposable
         {
             throw new AgentUnavailableException(KbCode.AgentUnreachable, e);
         }
+        catch (RpcException e) when (e.StatusCode != StatusCode.Cancelled)
+        {
+            throw new AgentInternalException(KbCode.Internal, e); // Unknown (wyjątek w obsłudze), NotFound, ResourceExhausted…: czytelny błąd zamiast stosu wywołań
+        }
     }
 
     private static OverallState Map(Api.V1.OverallState s) => s switch

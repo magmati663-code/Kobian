@@ -148,6 +148,19 @@ public sealed class AgentUnavailableException : Exception
     public AgentUnavailableException(string message, Exception inner) : base(message, inner) { }
 }
 
+/// <summary>
+/// Usługa odpowiedziała, ale jej obsługa metody zawiodła (nieobsłużony wyjątek w Agencie, np. niedostępny katalog stanu — status Unknown/NotFound/…): kod wyjścia 2, KB-0001.
+/// Wcześniej taki status wychodził z CLI jako nieobsłużony wyjątek ze stosem wywołań.
+/// </summary>
+public sealed class AgentInternalException : Exception
+{
+    public AgentInternalException() : base("Agent internal error.") { }
+
+    public AgentInternalException(string message) : base(message) { }
+
+    public AgentInternalException(string message, Exception inner) : base(message, inner) { }
+}
+
 /// <summary>Usługa wymaga nowszej rewizji klienta (D2.16) — tylko polecenia modyfikujące; kod wyjścia 4 (AC-37.2).</summary>
 public sealed class ClientTooOldException : Exception
 {

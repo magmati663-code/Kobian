@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using Kobian.Cli.Commands;
 using Kobian.Domain;
@@ -138,6 +139,31 @@ public sealed class CliAppTests
         using var doc = JsonDocument.Parse(output);
         Assert.Equal("kobian.cli.status/1", doc.RootElement.GetProperty("schema").GetString());
         Assert.Equal("ERP-noc", doc.RootElement.GetProperty("jobs")[0].GetProperty("name").GetString());
+    }
+
+    /// <summary>Klient, którego każda metoda kończy się błędem obsługi po stronie Agenta (jak status Unknown z gRPC) — bez ręcznej implementacji całego interfejsu.</summary>
+    public class FailingProxy : DispatchProxy
+    {
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            var ex = new AgentInternalException();
+            var rt = targetMethod!.ReturnType;
+            if (!rt.IsGenericType) return Task.FromException(ex);
+            var tcs = typeof(TaskCompletionSource<>).MakeGenericType(rt.GetGenericArguments()[0]);
+            var src = Activator.CreateInstance(tcs)!;
+            tcs.GetMethod("SetException", [typeof(Exception)])!.Invoke(src, [ex]);
+            return tcs.GetProperty("Task")!.GetValue(src);
+        }
+    }
+
+    [Fact, Trait("KB", "KB-0001")]
+    public async Task Internal_agent_failure_gives_exit_2_and_kb_0001_not_an_unhandled_exception()
+    {
+        var client = DispatchProxy.Create<IAgentClient, FailingProxy>();
+        var (code, output, err) = await Run(client, "status");
+        Assert.Equal(CliApp.ExitFailed, code);
+        Assert.Empty(output);
+        Assert.StartsWith(KbCode.Internal, err, StringComparison.Ordinal);
     }
 
     [Fact, Trait("AC", "AC-37.1"), Trait("KB", "KB-7010")]

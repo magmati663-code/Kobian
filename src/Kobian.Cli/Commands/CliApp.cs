@@ -59,6 +59,11 @@ public static class CliApp
             await stderr.WriteLineAsync($"{KbCode.AgentUnreachable}: service unavailable / brak połączenia z usługą").ConfigureAwait(false);
             return ExitUnavailable;
         }
+        catch (AgentInternalException)
+        {
+            await stderr.WriteLineAsync($"{KbCode.Internal}: internal service error / wewnętrzny błąd usługi").ConfigureAwait(false);
+            return ExitFailed;
+        }
         catch (ClientTooOldException)
         {
             await stderr.WriteLineAsync($"{KbCode.ClientRevisionTooOld}: client too old / klient zbyt stary").ConfigureAwait(false);
