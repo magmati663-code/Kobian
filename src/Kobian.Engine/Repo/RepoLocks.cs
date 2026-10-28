@@ -247,6 +247,10 @@ public sealed class RepoLease : IAsyncDisposable
         }
         catch (RepoWriteException ex)
         {
+            // Błąd celu (brak uprawnień, brak miejsca, utrata połączenia) to NIE „repozytorium zajęte”: zachowujemy kod i klasę z dostawcy — inaczej cel tylko do odczytu
+            // wyglądał jak blokada innej operacji (KB-1202, przejściowy) i był ponawiany bez sensu. „Zajęte” zostaje dla kolizji/niespójnej weryfikacji zapisu.
+            if (ex.InnerException is StorageException { Code: not KbCode.ObjectExists } se)
+                throw new KobianException(se.Code, se.ErrorClass, "Repository lock could not be written.", ex);
             throw new KobianException(KbCode.RepoLocked, ErrorClass.Transient, "Repository lock could not be written.", ex);
         }
         _files.Add(path);

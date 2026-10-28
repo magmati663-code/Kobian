@@ -151,6 +151,16 @@ public sealed class RepoLocksTests : IDisposable
         Assert.Equal(2, ex.LastScan!.Invalid.Count);
     }
 
+    [Fact, Trait("D", "D3.13")]
+    public async Task Destination_write_failure_keeps_its_own_code_instead_of_looking_like_a_busy_repository()
+    {
+        // cel odrzuca zapis blokady (tu: brak miejsca, jak cel tylko do odczytu → KB-2105): to nie jest „repozytorium zajęte”, więc nie może być KB-1202 (przejściowy, ponawiany)
+        var e = await Assert.ThrowsAsync<KobianException>(() =>
+            RepoLocks.AcquireSharedAsync(_store.Open(faultAt: 1, fault: FaultKind.NoSpaceOnCreate), _keys, _a, _time, null, _ct));
+        Assert.Equal(KbCode.DestinationFull, e.Code);
+        Assert.NotEqual(KbCode.RepoLocked, e.Code);
+    }
+
     private static string RepoLockPathWithBadName() => RepoPaths.LocksDir + "/README.txt";
 
     [Fact, Trait("D", "D3.13")]
