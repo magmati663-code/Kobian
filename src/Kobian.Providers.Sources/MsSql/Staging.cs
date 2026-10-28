@@ -4,7 +4,8 @@ namespace Kobian.Providers.Sources.MsSql;
 
 /// <summary>
 /// Cykl życia stagingu D5.10 (część niezależna od Windows): nazwa <c>staging\&lt;runId&gt;\&lt;guid&gt;.bak</c>, sprzątanie
-/// katalogów starszych niż 1 h nienależących do aktywnego uruchomienia (RecoveryService), weryfikacja braku pliku po usunięciu (K16.1).
+/// katalogów starszych niż 1 h nienależących do aktywnego uruchomienia (CatalogMaintenance.SweepStagingAsync: przy starcie i co godzinę — po awarii
+/// zostaje w stagingu pełny, nieszyfrowany .bak), weryfikacja braku pliku po usunięciu (K16.1).
 /// ACL katalogu (KobianAgent pełne, MSSQL$X zapis/odczyt, bez dziedziczenia) — port <see cref="IStagingAcl"/> (Platform.Windows).
 /// </summary>
 public static partial class Staging
@@ -15,6 +16,17 @@ public static partial class Staging
     private static partial Regex RunIdPattern();
 
     public static bool IsValidRunId(string runId) => runId is not null && RunIdPattern().IsMatch(runId);
+
+    /// <summary>Prefiks katalogu odtworzenia bazy (<c>restore-&lt;runId&gt;</c>, CatalogRestoreService): też zawiera pełny plik .bak i też wymaga sprzątania po awarii.</summary>
+    public const string RestoreDirPrefix = "restore-";
+
+    /// <summary>runId z nazwy katalogu uruchomienia (kopia: <c>&lt;runId&gt;</c>, odtworzenie: <c>restore-&lt;runId&gt;</c>); null = nazwa spoza wzorca (nie nasz katalog — nie ruszamy).</summary>
+    public static string? RunIdOfDirectory(string directoryName)
+    {
+        if (directoryName is null) return null;
+        var id = directoryName.StartsWith(RestoreDirPrefix, StringComparison.Ordinal) ? directoryName[RestoreDirPrefix.Length..] : directoryName;
+        return IsValidRunId(id) ? id : null;
+    }
 
     /// <summary>Ścieżka pliku .bak w katalogu uruchomienia; nazwa pliku losowa (Guid) — nie ujawnia nazwy bazy.</summary>
     public static string FilePath(string stagingRoot, string runId, Guid fileId)
@@ -37,7 +49,7 @@ public static partial class Staging
         foreach (var dir in root.EnumerateDirectories())
         {
             if (dir.LinkTarget is not null || (dir.Attributes & FileAttributes.ReparsePoint) != 0) continue;
-            if (!IsValidRunId(dir.Name) || activeRunIds.Contains(dir.Name)) continue;
+            if (RunIdOfDirectory(dir.Name) is not { } runId || activeRunIds.Contains(runId)) continue;
             if (nowUtc - dir.CreationTimeUtc < StaleAfter && nowUtc - dir.LastWriteTimeUtc < StaleAfter) continue;
             foreach (var f in dir.EnumerateFileSystemInfos())
             {

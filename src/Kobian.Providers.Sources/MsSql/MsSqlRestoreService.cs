@@ -47,15 +47,6 @@ public sealed class MsSqlRestoreService(IMsSqlSession session, TimeProvider time
     {
         ArgumentNullException.ThrowIfNull(request);
         TSql.RequireSysname(request.SourceDatabase, nameof(request.SourceDatabase));
-        var target = request.TargetDatabase ?? DefaultTargetName(request.SourceDatabase, time.GetUtcNow());
-        try
-        {
-            TSql.RequireSysname(target, nameof(request.TargetDatabase));
-        }
-        catch (ArgumentException)
-        {
-            throw new KobianException(KbCode.JobDefinitionInvalid, ErrorClass.Permanent, "Invalid target database name.");
-        }
         _ = MsSqlBackupCommand.VerifyOnly(request.BackupPath); // walidacja ścieżki (Windows, bez NUL, ≤ 4000)
         foreach (var dir in new[] { request.DataDirectory, request.LogDirectory })
             if (dir is not null && (!MsSqlBackupCommand.IsWindowsAbsolute(dir) || dir.Contains('\0', StringComparison.Ordinal) || dir.Length > 3000))
@@ -63,10 +54,7 @@ public sealed class MsSqlRestoreService(IMsSqlSession session, TimeProvider time
 
         try
         {
-            if (Int(await One(ExistsText, ("@name", target), ct).ConfigureAwait(false), "exists_flag") != 0)
-                throw new KobianException(KbCode.SqlRestoreTargetExists, ErrorClass.Permanent, "Target database exists.");
-            if (Int(await One(CanCreateText, null, ct).ConfigureAwait(false), "can_create") != 1)
-                throw new KobianException(KbCode.SqlRestorePermissionMissing, ErrorClass.Permanent, "CREATE ANY DATABASE is missing.");
+            var target = await ResolveTargetAsync(request.SourceDatabase, request.TargetDatabase, ct).ConfigureAwait(false);
 
             await session.ExecuteAsync(MsSqlBackupCommand.VerifyOnly(request.BackupPath), ct).ConfigureAwait(false);
 
@@ -101,6 +89,56 @@ public sealed class MsSqlRestoreService(IMsSqlSession session, TimeProvider time
             throw new KobianException(code, cls, "SQL Server rejected the restore.");
         }
     }
+
+    /// <summary>
+    /// Kontrola WSTĘPNA przed pobraniem pliku .bak z repozytorium (CatalogRestoreService): nazwa docelowa poprawna i wolna, login ma CREATE ANY DATABASE.
+    /// Kopia bazy to dziesiątki GB — błąd nazwy czy uprawnień ma wyjść od razu, a nie po godzinie pobierania. Zwraca ostateczną nazwę docelową;
+    /// <see cref="RestoreAsync"/> sprawdza to samo ponownie tuż przed RESTORE (baza mogła powstać w międzyczasie).
+    /// </summary>
+    public async Task<string> PreflightAsync(string sourceDatabase, string? targetDatabase, CancellationToken ct)
+    {
+        TSql.RequireSysname(sourceDatabase, nameof(sourceDatabase));
+        try
+        {
+            return await ResolveTargetAsync(sourceDatabase, targetDatabase, ct).ConfigureAwait(false);
+        }
+        catch (MsSqlServerException e)
+        {
+            var (code, cls) = SqlErrorMap.MapMany(e.ErrorNumbers);
+            throw new KobianException(code, cls, "SQL Server rejected the restore preflight.");
+        }
+    }
+
+    /// <summary>
+    /// Nazwa docelowa: podana jawnie (istniejąca baza → KB-3501, nigdy REPLACE) albo domyślna „&lt;źródło&gt;_restore_RRRRMMDD”; gdy domyślna jest zajęta (drugie odtworzenie tego samego dnia),
+    /// wybieramy pierwszą wolną z przyrostkiem „_2”…„_9” zamiast odmawiać. Potem CREATE ANY DATABASE (KB-3502).
+    /// </summary>
+    private async Task<string> ResolveTargetAsync(string sourceDatabase, string? requested, CancellationToken ct)
+    {
+        var baseName = requested ?? DefaultTargetName(sourceDatabase, time.GetUtcNow());
+        var target = baseName;
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                TSql.RequireSysname(target, nameof(requested));
+            }
+            catch (ArgumentException)
+            {
+                throw new KobianException(KbCode.JobDefinitionInvalid, ErrorClass.Permanent, "Invalid target database name.");
+            }
+            if (Int(await One(ExistsText, ("@name", target), ct).ConfigureAwait(false), "exists_flag") == 0) break;
+            if (requested is not null || attempt >= MaxDefaultNameAttempts)
+                throw new KobianException(KbCode.SqlRestoreTargetExists, ErrorClass.Permanent, "Target database exists.");
+            target = baseName + "_" + (attempt + 1).ToString(CultureInfo.InvariantCulture);
+        }
+        if (Int(await One(CanCreateText, null, ct).ConfigureAwait(false), "can_create") != 1)
+            throw new KobianException(KbCode.SqlRestorePermissionMissing, ErrorClass.Permanent, "CREATE ANY DATABASE is missing.");
+        return target;
+    }
+
+    /// <summary>Ile nazw (domyślna + przyrostki _2…) próbujemy, zanim zgłosimy KB-3501.</summary>
+    public const int MaxDefaultNameAttempts = 9;
 
     /// <summary>Nowe nazwy plików: &lt;baza&gt;.mdf, &lt;baza&gt;_N.ndf (kolejne pliki danych), &lt;baza&gt;_log.ldf / _log_N.ldf — wyłącznie z nazwy sysname (bez ścieżek z kopii).</summary>
     internal static IReadOnlyList<MsSqlRestoreMove> PlanMoves(IReadOnlyList<IReadOnlyDictionary<string, object?>> files, string target, string dataDir, string logDir)

@@ -65,6 +65,56 @@ public sealed class CatalogMaintenance(string catalogPath, CatalogWriter writer,
         return (ids.Count, files);
     }
 
+    /// <summary>
+    /// D5.10 / SEC-5.2: sprzątanie stagingu zadań „database” po awarii. Zabity Agent (albo SQL Server z blokadą pliku) zostawia w katalogu stagingu pełny, nieszyfrowany .bak
+    /// (kopia: <c>&lt;runId&gt;</c>, odtworzenie: <c>restore-&lt;runId&gt;</c>); <see cref="Staging.CleanupStale"/> nie była nigdzie wywoływana. Przebieg: katalogi stagingu ze wszystkich zadań
+    /// „database” (bez powtórzeń), aktywne uruchomienia (Queued/Running/Paused) pominięte, młodsze niż godzina pominięte. Błąd jednego katalogu nie przerywa pozostałych.
+    /// </summary>
+    /// <returns>Liczba usuniętych katalogów uruchomień.</returns>
+    public Task<int> SweepStagingAsync(CancellationToken ct)
+    {
+        var roots = new HashSet<string>(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+        var active = new HashSet<string>(StringComparer.Ordinal);
+        using (var c = CatalogBootstrap.Open(catalogPath, readOnly: true))
+        {
+            using (var jobs = c.CreateCommand())
+            {
+                jobs.CommandText = "SELECT type, definition FROM job_jobs WHERE type = 'database';";
+                using var rd = jobs.ExecuteReader();
+                while (rd.Read())
+                {
+                    try
+                    {
+                        var def = Kobian.Agent.Jobs.JobDefinition.Parse(rd.GetString(0), (byte[])rd[1]);
+                        if (def.MsSql is { StagingRoot.Length: > 0 } db && Path.IsPathFullyQualified(db.StagingRoot)) roots.Add(Path.GetFullPath(db.StagingRoot));
+                    }
+                    catch (Kobian.Domain.KobianException)
+                    {
+                        // definicja nieczytelna dla tej wersji — jej stagingu nie ruszamy
+                    }
+                }
+            }
+            using var runs = c.CreateCommand();
+            runs.CommandText = "SELECT run_id FROM run_runs WHERE state IN ('Queued','Running','Paused');";
+            using var rr = runs.ExecuteReader();
+            while (rr.Read()) active.Add(rr.GetString(0));
+        }
+        var removed = 0;
+        foreach (var root in roots)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                removed += Kobian.Providers.Sources.MsSql.Staging.CleanupStale(root, active, time.GetUtcNow()).Count;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // plik .bak zablokowany (SQL Server jeszcze pisze) albo brak uprawnień — następny przebieg za godzinę
+            }
+        }
+        return Task.FromResult(removed);
+    }
+
     /// <summary>Podgląd (tylko odczyt): ile sesji dziennika odtwarzania kwalifikuje się do usunięcia teraz.</summary>
     public long DueRestoreSessions()
     {
@@ -95,6 +145,7 @@ public sealed class CatalogMaintenance(string catalogPath, CatalogWriter writer,
                 try
                 {
                     await TickAsync(ct).ConfigureAwait(false);
+                    await SweepStagingAsync(ct).ConfigureAwait(false); // co godzinę (pierwszy przebieg przy starcie: po awarii zostają pliki .bak)
                 }
                 catch (Exception ex) when (ex is SqliteException or IOException or InvalidOperationException)
                 {

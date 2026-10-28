@@ -64,6 +64,52 @@ public sealed class CatalogMaintenanceTests : IAsyncLifetime
         return (long)cmd.ExecuteScalar()!;
     }
 
+    /// <summary>
+    /// D5.10 / SEC-5.2: po awarii w stagingu zostaje pełny .bak. Sprzątanie usuwa przeterminowane katalogi kopii (<c>runId</c>) i odtworzeń (<c>restore-runId</c>),
+    /// zostawia aktywne uruchomienia, młode katalogi i cudze nazwy.
+    /// </summary>
+    [Fact, Trait("BL", "BL-40"), Trait("Plan", "D5.10")]
+    public async Task Staging_sweep_removes_stale_backup_and_restore_directories_but_not_active_young_or_foreign_ones()
+    {
+        var staging = Path.Combine(_dir, "staging");
+        Directory.CreateDirectory(staging);
+        string Dir(string name, DateTime ageUtc, bool withBak = true)
+        {
+            var d = Path.Combine(staging, name);
+            Directory.CreateDirectory(d);
+            if (withBak) File.WriteAllBytes(Path.Combine(d, "x.bak"), [1, 2, 3]);
+            Directory.SetCreationTimeUtc(d, ageUtc);
+            Directory.SetLastWriteTimeUtc(d, ageUtc);
+            return d;
+        }
+        var old = DateTime.UtcNow.AddDays(-2);
+        var stale = Dir("aaaaaaaa11111111", old);
+        var staleRestore = Dir("restore-bbbbbbbb22222222", old);
+        var active = Dir("cccccccc33333333", old);
+        var young = Dir("dddddddd44444444", DateTime.UtcNow.AddMinutes(-5));
+        var foreign = Dir("Moje Dokumenty", old);
+        using (var c = CatalogBootstrap.Open(Catalog))
+        {
+            using var job = c.CreateCommand();
+            var def = $$$"""{"version":1,"database":{"server":"srv01\\SQLEXPRESS","name":"Db","staging":{{{System.Text.Json.JsonSerializer.Serialize(staging)}}},"sqlStaging":"C:\\ProgramData\\Kobian\\staging"},"destination":{"scheme":"local","root":"/x"},"key":{"file":"/k","passwordFile":"/p","repoHeader":"/h"}}""";
+            job.CommandText = "INSERT INTO job_jobs(job_id,name,type,definition,definition_sha256,enabled,time_zone,misfire,created_at,updated_at) VALUES ('j1','Erp','database',$d,x'00',1,'UTC','skip','2026-10-14T00:00:00Z','2026-10-14T00:00:00Z');";
+            job.Parameters.AddWithValue("$d", System.Text.Encoding.UTF8.GetBytes(def));
+            job.ExecuteNonQuery();
+            using var run = c.CreateCommand();
+            run.CommandText = "INSERT INTO run_runs(run_id,job_id,cause,state,started_at) VALUES ('cccccccc33333333','j1','manual','Running','2026-10-17T11:00:00.000Z');";
+            run.ExecuteNonQuery();
+        }
+
+        var removed = await new CatalogMaintenance(Catalog, _writer, TimeProvider.System).SweepStagingAsync(_ct);
+
+        Assert.Equal(2, removed);
+        Assert.False(Directory.Exists(stale));
+        Assert.False(Directory.Exists(staleRestore));
+        Assert.True(Directory.Exists(active)); // uruchomienie w toku
+        Assert.True(Directory.Exists(young)); // młodszy niż godzina
+        Assert.True(Directory.Exists(foreign)); // nazwa spoza wzorca runId
+    }
+
     [Fact, Trait("RD", "RD-69"), Trait("Plan", "D8.8")]
     public async Task Old_restore_journal_and_sent_notifications_are_removed_in_batches_active_runs_kept()
     {

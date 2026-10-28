@@ -111,6 +111,23 @@ public sealed class MsSqlJobTests : IAsyncLifetime
         Assert.True(StagingEmpty());
     }
 
+    /// <summary>AC-02.2 + rejestr KB-3101 („zadanie pominięte”, severity warning): kolizja z cudzą operacją na bazie to Warning bez snapshotu, nie fałszywy Failed.</summary>
+    [Fact, Trait("BL", "BL-40"), Trait("AC", "AC-02.2")]
+    public async Task Conflicting_operation_skips_the_run_as_warning_not_failed_and_leaves_no_staging()
+    {
+        AddJob("ERP", Definition());
+        var sql = new FakeSqlServer(_db, P("staging"), SqlRoot) { ConflictPolls = int.MaxValue };
+        var outcome = await Service(sql).RunAsync("ERP", _ct);
+
+        Assert.Equal(JobResult.Warning, outcome.Result);
+        Assert.Equal(KbCode.SqlConcurrentOperation, outcome.Code);
+        Assert.Null(outcome.SnapshotId);
+        Assert.False(outcome.Transient); // bez ponowień — następne uruchomienie wg harmonogramu
+        Assert.Equal(("Warning", KbCode.SqlConcurrentOperation), (LastRun().State, LastRun().Code));
+        Assert.DoesNotContain(sql.Executed, e => e.Text == MsSqlBackupCommand.TemplateText); // brak nakładania się operacji
+        Assert.True(StagingEmpty());
+    }
+
     [Fact, Trait("BL", "BL-40"), Trait("D", "D5.8")]
     public async Task Preparation_warning_makes_run_warning_with_code()
     {
@@ -347,12 +364,15 @@ public sealed class MsSqlJobTests : IAsyncLifetime
 
         // istniejąca baza → KB-3501, nic nie nadpisane, staging pusty
         var sql2 = new RestoreSql(P("staging"), SqlRoot) { Exists = true };
+        var volume = new CountingVolume();
         var svc2 = new CatalogRestoreService(Catalog, _writer, new Dictionary<string, IStorageProviderFactory> { ["local"] = new LocalStorageProviderFactory() }, TimeProvider.System)
         {
             MsSqlSessions = (_, _) => ValueTask.FromResult<IMsSqlSession>(sql2),
+            StagingVolume = volume,
         };
         var dup = await svc2.RestoreDatabaseAsync("latest", _db, _ct);
         Assert.Equal((JobResult.Failed, (string?)KbCode.SqlRestoreTargetExists), (dup.Outcome.Result, dup.Outcome.Code));
+        Assert.Equal(0, volume.Calls); // kontrola wstępna zawiodła PRZED sprawdzeniem miejsca i pobraniem .bak z repozytorium
         Assert.DoesNotContain(sql2.Calls, c => c.Text.StartsWith("RESTORE", StringComparison.Ordinal));
         Assert.True(StagingEmpty());
 
@@ -364,6 +384,17 @@ public sealed class MsSqlJobTests : IAsyncLifetime
         };
         Assert.Equal(KbCode.SqlServerNotAllowed, (await svc3.RestoreDatabaseAsync("latest", null, _ct)).Outcome.Code);
         Assert.Equal(KbCode.OperationNotAvailable, (await new CatalogRestoreService(Catalog, _writer, new Dictionary<string, IStorageProviderFactory>(), TimeProvider.System).RestoreDatabaseAsync("latest", null, _ct)).Outcome.Code);
+    }
+
+    private sealed class CountingVolume : IStagingVolume
+    {
+        public int Calls { get; private set; }
+
+        public long? FreeBytes(string stagingRoot)
+        {
+            Calls++;
+            return null;
+        }
     }
 
     private sealed class TinyVolume : IStagingVolume
@@ -388,7 +419,7 @@ public sealed class MsSqlJobTests : IAsyncLifetime
         };
         var r = await svc.RestoreDatabaseAsync("latest", null, _ct);
         Assert.Equal((JobResult.Failed, (string?)KbCode.SqlStagingSpace), (r.Outcome.Result, r.Outcome.Code));
-        Assert.Equal(0, opened);
+        Assert.Equal(1, opened); // tylko krótka sesja kontroli wstępnej (nazwa/uprawnienia); właściwego RESTORE nie otwarto, bo brak miejsca wykryto przed pobraniem
         Assert.True(StagingEmpty());
     }
 

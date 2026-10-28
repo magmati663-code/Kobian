@@ -292,7 +292,10 @@ public sealed class CatalogJobService
             }
             catch (KobianException ex)
             {
-                outcome = new JobOutcome(JobResult.Failed, ex.Code, ex.ErrorClass == ErrorClass.Transient, null);
+                // KB-3101 (AC-02.2): inna kopia/odtwarzanie/DBCC na bazie przez cały czas oczekiwania → zadanie POMINIĘTE (rejestr: severity warning, „kolejne uruchomienie wg
+                // harmonogramu”). Wcześniej kończyło się jako Failed, czyli fałszywym alarmem „kopia się nie udała” przy zwykłej kolizji z cudzym backupem.
+                var result = ex.Code == KbCode.SqlConcurrentOperation ? JobResult.Warning : JobResult.Failed;
+                outcome = new JobOutcome(result, ex.Code, ex.ErrorClass == ErrorClass.Transient, null);
             }
             catch (StorageException ex)
             {

@@ -261,6 +261,16 @@ public sealed class CatalogRestoreService : IDisposable
             if (def.MsSql is not { } db) throw new KobianException(KbCode.JobDefinitionInvalid, ErrorClass.Permanent, "Snapshot is not a database backup.");
             AllowedSqlServers.Demand(db.Connection.Server);
             if (!_providers.TryGetValue(def.DestinationScheme, out var factory)) throw new KobianException(KbCode.JobDefinitionInvalid, ErrorClass.Permanent, "Destination provider is not available.");
+            // Kontrola wstępna PRZED pobraniem .bak (dziesiątki GB): nazwa docelowa, istnienie bazy, CREATE ANY DATABASE. Osobna, krótka sesja SQL — pobranie może trwać długo.
+            var preflightSql = await MsSqlSessions(db, ct).ConfigureAwait(false);
+            try
+            {
+                await new MsSqlRestoreService(preflightSql, _time).PreflightAsync(db.Database, targetDatabase, ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                if (preflightSql is IAsyncDisposable pd) await pd.DisposeAsync().ConfigureAwait(false);
+            }
             stagingDir = Path.Combine(db.StagingRoot, "restore-" + runHex);
             Directory.CreateDirectory(stagingDir);
             using (var keys = KeyFileLoader.Load(def.KeyFile, def.PasswordFile, def.RepoHeader))

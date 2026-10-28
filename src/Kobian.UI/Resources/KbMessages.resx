@@ -172,6 +172,8 @@
   <data name="KB_3104_Action" xml:space="preserve"><value>Ustal, które narzędzie robi kopie logów.</value></data>
   <data name="KB_3105_Message" xml:space="preserve"><value>Dziennik transakcji rośnie — brak kopii logów w modelu FULL.</value></data>
   <data name="KB_3105_Action" xml:space="preserve"><value>Rozważ kopie logów lub model SIMPLE.</value></data>
+  <data name="KB_3106_Message" xml:space="preserve"><value>SQL Server nie może zapisać lub odczytać pliku kopii w katalogu tymczasowym (uprawnienia, ścieżka lub miejsce).</value></data>
+  <data name="KB_3106_Action" xml:space="preserve"><value>Nadaj kontu usługi SQL Server prawa zapisu i odczytu do katalogu staging, sprawdź ścieżkę i wolne miejsce.</value></data>
   <data name="KB_3201_Message" xml:space="preserve"><value>Baza ma uszkodzone strony (błąd sumy kontrolnej podczas kopii).</value></data>
   <data name="KB_3201_Action" xml:space="preserve"><value>Uruchom DBCC CHECKDB.</value></data>
   <data name="KB_3202_Message" xml:space="preserve"><value>Weryfikacja kopii bazy (VERIFYONLY) nie powiodła się.</value></data>

@@ -1576,3 +1576,14 @@
   action.en: "Check the identifier in the run history."
   source: "BL-64 WatchRun"
   since: "0.1"
+
+- code: KB-3106
+  name: SqlStagingAccess
+  class: permanent
+  severity: error
+  message.pl: "SQL Server nie może zapisać lub odczytać pliku kopii w katalogu tymczasowym (uprawnienia, ścieżka lub miejsce)."
+  message.en: "SQL Server cannot write or read the backup file in the staging folder (permissions, path or free space)."
+  action: "Nadaj kontu usługi SQL Server prawa zapisu i odczytu do katalogu staging, sprawdź ścieżkę i wolne miejsce."
+  action.en: "Grant the SQL Server service account read/write access to the staging folder and check the path and free space."
+  source: "R2.5.7 (przegląd logiki it. 139)"
+  since: "0.1"

@@ -78,6 +78,57 @@ public sealed class MsSqlRestoreServiceTests
         Assert.DoesNotContain(sql.Calls, c => c.Text.StartsWith("RESTORE", StringComparison.Ordinal));
     }
 
+    private sealed class TakenNamesSql : IMsSqlSession
+    {
+        public HashSet<string> Taken { get; } = new(StringComparer.Ordinal);
+        public List<SqlCommandSpec> Calls { get; } = [];
+
+        public Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> QueryAsync(SqlCommandSpec c, CancellationToken ct)
+        {
+            Calls.Add(c);
+            IReadOnlyDictionary<string, object?> Row(string k, object v) => new Dictionary<string, object?> { [k] = v };
+            IReadOnlyList<IReadOnlyDictionary<string, object?>> r = c.Text switch
+            {
+                MsSqlRestoreService.ExistsText => [Row("exists_flag", Taken.Contains((string)c.Parameters["@name"]) ? 1 : 0)],
+                MsSqlRestoreService.CanCreateText => [Row("can_create", 1)],
+                _ => throw new InvalidOperationException(c.Text),
+            };
+            return Task.FromResult(r);
+        }
+
+        public Task ExecuteAsync(SqlCommandSpec c, CancellationToken ct)
+        {
+            Calls.Add(c);
+            return Task.CompletedTask;
+        }
+    }
+
+    [Fact, Trait("AC", "AC-32.1")]
+    public async Task Taken_default_name_gets_the_first_free_numeric_suffix_but_an_explicit_name_is_never_changed()
+    {
+        var sql = new TakenNamesSql();
+        sql.Taken.Add("Firma_restore_20261014");
+        sql.Taken.Add("Firma_restore_20261014_2");
+        var svc = new MsSqlRestoreService(sql, new Clock());
+        Assert.Equal("Firma_restore_20261014_3", await svc.PreflightAsync("Firma", null, _ct));
+        sql.Taken.Add("Moja");
+        var e = await Assert.ThrowsAsync<KobianException>(() => svc.PreflightAsync("Firma", "Moja", _ct));
+        Assert.Equal(KbCode.SqlRestoreTargetExists, e.Code);
+        Assert.DoesNotContain(sql.Calls, c => c.Text.StartsWith("RESTORE", StringComparison.Ordinal)); // kontrola wstępna niczego nie odtwarza
+    }
+
+    [Fact, Trait("AC", "AC-32.2")]
+    public async Task Preflight_fails_before_any_backup_file_is_needed_when_target_exists_or_permission_is_missing()
+    {
+        var exists = new ScriptSql { Exists = true };
+        Assert.Equal(KbCode.SqlRestoreTargetExists, (await Assert.ThrowsAsync<KobianException>(() => new MsSqlRestoreService(exists, new Clock()).PreflightAsync("Firma", "Firma", _ct))).Code);
+        var noPerm = new ScriptSql { CanCreate = false };
+        Assert.Equal(KbCode.SqlRestorePermissionMissing, (await Assert.ThrowsAsync<KobianException>(() => new MsSqlRestoreService(noPerm, new Clock()).PreflightAsync("Firma", null, _ct))).Code);
+        Assert.DoesNotContain(noPerm.Calls, c => c.Text.Contains("FILELISTONLY", StringComparison.Ordinal) || c.Text.StartsWith("RESTORE", StringComparison.Ordinal));
+        var ok = new ScriptSql();
+        Assert.Equal("Firma_restore_20261014", await new MsSqlRestoreService(ok, new Clock()).PreflightAsync("Firma", null, _ct));
+    }
+
     [Theory]
     [InlineData("perm", "KB-3502")]
     [InlineData("filestream", "KB-3503")]

@@ -82,6 +82,10 @@ public sealed class MsSqlTests
     [InlineData(262, "KB-3003", ErrorClass.Permanent)]
     [InlineData(-2, "KB-3001", ErrorClass.Transient)]
     [InlineData(3043, "KB-3201", ErrorClass.Integrity)]
+    [InlineData(3201, "KB-3106", ErrorClass.Permanent)] // nie można otworzyć urządzenia kopii = uprawnienia/ścieżka, nie uszkodzenie danych
+    [InlineData(3202, "KB-3106", ErrorClass.Permanent)]
+    [InlineData(3241, "KB-3202", ErrorClass.Integrity)]
+    [InlineData(942, "KB-3005", ErrorClass.Permanent)]
     [InlineData(99999, "KB-0001", ErrorClass.Permanent)]
     public void Sql_errors_map_to_kb_codes(int number, string code, ErrorClass cls) => Assert.Equal((code, cls), SqlErrorMap.Map(number));
 

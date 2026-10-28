@@ -11,7 +11,14 @@ public static class SqlErrorMap
         18456 or 18452 or 4060 => (KbCode.SqlLoginFailed, ErrorClass.Permanent),
         262 => (KbCode.SqlBackupPermissionMissing, ErrorClass.Permanent),
         3043 => (KbCode.SqlPageChecksumError, ErrorClass.Integrity),
-        3201 or 3241 => (KbCode.SqlVerifyFailed, ErrorClass.Integrity),
+        // 3201 „Cannot open backup device” i 3202 „Write on … failed” to najczęściej brak praw konta usługi SQL Server do katalogu staging, zła ścieżka albo brak miejsca
+        // (numer błędu systemu operacyjnego jest tylko w tekście) — NIE uszkodzona kopia. Wcześniej 3201 → KB-3202 „weryfikacja nie powiodła się” (klasa Integrity,
+        // rada „uruchom kopię ponownie”), co przy pierwszym wdrożeniu myliło brak ACL z uszkodzeniem danych.
+        3201 or 3202 => (KbCode.SqlStagingAccess, ErrorClass.Permanent),
+        // 3241/3242/3243: nośnik kopii nieprawidłowo sformatowany / nie jest kopią SQL Server — to jest problem integralności pliku.
+        3241 or 3242 or 3243 => (KbCode.SqlVerifyFailed, ErrorClass.Integrity),
+        // baza nie istnieje / jest odtwarzana / offline — jak w D-02 (nie ONLINE)
+        911 or 927 or 942 => (KbCode.SqlDatabaseUnavailable, ErrorClass.Permanent),
         // TLS (it. 71, SEC-5.6): SEC_E_UNTRUSTED_ROOT, CERT_E_CN_NO_MATCH/SEC_E_WRONG_PRINCIPAL, CERT_E_UNTRUSTEDROOT oraz numer
         // zastępczy SqlClientMsSqlSession.TlsHandshakeFailed — certyfikat niezgodny z pinem/niezaufany. // PROWIZORYCZNIE Qb29
         -2146893019 or -2146893022 or -2146762487 => (KbCode.SqlTlsPinMismatch, ErrorClass.Security),

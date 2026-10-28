@@ -172,6 +172,8 @@
   <data name="KB_3104_Action" xml:space="preserve"><value>Find out which tool makes the log backups.</value></data>
   <data name="KB_3105_Message" xml:space="preserve"><value>Transaction log is growing — no log backups in FULL recovery.</value></data>
   <data name="KB_3105_Action" xml:space="preserve"><value>Consider log backups or the SIMPLE recovery model.</value></data>
+  <data name="KB_3106_Message" xml:space="preserve"><value>SQL Server cannot write or read the backup file in the staging folder (permissions, path or free space).</value></data>
+  <data name="KB_3106_Action" xml:space="preserve"><value>Grant the SQL Server service account read/write access to the staging folder and check the path and free space.</value></data>
   <data name="KB_3201_Message" xml:space="preserve"><value>The database has damaged pages (checksum error during backup).</value></data>
   <data name="KB_3201_Action" xml:space="preserve"><value>Run DBCC CHECKDB.</value></data>
   <data name="KB_3202_Message" xml:space="preserve"><value>Database backup verification (VERIFYONLY) failed.</value></data>

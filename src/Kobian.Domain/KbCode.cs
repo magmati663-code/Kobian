@@ -257,6 +257,9 @@ public static class KbCode
     /// <summary>Dziennik transakcji rośnie — brak kopii logów w modelu FULL.</summary>
     public const string SqlLogGrowing = "KB-3105";
 
+    /// <summary>SQL Server nie może zapisać lub odczytać pliku kopii w katalogu tymczasowym (uprawnienia, ścieżka lub miejsce).</summary>
+    public const string SqlStagingAccess = "KB-3106";
+
     /// <summary>Baza ma uszkodzone strony (błąd sumy kontrolnej podczas kopii).</summary>
     public const string SqlPageChecksumError = "KB-3201";
 
@@ -520,6 +523,7 @@ public static class KbCode
         SqlForeignFullBackup,
         SqlForeignLogBackups,
         SqlLogGrowing,
+        SqlStagingAccess,
         SqlPageChecksumError,
         SqlVerifyFailed,
         SqlBackupSetMismatch,
