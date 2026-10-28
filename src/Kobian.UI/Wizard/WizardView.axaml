@@ -218,7 +218,7 @@
                 <TextBlock Classes="muted" Text="{l:T Wizard.S2.SmbHint}" TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-03.S2.SmbHint" />
               </StackPanel>
               <!-- S2 FTPS (BL-34, it. 120): serwer + port, szyfrowanie słownie (tryb ↔ port, Qb68), poświadczenie jako odwołanie (AC-01.3); błędy przy polach. -->
-              <StackPanel Classes="field" IsVisible="{Binding IsFtps}" AutomationProperties.AutomationId="SCR-03.S2.Ftps">
+              <StackPanel Classes="field" IsVisible="{Binding IsTlsServer}" AutomationProperties.AutomationId="SCR-03.S2.Ftps">
                 <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
                   <TextBlock Classes="label" Text="{l:T Wizard.S2.Host}" Margin="0,0,0,6" />
                   <TextBlock Grid.Column="1" Classes="label" Text="{l:T Wizard.S2.Port}" Margin="0,0,0,6" />
@@ -231,15 +231,16 @@
                            AutomationProperties.LiveSetting="Assertive" />
                 <TextBlock Classes="fielderror" Text="{Binding FtpsPortError}" IsVisible="{Binding HasFtpsPortError}" AutomationProperties.AutomationId="SCR-03.S2.FtpsPortError"
                            AutomationProperties.LiveSetting="Assertive" />
-                <TextBlock Classes="label" Text="{l:T Wizard.Ftps.Mode}" Margin="0,8,0,0" />
-                <ListBox Classes="segmented" ItemsSource="{Binding FtpsModes}" SelectedItem="{Binding SelectedFtpsMode}" AutomationProperties.AutomationId="SCR-03.S2.FtpsMode"
+                <TextBlock Classes="label" Text="{l:T Wizard.Ftps.Mode}" Margin="0,8,0,0" IsVisible="{Binding IsFtps}" />
+                <ListBox Classes="segmented" IsVisible="{Binding IsFtps}" ItemsSource="{Binding FtpsModes}" SelectedItem="{Binding SelectedFtpsMode}" AutomationProperties.AutomationId="SCR-03.S2.FtpsMode"
                          AutomationProperties.Name="{l:T Wizard.Ftps.Mode}">
                   <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate></ListBox.ItemsPanel>
                   <ListBox.ItemTemplate>
                     <DataTemplate DataType="w:WizardOption"><TextBlock Text="{Binding Label}" AutomationProperties.AutomationId="{Binding AutomationId}" /></DataTemplate>
                   </ListBox.ItemTemplate>
                 </ListBox>
-                <TextBlock Classes="muted" Text="{l:T Wizard.Ftps.ModeHint}" TextWrapping="Wrap" />
+                <TextBlock Classes="muted" Text="{l:T Wizard.Ftps.ModeHint}" TextWrapping="Wrap" IsVisible="{Binding IsFtps}" />
+                <TextBlock Classes="muted" Text="{l:T Wizard.WebDav.Hint}" TextWrapping="Wrap" IsVisible="{Binding IsWebDav}" AutomationProperties.AutomationId="SCR-03.S2.WebDavHint" />
                 <TextBlock Classes="label" Text="{l:T Wizard.Ftps.Credential}" Margin="0,8,0,0" />
                 <TextBox Text="{Binding FtpsCredential}" Classes.invalid="{Binding HasFtpsCredentialError}" AutomationProperties.AutomationId="SCR-03.S2.FtpsCredential"
                          AutomationProperties.Name="{l:T Wizard.Ftps.Credential}" />

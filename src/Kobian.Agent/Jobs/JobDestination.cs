@@ -16,7 +16,9 @@ public sealed record RemoteDestination(string? SecretRef, string? Host = null, i
 /// <c>{"scheme":"sftp","root":"/srv/kopie","host":"backup.example","port":22,"hostKey":"SHA256:…","secretRef":"file:sftp1"}</c>,
 /// <c>{"scheme":"ftps","root":"/kopie","host":"nas.example","port":21,"hostKey":"SHA256:&lt;SPKI&gt;","secretRef":"file:ftp1"}</c> (BL-34; „hostKey” = pin SPKI,
 /// opcjonalny — certyfikat z zaufanego urzędu go nie wymaga, D4.11). Jawny „ftp” nie jest przyjmowany w definicji zadania (D4.3: wymaga flagi i potwierdzenia —
-/// brak pola w definicji v1, KB-2115; następny krok w notatkach BL-34).
+/// brak pola w definicji v1, KB-2115; następny krok w notatkach BL-34),
+/// <c>{"scheme":"webdav","root":"/remote.php/dav/files/kopie/kobian","host":"cloud.example","port":443,"hostKey":"SHA256:&lt;SPKI&gt;","secretRef":"file:dav1"}</c>
+/// (HTTPS; „hostKey” = pin SPKI jak FTPS, opcjonalny przy certyfikacie z zaufanego urzędu).
 /// Korzeń jest walidowany wg schematu (UNC nie jest „fully qualified” poza Windows, ścieżka SFTP jest uniksowa niezależnie od systemu Agenta).
 /// W zadaniu (inaczej niż w ProbeDestination) cel zdalny MUSI mieć poświadczenie, a SFTP — przypięty klucz hosta (D4.11, bez TOFU).
 /// </summary>
@@ -59,6 +61,13 @@ public static class JobDestination
                 // D4.11: pin SPKI opcjonalny (ważny łańcuch CA wystarcza); jeśli podany — musi mieć poprawny kształt.
                 if (!string.IsNullOrEmpty(d.HostKey) && !ValidHostKey(d.HostKey)) return KbCode.TlsIdentityMismatch;
                 return ValidSecretRef(d.SecretRef) ? null : KbCode.AuthRejected;
+            case "webdav":
+                // HTTPS zawsze (jawny HTTP poza definicją zadania, jak „ftp”); korzeń = ścieżka URL na serwerze (np. /remote.php/dav/files/kopie/kobian).
+                if (!d.Root.StartsWith('/') || d.Root.Contains('\\', StringComparison.Ordinal) || d.Root.Split('/').Any(s => s is ".." or ".")) return KbCode.DestinationNotFound;
+                if (!ValidHost(d.Host)) return KbCode.DestinationNotFound;
+                if (d.Port is { } wp && wp is < 1 or > 65535) return KbCode.DestinationNotFound;
+                if (!string.IsNullOrEmpty(d.HostKey) && !ValidHostKey(d.HostKey)) return KbCode.TlsIdentityMismatch;
+                return ValidSecretRef(d.SecretRef) ? null : KbCode.AuthRejected;
             case "ftp":
                 return KbCode.InsecureTransportNotConfirmed;
             default:
@@ -71,6 +80,7 @@ public static class JobDestination
     {
         ArgumentNullException.ThrowIfNull(d);
         if (d.Scheme == "ftps") return FtpsOptions(d);
+        if (d.Scheme == "webdav") return WebDavOptions(d);
         if (d.Scheme != "sftp") return null;
         var o = new Dictionary<string, string>(StringComparer.Ordinal) { ["host"] = d.Host ?? "", ["hostkey"] = d.HostKey ?? "" };
         if (d.Port is { } p) o["port"] = p.ToString(CultureInfo.InvariantCulture);
@@ -93,6 +103,15 @@ public static class JobDestination
         return o;
     }
 
+    /// <summary>Opcje WebDAV (wspólne dla zadania i ProbeDestination): host, port (domyślnie 443), pin SPKI jak FTPS. Nigdy „insecure”.</summary>
+    internal static Dictionary<string, string> WebDavOptions(DestinationRequest d)
+    {
+        var o = new Dictionary<string, string>(StringComparer.Ordinal) { ["host"] = d.Host ?? "" };
+        if (d.Port is { } p) o["port"] = p.ToString(CultureInfo.InvariantCulture);
+        if (!string.IsNullOrEmpty(d.HostKey)) o["spki"] = d.HostKey;
+        return o;
+    }
+
     /// <summary>Konfiguracja sesji dostawcy dla poprawnego (<see cref="Validate"/>) celu.</summary>
     public static DestinationConfig ToConfig(string id, DestinationRequest d)
     {
@@ -107,10 +126,12 @@ public static class JobDestination
     public static string Id(string scheme, string root, IReadOnlyDictionary<string, string>? options)
     {
         var key = scheme + ":" + root;
-        if (scheme is "sftp" or "ftps" && options is not null)
-            key = scheme + "://" + (options.TryGetValue("host", out var h) ? h : "") + ":" + (options.TryGetValue("port", out var p) ? p : scheme == "sftp" ? "22" : "21") + root;
+        if (scheme is "sftp" or "ftps" or "webdav" && options is not null)
+            key = scheme + "://" + (options.TryGetValue("host", out var h) ? h : "") + ":" + (options.TryGetValue("port", out var p) ? p : DefaultPort(scheme)) + root;
         return "dest-" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(key)))[..16];
     }
+
+    internal static string DefaultPort(string scheme) => scheme switch { "sftp" => "22", "webdav" => "443", _ => "21" };
 
     /// <summary>Sekcja „destination” z definicji v1 → żądanie celu; niepoprawny kształt = KB-0103 (JobDefinitionInvalid).</summary>
     internal static DestinationRequest Parse(JsonElement dest)
@@ -127,7 +148,7 @@ public static class JobDestination
             port = pv.ValueKind == JsonValueKind.Number && pv.TryGetInt32(out var n) ? n : throw JobDefinition.Invalid("Field 'port' must be an integer.");
         var d = new DestinationRequest(scheme, root, Opt("host"), port, Opt("secretRef"), Opt("hostKey"));
         if (Validate(d) is not null)
-            throw JobDefinition.Invalid(scheme is "local" or "smb" or "sftp" or "ftps" ? "The destination is not valid for this scheme." : "Unsupported destination scheme.");
+            throw JobDefinition.Invalid(scheme is "local" or "smb" or "sftp" or "ftps" or "webdav" ? "The destination is not valid for this scheme." : "Unsupported destination scheme.");
         return d;
     }
 

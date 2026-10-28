@@ -116,16 +116,20 @@
   <data name="KB_2105_Action" xml:space="preserve"><value>Nadaj uprawnienia do folderu lub udziału.</value></data>
   <data name="KB_2106_Message" xml:space="preserve"><value>Folder lub udział docelowy nie istnieje.</value></data>
   <data name="KB_2106_Action" xml:space="preserve"><value>Sprawdź ścieżkę celu.</value></data>
-  <data name="KB_2109_Message" xml:space="preserve"><value>Certyfikat serwera FTPS jest niezaufany albo jego klucz (SPKI) nie zgadza się z przypiętym.</value></data>
+  <data name="KB_2109_Message" xml:space="preserve"><value>Certyfikat serwera FTPS/WebDAV (HTTPS) jest niezaufany albo jego klucz (SPKI) nie zgadza się z przypiętym.</value></data>
   <data name="KB_2109_Action" xml:space="preserve"><value>Zweryfikuj odcisk SPKI serwera poza pasmem i zatwierdź go w konfiguracji celu albo użyj certyfikatu z zaufanego urzędu.</value></data>
-  <data name="KB_2110_Message" xml:space="preserve"><value>Serwer FTP nie obsługuje szyfrowania FTPS (odmowa AUTH TLS).</value></data>
-  <data name="KB_2110_Action" xml:space="preserve"><value>Włącz FTPS (TLS) na serwerze albo użyj celu SFTP.</value></data>
+  <data name="KB_2110_Message" xml:space="preserve"><value>Serwer nie obsługuje szyfrowania TLS (FTPS: odmowa AUTH TLS; WebDAV: brak HTTPS).</value></data>
+  <data name="KB_2110_Action" xml:space="preserve"><value>Włącz TLS na serwerze (FTPS albo HTTPS) albo użyj celu SFTP.</value></data>
   <data name="KB_2112_Message" xml:space="preserve"><value>Serwer odmówił otwarcia kolejnej sesji (limit serwera).</value></data>
   <data name="KB_2112_Action" xml:space="preserve"><value>Brak - program zmniejsza liczbę równoległych połączeń.</value></data>
   <data name="KB_2114_Message" xml:space="preserve"><value>Wstrzymano na 10 min próby połączenia z celem po 3 nieudanych w ciągu godziny (ochrona konta i adresu przed blokadą).</value></data>
   <data name="KB_2114_Action" xml:space="preserve"><value>Sprawdź poświadczenia i dostępność serwera; kolejna próba nastąpi automatycznie po przerwie.</value></data>
-  <data name="KB_2115_Message" xml:space="preserve"><value>Cel FTP bez szyfrowania wymaga jawnego potwierdzenia — połączenie odrzucone.</value></data>
+  <data name="KB_2115_Message" xml:space="preserve"><value>Cel FTP/WebDAV bez szyfrowania wymaga jawnego potwierdzenia — połączenie odrzucone.</value></data>
   <data name="KB_2115_Action" xml:space="preserve"><value>Użyj FTPS albo SFTP; jawny FTP tylko z flagą niezabezpieczonego połączenia (hasło leci otwartym tekstem).</value></data>
+  <data name="KB_2116_Message" xml:space="preserve"><value>Serwer celu odrzucił obiekt jako zbyt duży (limit rozmiaru żądania).</value></data>
+  <data name="KB_2116_Action" xml:space="preserve"><value>Zwiększ na serwerze limit rozmiaru przesyłanego pliku do co najmniej 64 MB (np. client_max_body_size w nginx, LimitRequestBody w Apache).</value></data>
+  <data name="KB_2117_Message" xml:space="preserve"><value>Serwer WebDAV odrzucił żądanie albo nie obsługuje wymaganej operacji.</value></data>
+  <data name="KB_2117_Action" xml:space="preserve"><value>Sprawdź, czy adres i ścieżka wskazują zasób WebDAV oraz czy serwer obsługuje PROPFIND, MKCOL i MOVE.</value></data>
   <data name="KB_2141_Message" xml:space="preserve"><value>Ten odcisk nie czeka na zatwierdzenie dla tego celu (zatwierdzić można tylko odcisk przedstawiony przez serwer i oczekujący).</value></data>
   <data name="KB_2141_Action" xml:space="preserve"><value>Sprawdź listę: kobian destinations identity list — i skopiuj dokładny odcisk ze stanu pending.</value></data>
   <data name="KB_2142_Message" xml:space="preserve"><value>Oczekiwanie na zatwierdzenie tożsamości serwera wygasło (24 h).</value></data>

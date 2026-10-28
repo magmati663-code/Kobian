@@ -6,12 +6,13 @@ using Kobian.Providers.Storage.Local;
 using Kobian.Providers.Storage.Sftp;
 using Kobian.Providers.Storage.Smb;
 using Kobian.Providers.Storage.Throttling;
+using Kobian.Providers.Storage.WebDav;
 
 namespace Kobian.Agent.Hosting;
 
 /// <summary>
 /// Rejestr dostawców celu w Agencie: local, sftp (SSH.NET + poświadczenia z katalogu sekretów — PROWIZORYCZNIE Qb16), ftps/ftp (FluentFTP, BL-34; „ftp” jawny
-/// tylko z opcją insecure — D4.3, KB-2115) i smb (tylko Windows, BL-73).
+/// tylko z opcją insecure — D4.3, KB-2115), webdav (HTTPS na HttpClient; poświadczenie użytkownik + hasło w formacie FTP) i smb (tylko Windows, BL-73).
 /// Cele sieciowe (sftp, ftps, ftp, smb) otwierają sesje przez wspólny <see cref="SessionOpenGovernor"/> (D4.16 pkt 3, SEC-24.4 — BL-77); dysk lokalny bez dławienia.
 /// </summary>
 public static class AgentProviders
@@ -42,6 +43,8 @@ public static class AgentProviders
             var ftp = new GovernedStorageProviderFactory(new FtpStorageProviderFactory(ftpConnector, scheme), governor);
             map[ftp.Scheme] = ftp;
         }
+        var webdav = new GovernedStorageProviderFactory(new WebDavStorageProviderFactory(new HttpWebDavConnector(new FileFtpCredentialProvider(secretsDir))), governor);
+        map[webdav.Scheme] = webdav;
         if (smbConnector is not null)
         {
             var smb = new GovernedStorageProviderFactory(new SmbStorageProviderFactory(smbConnector, new FileSmbCredentialProvider(secretsDir)), governor);

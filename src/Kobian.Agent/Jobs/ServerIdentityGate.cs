@@ -26,12 +26,12 @@ public sealed class ServerIdentityGate(IStorageProviderFactory inner, ServerIden
 
     public string Scheme => _inner.Scheme;
 
-    /// <summary>Opakowuje dostawców sftp/ftps rejestru (pozostałe bez zmian).</summary>
+    /// <summary>Opakowuje dostawców sftp/ftps/webdav rejestru (pozostałe bez zmian).</summary>
     public static Dictionary<string, IStorageProviderFactory> Wrap(IReadOnlyDictionary<string, IStorageProviderFactory> providers, ServerIdentityStore store)
     {
         ArgumentNullException.ThrowIfNull(providers);
         var map = new Dictionary<string, IStorageProviderFactory>(StringComparer.Ordinal);
-        foreach (var (k, v) in providers) map[k] = k is "sftp" or "ftps" ? new ServerIdentityGate(v, store) : v;
+        foreach (var (k, v) in providers) map[k] = k is "sftp" or "ftps" or "webdav" ? new ServerIdentityGate(v, store) : v;
         return map;
     }
 

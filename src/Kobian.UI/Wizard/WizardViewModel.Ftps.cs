@@ -18,12 +18,14 @@ public static partial class FtpsFieldRules
     public const int MaxPathLength = 1024;
     public const int ExplicitPort = 21;
     public const int ImplicitPort = 990;
+    public const int HttpsPort = 443;
 
     public static string? HostError(string? host)
     {
         var h = (host ?? "").Trim();
         if (h.Length == 0) return "Wizard.Ftps.Err.HostRequired";
-        if (h.Contains("://", StringComparison.Ordinal) || h.StartsWith("ftp:", StringComparison.OrdinalIgnoreCase) || h.StartsWith("ftps:", StringComparison.OrdinalIgnoreCase))
+        if (h.Contains("://", StringComparison.Ordinal) || h.StartsWith("ftp:", StringComparison.OrdinalIgnoreCase) || h.StartsWith("ftps:", StringComparison.OrdinalIgnoreCase)
+            || h.StartsWith("http:", StringComparison.OrdinalIgnoreCase) || h.StartsWith("https:", StringComparison.OrdinalIgnoreCase))
             return "Wizard.Ftps.Err.HostScheme";
         if (h.IndexOfAny(['/', '\\']) >= 0) return "Wizard.Ftps.Err.HostPath";
         if (h.Contains('@', StringComparison.Ordinal)) return "Wizard.Ftps.Err.HostUser";
@@ -79,6 +81,11 @@ public sealed partial class WizardViewModel
 
     public bool IsFtps => SelectedDestination?.Value == DestinationKind.Ftps;
 
+    public bool IsWebDav => SelectedDestination?.Value == DestinationKind.WebDav;
+
+    /// <summary>Cel z serwerem TLS (FTPS albo WebDAV/HTTPS): wspólne pola host/port/poświadczenie/folder i zatwierdzanie odcisku SPKI.</summary>
+    public bool IsTlsServer => IsFtps || IsWebDav;
+
     [ObservableProperty]
     public partial string FtpsHost { get; set; } = "";
 
@@ -114,19 +121,19 @@ public sealed partial class WizardViewModel
     public bool HasFtpsCredentialError => FtpsCredentialError.Length > 0;
 
     /// <summary>Ekran zatwierdzenia tożsamości dotyczy certyfikatu FTPS (inne teksty niż klucz hosta SFTP).</summary>
-    public bool IsFtpsIdentity => IsFtps;
+    public bool IsFtpsIdentity => IsTlsServer;
 
-    public bool IsSftpIdentity => !IsFtps;
+    public bool IsSftpIdentity => !IsTlsServer;
 
     /// <summary>„Serwer: nas.firma.local:990 · Implicit TLS” — serwer, którego dotyczy odcisk (S2Identity).</summary>
-    public string FtpsServerText => Strings.Format("Wizard.Identity.Server", string.Create(CultureInfo.InvariantCulture, $"{HostForUrl(FtpsHost.Trim())}:{FtpsPort}") + " · " + ModeText(FtpsPort));
+    public string FtpsServerText => Strings.Format("Wizard.Identity.Server", string.Create(CultureInfo.InvariantCulture, $"{HostForUrl(FtpsHost.Trim())}:{FtpsPort}") + " · " + (IsWebDav ? "HTTPS" : ModeText(FtpsPort)));
 
     internal static string ModeText(int port) => Strings.Get(FtpsFieldRules.ModeForPort(port) == FtpsTlsMode.Implicit ? "Wizard.Ftps.ModeShort.Implicit" : "Wizard.Ftps.ModeShort.Explicit");
 
     /// <summary>Podpowiedź pola folderu: dla FTPS ścieżka uniksowa na serwerze, inaczej dysk/UNC.</summary>
-    public string PathWatermark => Strings.Get(IsFtps ? "Wizard.Ftps.PathWatermark" : "Wizard.S2.PathWatermark");
+    public string PathWatermark => Strings.Get(IsWebDav ? "Wizard.WebDav.PathWatermark" : IsFtps ? "Wizard.Ftps.PathWatermark" : "Wizard.S2.PathWatermark");
 
-    public string PathHint => Strings.Get(IsFtps ? "Wizard.Ftps.PathHint" : "Wizard.S2.Hint");
+    public string PathHint => Strings.Get(IsWebDav ? "Wizard.WebDav.PathHint" : IsFtps ? "Wizard.Ftps.PathHint" : "Wizard.S2.Hint");
 
     private bool _syncingFtps;
 
@@ -134,6 +141,9 @@ public sealed partial class WizardViewModel
     {
         ForgetApprovedIdentity();
         ClearFtpsErrors();
+        // Pola serwera TLS są wspólne dla FTPS i WebDAV — domyślny port podąża za rodzajem celu, chyba że użytkownik wpisał własny.
+        if (value?.Value == DestinationKind.WebDav && FtpsPort is FtpsFieldRules.ExplicitPort or FtpsFieldRules.ImplicitPort) FtpsPort = FtpsFieldRules.HttpsPort;
+        else if (value?.Value == DestinationKind.Ftps && FtpsPort == FtpsFieldRules.HttpsPort) FtpsPort = FtpsFieldRules.ExplicitPort;
     }
 
     partial void OnSftpHostChanged(string value) => ForgetApprovedIdentity();
@@ -213,6 +223,10 @@ public sealed partial class WizardViewModel
     private static string ErrorText(string? key) => key is null ? "" : Strings.Get(key);
 
     private static string HostForUrl(string host) => host.Contains(':', StringComparison.Ordinal) ? "[" + host + "]" : host;
+
+    private string WebDavDestinationText() =>
+        Strings.Format("Wizard.WebDav.Summary", string.Create(CultureInfo.InvariantCulture, $"https://{HostForUrl(FtpsHost.Trim())}:{FtpsPort}/{DestinationPath.Trim().TrimStart('/')}"),
+            FtpsCredential.Trim());
 
     private string FtpsDestinationText() =>
         Strings.Format("Wizard.Ftps.Summary", string.Create(CultureInfo.InvariantCulture, $"ftps://{HostForUrl(FtpsHost.Trim())}:{FtpsPort}/{DestinationPath.Trim().TrimStart('/')}"),

@@ -116,16 +116,20 @@
   <data name="KB_2105_Action" xml:space="preserve"><value>Grant permissions to the folder or share.</value></data>
   <data name="KB_2106_Message" xml:space="preserve"><value>The destination folder or share does not exist.</value></data>
   <data name="KB_2106_Action" xml:space="preserve"><value>Check the destination path.</value></data>
-  <data name="KB_2109_Message" xml:space="preserve"><value>The FTPS server certificate is untrusted or its key (SPKI) does not match the pinned one.</value></data>
+  <data name="KB_2109_Message" xml:space="preserve"><value>The FTPS/WebDAV (HTTPS) server certificate is untrusted or its key (SPKI) does not match the pinned one.</value></data>
   <data name="KB_2109_Action" xml:space="preserve"><value>Verify the server SPKI fingerprint out of band and approve it in the destination settings, or use a certificate from a trusted authority.</value></data>
-  <data name="KB_2110_Message" xml:space="preserve"><value>The FTP server does not support FTPS encryption (AUTH TLS refused).</value></data>
-  <data name="KB_2110_Action" xml:space="preserve"><value>Enable FTPS (TLS) on the server or use an SFTP destination.</value></data>
+  <data name="KB_2110_Message" xml:space="preserve"><value>The server does not support TLS encryption (FTPS: AUTH TLS refused; WebDAV: no HTTPS).</value></data>
+  <data name="KB_2110_Action" xml:space="preserve"><value>Enable TLS on the server (FTPS or HTTPS) or use an SFTP destination.</value></data>
   <data name="KB_2112_Message" xml:space="preserve"><value>The server refused a new session (server limit).</value></data>
   <data name="KB_2112_Action" xml:space="preserve"><value>None - the program reduces the number of parallel connections.</value></data>
   <data name="KB_2114_Message" xml:space="preserve"><value>Connection attempts to the destination are paused for 10 minutes after 3 failures within an hour (protects the account and address from lockout).</value></data>
   <data name="KB_2114_Action" xml:space="preserve"><value>Check the credentials and the server availability; the next attempt will follow automatically after a pause.</value></data>
-  <data name="KB_2115_Message" xml:space="preserve"><value>An unencrypted FTP destination requires explicit confirmation — connection refused.</value></data>
+  <data name="KB_2115_Message" xml:space="preserve"><value>An unencrypted FTP/WebDAV destination requires explicit confirmation — connection refused.</value></data>
   <data name="KB_2115_Action" xml:space="preserve"><value>Use FTPS or SFTP; plain FTP only with the insecure-connection flag (the password is sent in clear text).</value></data>
+  <data name="KB_2116_Message" xml:space="preserve"><value>The destination server rejected the object as too large (request size limit).</value></data>
+  <data name="KB_2116_Action" xml:space="preserve"><value>Raise the upload size limit on the server to at least 64 MB (e.g. client_max_body_size in nginx, LimitRequestBody in Apache).</value></data>
+  <data name="KB_2117_Message" xml:space="preserve"><value>The WebDAV server refused the request or does not support a required operation.</value></data>
+  <data name="KB_2117_Action" xml:space="preserve"><value>Check that the address and path point to a WebDAV resource and that the server supports PROPFIND, MKCOL and MOVE.</value></data>
   <data name="KB_2141_Message" xml:space="preserve"><value>This fingerprint is not awaiting approval for this destination (only a fingerprint presented by the server and still pending can be approved).</value></data>
   <data name="KB_2141_Action" xml:space="preserve"><value>Check the list: kobian destinations identity list - and copy the exact fingerprint from the pending state.</value></data>
   <data name="KB_2142_Message" xml:space="preserve"><value>The server identity approval request has expired (24 h).</value></data>

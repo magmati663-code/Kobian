@@ -1383,21 +1383,21 @@
   name: TlsIdentityMismatch
   class: security
   severity: critical
-  message.pl: "Certyfikat serwera FTPS jest niezaufany albo jego klucz (SPKI) nie zgadza się z przypiętym."
-  message.en: "The FTPS server certificate is untrusted or its key (SPKI) does not match the pinned one."
+  message.pl: "Certyfikat serwera FTPS/WebDAV (HTTPS) jest niezaufany albo jego klucz (SPKI) nie zgadza się z przypiętym."
+  message.en: "The FTPS/WebDAV (HTTPS) server certificate is untrusted or its key (SPKI) does not match the pinned one."
   action: "Zweryfikuj odcisk SPKI serwera poza pasmem i zatwierdź go w konfiguracji celu albo użyj certyfikatu z zaufanego urzędu."
   action.en: "Verify the server SPKI fingerprint out of band and approve it in the destination settings, or use a certificate from a trusted authority."
-  source: "D4.8, D4.11, BL-34"
+  source: "D4.8, D4.11, BL-34, WebDAV"
   since: "0.1"
 
 - code: KB-2110
   name: FtpsNotSupported
   class: permanent
   severity: error
-  message.pl: "Serwer FTP nie obsługuje szyfrowania FTPS (odmowa AUTH TLS)."
-  message.en: "The FTP server does not support FTPS encryption (AUTH TLS refused)."
-  action: "Włącz FTPS (TLS) na serwerze albo użyj celu SFTP."
-  action.en: "Enable FTPS (TLS) on the server or use an SFTP destination."
+  message.pl: "Serwer nie obsługuje szyfrowania TLS (FTPS: odmowa AUTH TLS; WebDAV: brak HTTPS)."
+  message.en: "The server does not support TLS encryption (FTPS: AUTH TLS refused; WebDAV: no HTTPS)."
+  action: "Włącz TLS na serwerze (FTPS albo HTTPS) albo użyj celu SFTP."
+  action.en: "Enable TLS on the server (FTPS or HTTPS) or use an SFTP destination."
   source: "D4.3, D4.8, BL-34"
   since: "0.1"
 
@@ -1405,8 +1405,8 @@
   name: InsecureTransportNotConfirmed
   class: security
   severity: error
-  message.pl: "Cel FTP bez szyfrowania wymaga jawnego potwierdzenia — połączenie odrzucone."
-  message.en: "An unencrypted FTP destination requires explicit confirmation — connection refused."
+  message.pl: "Cel FTP/WebDAV bez szyfrowania wymaga jawnego potwierdzenia — połączenie odrzucone."
+  message.en: "An unencrypted FTP/WebDAV destination requires explicit confirmation — connection refused."
   action: "Użyj FTPS albo SFTP; jawny FTP tylko z flagą niezabezpieczonego połączenia (hasło leci otwartym tekstem)."
   action.en: "Use FTPS or SFTP; plain FTP only with the insecure-connection flag (the password is sent in clear text)."
   source: "D4.3, BL-34 (budowa)"
@@ -1597,4 +1597,26 @@
   action: "Uruchom usługę Kobian i spróbuj ponownie."
   action.en: "Start the Kobian service and try again."
   source: "R2.6.4"
+  since: "0.1"
+
+- code: KB-2116
+  name: DestinationObjectTooLarge
+  class: permanent
+  severity: error
+  message.pl: "Serwer celu odrzucił obiekt jako zbyt duży (limit rozmiaru żądania)."
+  message.en: "The destination server rejected the object as too large (request size limit)."
+  action: "Zwiększ na serwerze limit rozmiaru przesyłanego pliku do co najmniej 64 MB (np. client_max_body_size w nginx, LimitRequestBody w Apache)."
+  action.en: "Raise the upload size limit on the server to at least 64 MB (e.g. client_max_body_size in nginx, LimitRequestBody in Apache)."
+  source: "WebDAV"
+  since: "0.1"
+
+- code: KB-2117
+  name: WebDavRequestRefused
+  class: permanent
+  severity: error
+  message.pl: "Serwer WebDAV odrzucił żądanie albo nie obsługuje wymaganej operacji."
+  message.en: "The WebDAV server refused the request or does not support a required operation."
+  action: "Sprawdź, czy adres i ścieżka wskazują zasób WebDAV oraz czy serwer obsługuje PROPFIND, MKCOL i MOVE."
+  action.en: "Check that the address and path point to a WebDAV resource and that the server supports PROPFIND, MKCOL and MOVE."
+  source: "WebDAV"
   since: "0.1"

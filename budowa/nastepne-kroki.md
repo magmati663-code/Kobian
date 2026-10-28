@@ -601,3 +601,9 @@ Odłożone (opis w raporcie sesji): wznowienie po uśpieniu/misfire (SchedulerCo
 ## Przegląd, runda 3–4 (podsumowanie)
 - Poprawione: sweep staging nie usuwa obcych katalogów, flush CatalogWriter w try, Dispose CatalogRestoreService, zawężone IsServiceFailure, A03 liczone od najdłuższego odstępu cyklu (harmonogram „dni robocze”), tolerancja `range` w V4 przy malejącej liczbie, rejestr KB-9001, blokada Wstecz/Anuluj w kreatorze podczas pracy.
 - Odłożone (z raportu recenzenta): misfire po uśpieniu w `SchedulerCore.Tick` oraz trwałość oczekującego misfire; V4 „na sucho” przy pominiętych zapytaniach po restore; walidacja ścieżek urządzeń z Workera (regex VSS); `ci.sh` audyt ignoruje kod wyjścia; KB-1102 dla „ostatni klucz”; osłona pętli OutboxDispatcher; `LastHandled` nowego wyzwalacza.
+
+## Cel WebDAV (nowy dostawca)
+- `src/Kobian.Providers.Storage/WebDav/`: HTTPS na HttpClient, Basic po weryfikacji TLS, pin SPKI jak FTPS, PUT (If-None-Match) + MOVE (Overwrite: F) = zapis bez nadpisania po stronie serwera, PROPFIND (parser 207 bez DTD), quota RFC 4331, limity czasu.
+- Agent (rejestr, definicja zadania `webdav`, katalog tożsamości, probe), CLI `--dest-scheme webdav`, `kobian-restore`, kreator (wspólne pola z FTPS, port 443), karta celu. KB-2116, KB-2117; KB-2109/2110/2115 uogólnione.
+- Testy: serwer WebDAV w procesie (TLS, wyścigi, błędy HTTP, serwery ignorujące Range/If-None-Match, przekierowania kolekcji), backup → restore przez WebDAV. Docs: `docs/admin/cel-webdav.md`.
+- Do zrobienia: test na prawdziwych serwerach (Nextcloud, Synology, Apache, nginx, IIS); Digest/NTLM; wersja EN przewodnika; SFTP: limit czasu i keep-alive (zrobione).

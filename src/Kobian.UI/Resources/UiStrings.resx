@@ -350,6 +350,7 @@
   <data name="Dest.Scheme.smb" xml:space="preserve"><value>Udział sieciowy (SMB)</value></data>
   <data name="Dest.Scheme.ftp" xml:space="preserve"><value>Serwer FTP</value></data>
   <data name="Dest.Scheme.ftps" xml:space="preserve"><value>Serwer FTPS</value></data>
+  <data name="Dest.Scheme.webdav" xml:space="preserve"><value>Serwer WebDAV (HTTPS)</value></data>
   <data name="Dest.Scheme.other" xml:space="preserve"><value>Inny</value></data>
   <data name="Dest.UsedBy" xml:space="preserve"><value>Używany przez: {0}</value></data>
   <data name="Dest.Unreadable" xml:space="preserve"><value>Nie udało się odczytać definicji zadań: {0} — sprawdź je w liście zadań.</value></data>
@@ -376,6 +377,11 @@
   <data name="Browse.Damage.Unrecoverable" xml:space="preserve"><value>Tej kopii nie da się odtworzyć (wynik weryfikacji z naprawą). Wybierz inną kopię z listy.</value></data>
   <data name="Browse.Damage.Partial" xml:space="preserve"><value>Ta kopia jest częściowo uszkodzona — nie da się odtworzyć: {0}. Pozostałe pliki i foldery odtworzysz normalnie.</value></data>
   <data name="Wizard.Dest.Ftps" xml:space="preserve"><value>Serwer FTPS</value></data>
+  <data name="Wizard.Dest.WebDav" xml:space="preserve"><value>Serwer WebDAV (HTTPS)</value></data>
+  <data name="Wizard.WebDav.Hint" xml:space="preserve"><value>Połączenie zawsze szyfrowane (HTTPS). Działa z Nextcloud, ownCloud, NAS Synology/QNAP oraz serwerami Apache/nginx z WebDAV.</value></data>
+  <data name="Wizard.WebDav.PathWatermark" xml:space="preserve"><value>np. /remote.php/dav/files/kopie/biuro</value></data>
+  <data name="Wizard.WebDav.PathHint" xml:space="preserve"><value>Ścieżka folderu w adresie WebDAV, zaczynająca się od „/” (Nextcloud: /remote.php/dav/files/&lt;użytkownik&gt;/&lt;folder&gt;). Folder musi istnieć. Po „Dalej” sprawdzimy połączenie, certyfikat serwera i prawo zapisu.</value></data>
+  <data name="Wizard.WebDav.Summary" xml:space="preserve"><value>{0} · poświadczenie „{1}”</value></data>
   <data name="Wizard.Ftps.HostWatermark" xml:space="preserve"><value>np. nas.firma.local lub 192.168.1.20</value></data>
   <data name="Wizard.Ftps.Mode" xml:space="preserve"><value>Szyfrowanie połączenia</value></data>
   <data name="Wizard.Ftps.Mode.Explicit" xml:space="preserve"><value>Standardowe (zalecane) · port 21</value></data>
@@ -390,7 +396,7 @@
   <data name="Wizard.Ftps.PlainFtp" xml:space="preserve"><value>Zwykły FTP bez szyfrowania nie jest dostępny w kreatorze — hasło i dane szłyby otwartym tekstem. Użyj FTPS albo SFTP.</value></data>
   <data name="Wizard.Ftps.Summary" xml:space="preserve"><value>{0} · {1} · poświadczenie „{2}”</value></data>
   <data name="Wizard.Ftps.Err.HostRequired" xml:space="preserve"><value>Podaj nazwę lub adres serwera.</value></data>
-  <data name="Wizard.Ftps.Err.HostScheme" xml:space="preserve"><value>Wpisz samą nazwę serwera, bez „ftp://” ani „ftps://”.</value></data>
+  <data name="Wizard.Ftps.Err.HostScheme" xml:space="preserve"><value>Wpisz samą nazwę serwera, bez „ftp://”, „ftps://” ani „https://”.</value></data>
   <data name="Wizard.Ftps.Err.HostPath" xml:space="preserve"><value>Wpisz samą nazwę serwera — folder podaj niżej, w polu „Folder docelowy”.</value></data>
   <data name="Wizard.Ftps.Err.HostUser" xml:space="preserve"><value>Wpisz samą nazwę serwera, bez użytkownika i „@” — login jest w poświadczeniu.</value></data>
   <data name="Wizard.Ftps.Err.HostPort" xml:space="preserve"><value>Wpisz samą nazwę serwera — port podaj w polu „Port”.</value></data>

@@ -173,10 +173,10 @@ public static class KbCode
     /// <summary>Folder lub udział docelowy nie istnieje.</summary>
     public const string DestinationNotFound = "KB-2106";
 
-    /// <summary>Certyfikat serwera FTPS jest niezaufany albo jego klucz (SPKI) nie zgadza się z przypiętym.</summary>
+    /// <summary>Certyfikat serwera FTPS/WebDAV (HTTPS) jest niezaufany albo jego klucz (SPKI) nie zgadza się z przypiętym.</summary>
     public const string TlsIdentityMismatch = "KB-2109";
 
-    /// <summary>Serwer FTP nie obsługuje szyfrowania FTPS (odmowa AUTH TLS).</summary>
+    /// <summary>Serwer nie obsługuje szyfrowania TLS (FTPS: odmowa AUTH TLS; WebDAV: brak HTTPS).</summary>
     public const string FtpsNotSupported = "KB-2110";
 
     /// <summary>Serwer odmówił otwarcia kolejnej sesji (limit serwera).</summary>
@@ -185,8 +185,14 @@ public static class KbCode
     /// <summary>Wstrzymano na 10 min próby połączenia z celem po 3 nieudanych w ciągu godziny (ochrona konta i adresu przed blokadą).</summary>
     public const string DestinationOpenThrottled = "KB-2114";
 
-    /// <summary>Cel FTP bez szyfrowania wymaga jawnego potwierdzenia — połączenie odrzucone.</summary>
+    /// <summary>Cel FTP/WebDAV bez szyfrowania wymaga jawnego potwierdzenia — połączenie odrzucone.</summary>
     public const string InsecureTransportNotConfirmed = "KB-2115";
+
+    /// <summary>Serwer celu odrzucił obiekt jako zbyt duży (limit rozmiaru żądania).</summary>
+    public const string DestinationObjectTooLarge = "KB-2116";
+
+    /// <summary>Serwer WebDAV odrzucił żądanie albo nie obsługuje wymaganej operacji.</summary>
+    public const string WebDavRequestRefused = "KB-2117";
 
     /// <summary>Ten odcisk nie czeka na zatwierdzenie dla tego celu (zatwierdzić można tylko odcisk przedstawiony przez serwer i oczekujący).</summary>
     public const string ServerIdentityNotPending = "KB-2141";
@@ -503,6 +509,8 @@ public static class KbCode
         ServerSessionLimit,
         DestinationOpenThrottled,
         InsecureTransportNotConfirmed,
+        DestinationObjectTooLarge,
+        WebDavRequestRefused,
         ServerIdentityNotPending,
         ServerIdentityApprovalExpired,
         ServerIdentityPinLimit,

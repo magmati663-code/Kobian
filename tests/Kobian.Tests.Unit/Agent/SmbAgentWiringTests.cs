@@ -72,7 +72,7 @@ public sealed class SmbAgentWiringTests : IDisposable
         Assert.False(AgentProviders.Create(_dir).ContainsKey("smb"));
         var withSmb = AgentProviders.Create(_dir, new NoConnector());
         Assert.Equal("smb", withSmb["smb"].Scheme);
-        Assert.Equal(5, withSmb.Count); // local, sftp, ftps, ftp (BL-34), smb
+        Assert.Equal(6, withSmb.Count); // local, sftp, ftps, ftp (BL-34), webdav, smb
     }
 
     [Theory]

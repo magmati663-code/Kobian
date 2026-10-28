@@ -46,7 +46,7 @@ public sealed class DestinationProbeService(IReadOnlyDictionary<string, IStorage
                 return ex.Code;
             }
         }
-        if (d.Scheme is "sftp" or "ftps" or "ftp")
+        if (d.Scheme is "sftp" or "ftps" or "ftp" or "webdav")
         {
             if (string.IsNullOrEmpty(d.Host) || d.Host.Length > MaxHostLength) return KbCode.DestinationNotFound;
             if (d.Port is { } p && p is < 1 or > 65535) return KbCode.DestinationNotFound;
@@ -100,6 +100,10 @@ public sealed class DestinationProbeService(IReadOnlyDictionary<string, IStorage
         else if (d.Scheme == "ftps")
         {
             options = JobDestination.FtpsOptions(d);
+        }
+        else if (d.Scheme == "webdav")
+        {
+            options = JobDestination.WebDavOptions(d);
         }
         return new DestinationConfig("probe", d.Scheme, d.Root, string.IsNullOrEmpty(d.SecretRef) ? null : d.SecretRef, options);
     }

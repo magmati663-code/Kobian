@@ -19,7 +19,7 @@ public static class OfflineRestore
         => RunAsync(args, local, null, o, e, ct);
 
     /// <param name="remote">
-    /// Fabryka zdalnych dostawców (argumenty: katalog sekretów, schemat) dla <c>--dest-scheme sftp|ftps</c>; null = tylko cel lokalny.
+    /// Fabryka zdalnych dostawców (argumenty: katalog sekretów, schemat) dla <c>--dest-scheme sftp|ftps|webdav</c>; null = tylko cel lokalny.
     /// Cel zdalny: <c>--dest-scheme sftp --host H [--port N] --hostkey SHA256:… --secrets-dir D --secret-ref file:nazwa --repo-header kobian.repo --repo /ścieżka</c>
     /// (FTPS: <c>--spki SHA256:…[,…]</c> zamiast <c>--hostkey</c>, opcjonalnie <c>--tls implicit</c>). Nagłówek <c>kobian.repo</c> musi być lokalną kopią.
     /// </param>
@@ -36,7 +36,7 @@ public static class OfflineRestore
         var keyFile = Opt("--key-file");
         if (verb is not ("list" or "restore" or "check") || repo is null || keyFile is null || Opt("--password-file") is null || (verb == "restore" && Opt("--to") is null))
         {
-            await e.WriteLineAsync("usage: kobian-restore list|restore|check --repo <dir> --key-file <file> --password-file <file> [--repo-header <kobian.repo>] [--snapshot <id|latest>] [--path <pattern>] --to <dir> [--sample <0-100>] [--rotation <n>] [remote: --dest-scheme sftp|ftps --host <h> --hostkey|--spki <pin> --secrets-dir <dir> --secret-ref file:<name>]").ConfigureAwait(false);
+            await e.WriteLineAsync("usage: kobian-restore list|restore|check --repo <dir> --key-file <file> --password-file <file> [--repo-header <kobian.repo>] [--snapshot <id|latest>] [--path <pattern>] --to <dir> [--sample <0-100>] [--rotation <n>] [remote: --dest-scheme sftp|ftps|webdav --host <h> --hostkey|--spki <pin> --secrets-dir <dir> --secret-ref file:<name>]").ConfigureAwait(false);
             return 64;
         }
         var sample = 0;
@@ -62,12 +62,12 @@ public static class OfflineRestore
             var pin = scheme == "sftp" ? Opt("--hostkey") : Opt("--spki");
             if (remote is null || remote(secretsDir ?? "-", scheme) is not { } rf)
             {
-                await e.WriteLineAsync($"unsupported --dest-scheme '{scheme}' (supported: local, sftp, ftps)").ConfigureAwait(false);
+                await e.WriteLineAsync($"unsupported --dest-scheme '{scheme}' (supported: local, sftp, ftps, webdav)").ConfigureAwait(false);
                 return 64;
             }
             if (secretsDir is null || secretRef is null || host is null || Opt("--repo-header") is null || (scheme == "sftp" && pin is null))
             {
-                await e.WriteLineAsync("usage (remote): --dest-scheme sftp|ftps --host <h> [--port <n>] (--hostkey|--spki) <SHA256:…> --secrets-dir <dir> --secret-ref file:<name> --repo-header <local kobian.repo> --repo <path on server>").ConfigureAwait(false);
+                await e.WriteLineAsync("usage (remote): --dest-scheme sftp|ftps|webdav --host <h> [--port <n>] (--hostkey|--spki) <SHA256:…> --secrets-dir <dir> --secret-ref file:<name> --repo-header <local kobian.repo> --repo <path on server>").ConfigureAwait(false);
                 return 64;
             }
             var options = new Dictionary<string, string>(StringComparer.Ordinal) { ["host"] = host };

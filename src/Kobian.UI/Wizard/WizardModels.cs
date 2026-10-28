@@ -19,6 +19,12 @@ public enum DestinationKind
     /// i — gdy certyfikatu nie zaufa system — przypięty odcisk SPKI (D4.11). Jawny FTP nie jest oferowany w kreatorze (D4.3, KB-2115).
     /// </summary>
     Ftps,
+
+    /// <summary>
+    /// Serwer WebDAV przez HTTPS (Nextcloud, ownCloud, NAS Synology/QNAP, Apache/nginx): host, port (domyślnie 443), ścieżka URL folderu, odwołanie do poświadczenia
+    /// i — gdy certyfikatu nie zaufa system — przypięty odcisk SPKI (D4.11, jak FTPS). Jawny HTTP nie jest oferowany.
+    /// </summary>
+    WebDav,
 }
 
 /// <summary>Tryb TLS celu FTPS (D4.3). Definicja zadania v1 nie ma pola trybu — tryb wynika z portu (PROWIZORYCZNIE Qb68: 990 = Implicit, inny = Explicit).</summary>

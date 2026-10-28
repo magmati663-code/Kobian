@@ -51,7 +51,7 @@ public sealed partial class WizardViewModel : ObservableObject
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         Destinations = [new(DestinationKind.Local, "Wizard.Dest.Local"), new(DestinationKind.Sftp, "Wizard.Dest.Sftp"), new(DestinationKind.Smb, "Wizard.Dest.Smb"),
-            new(DestinationKind.Ftps, "Wizard.Dest.Ftps")];
+            new(DestinationKind.Ftps, "Wizard.Dest.Ftps"), new(DestinationKind.WebDav, "Wizard.Dest.WebDav")];
         Schedules =
         [
             new(SchedulePreset.Daily, "Wizard.Schedule.Daily"), new(SchedulePreset.Weekdays, "Wizard.Schedule.Weekdays"),
@@ -146,7 +146,7 @@ public sealed partial class WizardViewModel : ObservableObject
     public IReadOnlyList<WizardOption<DestinationKind>> Destinations { get; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSftp), nameof(IsSmb), nameof(IsFtps), nameof(IsFtpsIdentity), nameof(IsSftpIdentity), nameof(PathWatermark), nameof(PathHint))]
+    [NotifyPropertyChangedFor(nameof(IsSftp), nameof(IsSmb), nameof(IsFtps), nameof(IsWebDav), nameof(IsTlsServer), nameof(IsFtpsIdentity), nameof(IsSftpIdentity), nameof(PathWatermark), nameof(PathHint))]
     public partial WizardOption<DestinationKind> SelectedDestination { get; set; }
 
     public bool IsSftp => SelectedDestination?.Value == DestinationKind.Sftp;
@@ -303,6 +303,7 @@ public sealed partial class WizardViewModel : ObservableObject
     public string DestinationText => IsSftp
         ? string.Create(CultureInfo.InvariantCulture, $"sftp://{SftpUser}@{SftpHost}:{SftpPort}/{DestinationPath.TrimStart('/')}")
         : IsFtps ? FtpsDestinationText()
+        : IsWebDav ? WebDavDestinationText()
         : DestinationPath.Trim(); // jak w szkicu (Draft) — podsumowanie S6 pokazuje to, co trafi do usługi
 
     public string SourcesText => IsDatabaseSource
@@ -319,8 +320,8 @@ public sealed partial class WizardViewModel : ObservableObject
 
     /// <summary>Szkic bez sekretów; zadanie „database” nie ma folderów źródłowych (ADR-0018).</summary>
     public WizardDraft Draft() => new(JobName.Trim(), IsDatabaseSource ? [] : Sources.ToList(), SelectedDestination.Value, DestinationPath.Trim(),
-        IsSftp ? SftpHost.Trim() : null, SftpPort, IsSftp ? SftpUser.Trim() : null, IsSftp || IsFtps ? _approvedHostKey : null, Cron, KeepDaily, KeepWeekly, KeepMonthly,
-        DatabaseDraft(), IsSmb ? SmbCredential.Trim() : null, IsFtps ? FtpsHost.Trim() : null, FtpsPort, IsFtps ? FtpsCredential.Trim() : null);
+        IsSftp ? SftpHost.Trim() : null, SftpPort, IsSftp ? SftpUser.Trim() : null, IsSftp || IsTlsServer ? _approvedHostKey : null, Cron, KeepDaily, KeepWeekly, KeepMonthly,
+        DatabaseDraft(), IsSmb ? SmbCredential.Trim() : null, IsTlsServer ? FtpsHost.Trim() : null, FtpsPort, IsTlsServer ? FtpsCredential.Trim() : null);
 
     // ---------- polecenia ----------
 
@@ -370,7 +371,7 @@ public sealed partial class WizardViewModel : ObservableObject
                     break;
                 case WizardState.S1Sources when IsDatabaseSource && !DatabaseStepReady():
                     break;
-                case WizardState.S2Destination when IsFtps && !ValidateFtpsFields():
+                case WizardState.S2Destination when IsTlsServer && !ValidateFtpsFields():
                     break; // błędy przy polach; usługa nie jest wołana
                 default:
                     var issues = await _service.ValidateStepAsync(State, Draft(), ct).ConfigureAwait(true);

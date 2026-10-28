@@ -350,6 +350,7 @@
   <data name="Dest.Scheme.smb" xml:space="preserve"><value>Network share (SMB)</value></data>
   <data name="Dest.Scheme.ftp" xml:space="preserve"><value>FTP server</value></data>
   <data name="Dest.Scheme.ftps" xml:space="preserve"><value>FTPS server</value></data>
+  <data name="Dest.Scheme.webdav" xml:space="preserve"><value>WebDAV server (HTTPS)</value></data>
   <data name="Dest.Scheme.other" xml:space="preserve"><value>Other</value></data>
   <data name="Dest.UsedBy" xml:space="preserve"><value>Used by: {0}</value></data>
   <data name="Dest.Unreadable" xml:space="preserve"><value>Could not read job definitions: {0} — check them in the job list.</value></data>
@@ -376,6 +377,11 @@
   <data name="Browse.Damage.Unrecoverable" xml:space="preserve"><value>This backup cannot be restored (result of check with repair). Choose another backup from the list.</value></data>
   <data name="Browse.Damage.Partial" xml:space="preserve"><value>This backup is partially damaged — cannot be restored: {0}. Other files and folders restore normally.</value></data>
   <data name="Wizard.Dest.Ftps" xml:space="preserve"><value>FTPS server</value></data>
+  <data name="Wizard.Dest.WebDav" xml:space="preserve"><value>WebDAV server (HTTPS)</value></data>
+  <data name="Wizard.WebDav.Hint" xml:space="preserve"><value>The connection is always encrypted (HTTPS). Works with Nextcloud, ownCloud, Synology/QNAP NAS and Apache/nginx WebDAV servers.</value></data>
+  <data name="Wizard.WebDav.PathWatermark" xml:space="preserve"><value>e.g. /remote.php/dav/files/backup/office</value></data>
+  <data name="Wizard.WebDav.PathHint" xml:space="preserve"><value>Folder path in the WebDAV address, starting with “/” (Nextcloud: /remote.php/dav/files/&lt;user&gt;/&lt;folder&gt;). The folder must exist. After “Next” we check the connection, the server certificate and write access.</value></data>
+  <data name="Wizard.WebDav.Summary" xml:space="preserve"><value>{0} · credential “{1}”</value></data>
   <data name="Wizard.Ftps.HostWatermark" xml:space="preserve"><value>e.g. nas.company.local or 192.168.1.20</value></data>
   <data name="Wizard.Ftps.Mode" xml:space="preserve"><value>Connection encryption</value></data>
   <data name="Wizard.Ftps.Mode.Explicit" xml:space="preserve"><value>Standard (recommended) · port 21</value></data>
@@ -390,7 +396,7 @@
   <data name="Wizard.Ftps.PlainFtp" xml:space="preserve"><value>Plain FTP without encryption is not available in the wizard — the password and data would travel in clear text. Use FTPS or SFTP.</value></data>
   <data name="Wizard.Ftps.Summary" xml:space="preserve"><value>{0} · {1} · credential “{2}”</value></data>
   <data name="Wizard.Ftps.Err.HostRequired" xml:space="preserve"><value>Enter the server name or address.</value></data>
-  <data name="Wizard.Ftps.Err.HostScheme" xml:space="preserve"><value>Enter just the server name, without “ftp://” or “ftps://”.</value></data>
+  <data name="Wizard.Ftps.Err.HostScheme" xml:space="preserve"><value>Enter just the server name, without “ftp://”, “ftps://” or “https://”.</value></data>
   <data name="Wizard.Ftps.Err.HostPath" xml:space="preserve"><value>Enter just the server name — put the folder below, in “Destination folder”.</value></data>
   <data name="Wizard.Ftps.Err.HostUser" xml:space="preserve"><value>Enter just the server name, without a user and “@” — the login is in the credential.</value></data>
   <data name="Wizard.Ftps.Err.HostPort" xml:space="preserve"><value>Enter just the server name — put the port in the “Port” field.</value></data>

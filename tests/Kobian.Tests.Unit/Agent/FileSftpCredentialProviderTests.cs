@@ -168,6 +168,6 @@ public sealed class FileSftpCredentialProviderTests : IDisposable
         var p = AgentProviders.Create(_dir);
         Assert.Equal("local", p["local"].Scheme);
         Assert.Equal("sftp", p["sftp"].Scheme);
-        Assert.Equal(4, p.Count); // + ftps, ftp (BL-34)
+        Assert.Equal(5, p.Count); // + ftps, ftp (BL-34), webdav
     }
 }

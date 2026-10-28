@@ -42,7 +42,7 @@ public sealed partial class DestinationCardViewModel(DestinationItem item, strin
     public string JobsText { get; } = jobsText;
 
     /// <summary>Cel z szyfrowanym transportem (SFTP, FTPS) — ikona kłódki + słowny opis w nazwie dostępnej (kolor/ikona nie są jedynym nośnikiem).</summary>
-    public bool IsEncrypted => Item.Scheme is "sftp" or "ftps";
+    public bool IsEncrypted => Item.Scheme is "sftp" or "ftps" or "webdav";
 
     /// <summary>FTPS: „nas:990 · Implicit TLS · przypięty klucz SHA256:AbCd…” albo informacja, że szczegóły są w definicji zadania.</summary>
     public string DetailText { get; } = DestinationsViewModel.Details(item);
@@ -66,7 +66,7 @@ public sealed partial class DestinationCardViewModel(DestinationItem item, strin
     /// Cel sieciowy (SFTP/FTPS) bez adresu serwera w odpowiedzi ListDestinations v1 nie da się sprawdzić z listy — Agent odpowiedziałby mylącym KB-2106
     /// („folder nie istnieje”). Przycisk wyłączony z wyjaśnieniem (it. 120); lokalny/SMB — bez zmian.
     /// </summary>
-    public bool CanCheck => Item.Scheme is not ("sftp" or "ftps" or "ftp") || !string.IsNullOrEmpty(Item.Host);
+    public bool CanCheck => Item.Scheme is not ("sftp" or "ftps" or "ftp" or "webdav") || !string.IsNullOrEmpty(Item.Host);
 
     public bool CanCheckNow => CanCheck && !IsChecking;
 
@@ -140,7 +140,7 @@ public sealed partial class DestinationsViewModel(IDestinationsSource source) : 
             var c = CultureInfo.CurrentUICulture;
             Cards.Clear();
             foreach (var d in list.Items)
-                Cards.Add(new DestinationCardViewModel(d, Strings.Get("Dest.Scheme." + (d.Scheme is "local" or "sftp" or "smb" or "ftp" or "ftps" ? d.Scheme : "other"), c),
+                Cards.Add(new DestinationCardViewModel(d, Strings.Get("Dest.Scheme." + (d.Scheme is "local" or "sftp" or "smb" or "ftp" or "ftps" or "webdav" ? d.Scheme : "other"), c),
                     string.Format(CultureInfo.CurrentCulture, Strings.Get("Dest.UsedBy", c), string.Join(", ", d.Jobs))));
             UnreadableText = list.UnreadableJobs > 0 ? string.Format(CultureInfo.CurrentCulture, Strings.Get("Dest.Unreadable", c), list.UnreadableJobs) : "";
         }
@@ -180,15 +180,15 @@ public sealed partial class DestinationsViewModel(IDestinationsSource source) : 
         }
     }
 
-    /// <summary>Linia szczegółów celu FTPS (tryb TLS z portu — Qb68; odcisk skrócony). Inne schematy: pusta (bez zmian względem it. 82).</summary>
+    /// <summary>Linia szczegółów celu FTPS/WebDAV (tryb TLS z portu — Qb68, WebDAV = HTTPS; odcisk skrócony). Inne schematy: pusta (bez zmian względem it. 82).</summary>
     internal static string Details(DestinationItem d)
     {
-        if (d.Scheme != "ftps") return "";
+        if (d.Scheme is not ("ftps" or "webdav")) return "";
         if (d.Host is null && d.Port is null && d.HostKey is null) return Strings.Get("Dest.Ftps.NoDetails");
         var parts = new List<string>();
-        var port = d.Port ?? Wizard.FtpsFieldRules.ExplicitPort;
+        var port = d.Port ?? (d.Scheme == "webdav" ? Wizard.FtpsFieldRules.HttpsPort : Wizard.FtpsFieldRules.ExplicitPort);
         if (d.Host is { Length: > 0 } h) parts.Add(string.Create(CultureInfo.InvariantCulture, $"{(h.Contains(':', StringComparison.Ordinal) ? "[" + h + "]" : h)}:{port}"));
-        parts.Add(Wizard.WizardViewModel.ModeText(port));
+        parts.Add(d.Scheme == "webdav" ? "HTTPS" : Wizard.WizardViewModel.ModeText(port));
         parts.Add(d.HostKey is { Length: > 0 } k ? Strings.Format("Dest.Ftps.Pin", Wizard.FtpsFieldRules.ShortFingerprint(k)) : Strings.Get("Dest.Ftps.SystemTrust"));
         return string.Join(" · ", parts);
     }

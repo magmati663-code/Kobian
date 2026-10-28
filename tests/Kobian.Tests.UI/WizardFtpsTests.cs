@@ -100,7 +100,7 @@ public sealed class WizardFtpsTests
     public void Plain_ftp_is_not_offered_in_wizard()
     {
         var vm = new WizardViewModel(new FakeWizardService());
-        Assert.Equal([DestinationKind.Local, DestinationKind.Sftp, DestinationKind.Smb, DestinationKind.Ftps], vm.Destinations.Select(d => d.Value));
+        Assert.Equal([DestinationKind.Local, DestinationKind.Sftp, DestinationKind.Smb, DestinationKind.Ftps, DestinationKind.WebDav], vm.Destinations.Select(d => d.Value));
         Assert.DoesNotContain(vm.Destinations, d => d.Label.Equals("Serwer FTP", StringComparison.Ordinal));
         Assert.Contains("nie jest dostępny", Strings("Wizard.Ftps.PlainFtp"), StringComparison.Ordinal);
     }

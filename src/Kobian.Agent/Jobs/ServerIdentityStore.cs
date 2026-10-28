@@ -157,14 +157,14 @@ public sealed partial class ServerIdentityStore(string catalogPath, CatalogWrite
     public static string? KindOf(string scheme) => scheme switch
     {
         "sftp" => ServerIdentityMachine.SshHostKey,
-        "ftps" => ServerIdentityMachine.TlsSpki,
+        "ftps" or "webdav" => ServerIdentityMachine.TlsSpki,
         _ => null,
     };
 
     /// <summary>„schemat://host:port” bez poświadczeń (do listy SCR-09/CLI).</summary>
     public static string Endpoint(string scheme, string? host, string? port)
     {
-        var p = string.IsNullOrEmpty(port) ? (scheme == "sftp" ? "22" : "21") : port;
+        var p = string.IsNullOrEmpty(port) ? JobDestination.DefaultPort(scheme) : port;
         var e = scheme + "://" + (string.IsNullOrEmpty(host) ? "?" : host) + ":" + p;
         return e.Length <= ServerIdentityMachine.MaxEndpointLength ? e : e[..ServerIdentityMachine.MaxEndpointLength];
     }

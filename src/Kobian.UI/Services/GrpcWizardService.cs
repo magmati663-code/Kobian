@@ -113,6 +113,15 @@ public sealed class GrpcWizardService(Agent.AgentClient client, Metadata headers
             if (!string.IsNullOrEmpty(d.ApprovedHostKey)) f.HostKey = d.ApprovedHostKey;
             return f;
         }
+        if (d.Destination == DestinationKind.WebDav)
+        {
+            // HTTPS zawsze; pin SPKI tylko po zatwierdzeniu w S2Identity (D4.11) — jak FTPS.
+            var w = new DestinationSpec { Scheme = "webdav", Root = d.DestinationPath.Trim(), Port = d.FtpsPort };
+            if (!string.IsNullOrWhiteSpace(d.FtpsHost)) w.Host = d.FtpsHost.Trim();
+            if (!string.IsNullOrWhiteSpace(d.FtpsSecret)) w.SecretRef = "file:" + d.FtpsSecret.Trim();
+            if (!string.IsNullOrEmpty(d.ApprovedHostKey)) w.HostKey = d.ApprovedHostKey;
+            return w;
+        }
         var s = new DestinationSpec { Scheme = "sftp", Root = d.DestinationPath.Trim(), Port = d.SftpPort };
         if (!string.IsNullOrWhiteSpace(d.SftpHost)) s.Host = d.SftpHost.Trim();
         if (!string.IsNullOrWhiteSpace(d.SftpUser)) s.SecretRef = "file:" + d.SftpUser.Trim();
