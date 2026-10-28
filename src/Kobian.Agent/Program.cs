@@ -225,5 +225,11 @@ static ICallerRoleResolver CallerRoles(bool service)
     if (service) return new TokenCallerResolver(new NamedPipeIdentityReader(), AgentRoleMap.ForLocalMachine());
 #endif
     _ = service;
-    return new FixedRoleResolver(AgentRole.Operator);
+    // Tryb konsoli (dev/testy; pipe/gniazdo tylko dla bieżącego użytkownika): KOBIAN_DEV_ROLE=Reader|Operator|Administrator pozwala przetestować metody wyższych ról
+    // (eksport/import zadań, zatwierdzanie tożsamości serwerów). W usłudze zmienna jest ignorowana — rola pochodzi wyłącznie z tokenu klienta.
+    var devRole = Environment.GetEnvironmentVariable("KOBIAN_DEV_ROLE");
+    var role = Enum.TryParse<AgentRole>(devRole, ignoreCase: true, out var parsed) && parsed is AgentRole.Reader or AgentRole.Operator or AgentRole.Administrator
+        ? parsed
+        : AgentRole.Operator;
+    return new FixedRoleResolver(role);
 }

@@ -54,9 +54,16 @@ public static class CliApp
                 _ => Usage(stderr),
             };
         }
-        catch (AgentUnavailableException)
+        catch (AgentUnavailableException ex)
         {
-            await stderr.WriteLineAsync($"{KbCode.AgentUnreachable}: service unavailable / brak połączenia z usługą").ConfigureAwait(false);
+            // Wiadomość wyjątku niesie kod KB z Agenta tylko dla odmowy roli/uwierzytelnienia (GrpcAgentClient); w pozostałych przypadkach — brak połączenia.
+            var text = ex.Message switch
+            {
+                KbCode.ApiAccessDenied => $"{KbCode.ApiAccessDenied}: access denied (role too low) / brak uprawnień do tej operacji",
+                KbCode.CallerUnauthenticated => $"{KbCode.CallerUnauthenticated}: caller not authenticated / klient nieuwierzytelniony",
+                _ => $"{KbCode.AgentUnreachable}: service unavailable / brak połączenia z usługą",
+            };
+            await stderr.WriteLineAsync(text).ConfigureAwait(false);
             return ExitUnavailable;
         }
         catch (AgentInternalException)

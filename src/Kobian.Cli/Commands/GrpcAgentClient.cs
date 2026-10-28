@@ -352,7 +352,13 @@ public sealed class GrpcAgentClient : IAgentClient, IDisposable
         {
             throw new ClientTooOldException(KbCode.ClientRevisionTooOld, e);
         }
-        catch (RpcException e) when (e.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded or StatusCode.PermissionDenied or StatusCode.Unauthenticated or StatusCode.Internal)
+        catch (RpcException e) when (e.StatusCode is StatusCode.PermissionDenied or StatusCode.Unauthenticated)
+        {
+            // Odmowa roli to nie „usługa niedostępna”: kod z trailera Agenta (KB-7011/KB-7001) trafia do komunikatu; kod wyjścia bez zmian (3).
+            var served = e.Trailers.GetValue(ApiConventions.KbCodeTrailer);
+            throw new AgentUnavailableException(served is KbCode.ApiAccessDenied or KbCode.CallerUnauthenticated ? served : KbCode.AgentUnreachable, e);
+        }
+        catch (RpcException e) when (e.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded or StatusCode.Internal)
         {
             throw new AgentUnavailableException(KbCode.AgentUnreachable, e);
         }

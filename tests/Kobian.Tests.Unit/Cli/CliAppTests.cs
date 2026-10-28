@@ -144,9 +144,11 @@ public sealed class CliAppTests
     /// <summary>Klient, którego każda metoda kończy się błędem obsługi po stronie Agenta (jak status Unknown z gRPC) — bez ręcznej implementacji całego interfejsu.</summary>
     public class FailingProxy : DispatchProxy
     {
+        protected virtual Exception Failure() => new AgentInternalException();
+
         protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
         {
-            var ex = new AgentInternalException();
+            var ex = Failure();
             var rt = targetMethod!.ReturnType;
             if (!rt.IsGenericType) return Task.FromException(ex);
             var tcs = typeof(TaskCompletionSource<>).MakeGenericType(rt.GetGenericArguments()[0]);
@@ -154,6 +156,20 @@ public sealed class CliAppTests
             tcs.GetMethod("SetException", [typeof(Exception)])!.Invoke(src, [ex]);
             return tcs.GetProperty("Task")!.GetValue(src);
         }
+    }
+
+    public class DeniedProxy : FailingProxy
+    {
+        protected override Exception Failure() => new AgentUnavailableException(KbCode.ApiAccessDenied);
+    }
+
+    [Fact, Trait("KB", "KB-7011")]
+    public async Task Role_denial_is_reported_as_access_denied_not_as_unreachable_service_and_keeps_exit_3()
+    {
+        var (code, output, err) = await Run(DispatchProxy.Create<IAgentClient, DeniedProxy>(), "export");
+        Assert.Equal(CliApp.ExitUnavailable, code);
+        Assert.Empty(output);
+        Assert.StartsWith(KbCode.ApiAccessDenied, err, StringComparison.Ordinal);
     }
 
     [Fact, Trait("KB", "KB-0001")]
