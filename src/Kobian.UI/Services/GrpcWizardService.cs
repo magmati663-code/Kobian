@@ -86,7 +86,8 @@ public sealed class GrpcWizardService(Agent.AgentClient client, Metadata headers
     {
         // Pierwsza kopia może trwać długo — bez terminu (anulowanie przez ct, jak restore w CLI).
         var r = await Call(() => client.RunJobAsync(new RunJobRequest { Job = jobName, Wait = true }, headers, null, ct).ResponseAsync).ConfigureAwait(false);
-        return r.Result == OverallState.Ok ? null : (r.HasCode ? r.Code : GrpcDashboardSource.KbUnknown);
+        // Warning (np. pominięte zablokowane pliki) to kopia, która POWSTAŁA — kreator nie może jej pokazywać jako niepowodzenia (wcześniej każdy wynik ≠ Ok → „nie udało się”, a przy Warning bez kodu „KB-0001”).
+        return r.Result == OverallState.Failed ? (r.HasCode ? r.Code : GrpcDashboardSource.KbUnknown) : null;
     }
 
     /// <summary>

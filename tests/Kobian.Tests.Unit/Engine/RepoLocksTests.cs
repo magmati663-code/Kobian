@@ -163,6 +163,18 @@ public sealed class RepoLocksTests : IDisposable
 
     private static string RepoLockPathWithBadName() => RepoPaths.LocksDir + "/README.txt";
 
+    /// <summary>
+    /// Sesja Backup nie usuwa swoich blokad, więc po miesiącach kopii bez prune locks/ przekracza limit. Limit chroni kopię (zalanie katalogu), ale NIE może obowiązywać sesji
+    /// Maintenance — to prune sprząta locks/; gdyby sam dostawał KB-1202, repozytorium blokowało się na stałe.
+    /// </summary>
+    [Fact, Trait("D", "D3.13")]
+    public async Task Maintenance_scan_is_not_limited_by_the_backup_lock_file_cap()
+    {
+        for (var i = 0; i < 5; i++) _store.Objects[RepoPaths.Lock(RandomNumberGenerator.GetBytes(16))] = "{}"u8.ToArray();
+        var scan = await RepoLocks.ScanAsync(_store.Open(CredentialRole.Maintenance), _keys, _time.Now, new RepoLockOptions(MaxLockFiles: 4), _ct);
+        Assert.Equal(5, scan.Invalid.Count); // wszystkie przeczytane, żaden wyjątek
+    }
+
     [Fact, Trait("D", "D3.13")]
     public async Task Too_many_lock_files_count_as_locked()
     {

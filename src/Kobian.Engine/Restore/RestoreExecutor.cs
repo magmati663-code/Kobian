@@ -113,11 +113,11 @@ public sealed class RestoreExecutor(RepoReader reader)
                         var covered = st.Covered(childRel);
                         if (!covered && !st.OnPath(childRel)) continue; // poza wyborem — bez odczytu drzewa
                         if (covered) Directory.CreateDirectory(target);
-                        await DirAsync(e.SubtreeId, childRel, target, st, ct).ConfigureAwait(false);
+                        await SubDirAsync(e.SubtreeId, childRel, target, st, ct).ConfigureAwait(false);
                         break;
                     }
                     if (st.Filter is null || DirectoryCouldMatch(st.Filter, childRel)) Directory.CreateDirectory(target);
-                    await DirAsync(e.SubtreeId, childRel, target, st, ct).ConfigureAwait(false);
+                    await SubDirAsync(e.SubtreeId, childRel, target, st, ct).ConfigureAwait(false);
                     break;
                 case EntryKind.File:
                     if (st.Exact is not null && !st.Covered(childRel)) continue;
@@ -130,6 +130,19 @@ public sealed class RestoreExecutor(RepoReader reader)
                     st.Issues.Add(new RestoreIssue(KbCode.RestoreReparseRefused, childRel)); // dowiązania nie są odtwarzane (D8.9 R8)
                     break;
             }
+        }
+    }
+
+    /// <summary>Uszkodzone/brakujące drzewo JEDNEGO podkatalogu: raport (KB-5202 ze ścieżką katalogu) i dalej z rodzeństwem — reszta kopii ma wrócić; błąd drzewa korzenia nadal przerywa (nie ma czego odtwarzać).</summary>
+    private async Task SubDirAsync(byte[] treeId, string rel, string dir, State st, CancellationToken ct)
+    {
+        try
+        {
+            await DirAsync(treeId, rel, dir, st, ct).ConfigureAwait(false);
+        }
+        catch (KobianException ex) when (ex.ErrorClass == ErrorClass.Integrity)
+        {
+            st.Issues.Add(new RestoreIssue(KbCode.RestorePackMissing, rel));
         }
     }
 

@@ -151,6 +151,31 @@ public sealed class RestoreExecutorTests : IDisposable
         public ValueTask FinishedAsync(string rel, RestoreFileState state) => ValueTask.CompletedTask;
     }
 
+    /// <summary>Uszkodzone drzewo jednego podkatalogu: raport z jego ścieżką i dalej z rodzeństwem (big.bin wraca), a nie zerowy wynik całego restore.</summary>
+    [Fact, Trait("SEC", "SEC-3.3"), Trait("KB", "KB-5202")]
+    public async Task Damaged_subtree_is_reported_and_siblings_are_still_restored()
+    {
+        var (s, keys, snap) = await Backup(packTarget: 1);
+        await using (s)
+        using (keys)
+        {
+            using var reader = new RepoReader(s, keys);
+            await reader.LoadIndexesAsync(snap, _ct);
+            var docs = (await reader.ReadTreeAsync(snap.RootTreeId, _ct)).Single(x => x.Name == "docs");
+            Assert.True(reader.TryLocate(docs.SubtreeId!, out var loc));
+            var pack = Path.Combine(Repo, RepoPaths.Pack(loc!.PackId).Replace('/', Path.DirectorySeparatorChar));
+            var b = File.ReadAllBytes(pack);
+            b[200] ^= 0x01;
+            File.WriteAllBytes(pack, b);
+            using var reader2 = new RepoReader(s, keys);
+            await reader2.LoadIndexesAsync(snap, _ct);
+            var r = await new RestoreExecutor(reader2).RestoreAsync(snap, Dst, null, _ct);
+            Assert.Equal(RestoreStatus.Failed, r.Status);
+            Assert.Contains(r.Issues, i => i.RelativePath == "docs" && i.Code == KbCode.RestorePackMissing);
+            Assert.Equal(9 * 1024 * 1024 + 5, new FileInfo(Path.Combine(Dst, "big.bin")).Length); // rodzeństwo odtworzone
+        }
+    }
+
     private sealed class AllRestoredJournal : IRestoreJournal
     {
         public bool IsRestored(string rel) => true;

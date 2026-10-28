@@ -113,6 +113,46 @@ public sealed class CatalogRestoreServiceTests : IAsyncLifetime
         Assert.True(File.Exists(Path.Combine(P("out2"), "sub", "b.txt")));
     }
 
+    /// <summary>Restart usługi: Running i ręczne Queued → Interrupted, ale wystąpienie harmonogramu czekające w kolejce nie może przepaść bez śladu.</summary>
+    [Fact, Trait("D", "D7.8")]
+    public async Task Recovery_keeps_queued_schedule_runs_and_interrupts_the_rest()
+    {
+        AddJob();
+        using (var c = CatalogBootstrap.Open(Catalog))
+        {
+            string jobId;
+            using (var q = c.CreateCommand())
+            {
+                q.CommandText = "SELECT job_id FROM job_jobs LIMIT 1;";
+                jobId = (string)q.ExecuteScalar()!;
+            }
+            foreach (var (id, cause, state) in new[] { ("r-running", "schedule", "Running"), ("r-manual", "manual", "Queued"), ("r-sched", "schedule", "Queued"), ("r-misfire", "misfire", "Queued") })
+            {
+                using var cmd = c.CreateCommand();
+                cmd.CommandText = "INSERT INTO run_runs(run_id,job_id,cause,state,queued_at,started_at) VALUES ($i,$j,$c,$s,'2026-10-14T00:00:00.000Z','2026-10-14T00:00:00.000Z');";
+                cmd.Parameters.AddWithValue("$j", jobId);
+                cmd.Parameters.AddWithValue("$i", id);
+                cmd.Parameters.AddWithValue("$c", cause);
+                cmd.Parameters.AddWithValue("$s", state);
+                cmd.ExecuteNonQuery();
+            }
+        }
+        await _jobs.RecoverInterruptedAsync(_ct);
+        Assert.Equal("Interrupted", StateOf("r-running"));
+        Assert.Equal("Interrupted", StateOf("r-manual"));
+        Assert.Equal("Queued", StateOf("r-sched"));
+        Assert.Equal("Queued", StateOf("r-misfire"));
+    }
+
+    private string StateOf(string runId)
+    {
+        using var c = CatalogBootstrap.Open(Catalog, readOnly: true);
+        using var cmd = c.CreateCommand();
+        cmd.CommandText = "SELECT state FROM run_runs WHERE run_id=$i;";
+        cmd.Parameters.AddWithValue("$i", runId);
+        return (string)cmd.ExecuteScalar()!;
+    }
+
     [Fact, Trait("RD", "RD-82")]
     public async Task Detached_restore_started_after_shutdown_is_cancelled_and_not_executed()
     {

@@ -79,4 +79,19 @@ public sealed class ServiceFailureTests
         Assert.True(UiFailure.IsServiceFailure(new IOException()));
         Assert.False(UiFailure.IsServiceFailure(new ArgumentException()));
     }
+
+    [Fact]
+    public void Paused_schedule_makes_the_job_disabled_on_the_dashboard_like_in_the_jobs_screen()
+    {
+        var data = FakeDashboardSource.AllGood();
+        var resp = new Kobian.Api.V1.ListSchedulesResponse();
+        resp.Schedules.Add(new Kobian.Api.V1.ScheduleInfo { Job = data.Jobs[0].JobId, Cron = "0 22 * * *", Enabled = false });
+        resp.Schedules.Add(new Kobian.Api.V1.ScheduleInfo { Job = data.Jobs[1].JobId, Cron = "0 * * * *", Enabled = true });
+
+        var mapped = GrpcDashboardSource.ApplyPausedSchedules(data, resp);
+
+        Assert.False(mapped.Jobs[0].Enabled);
+        Assert.True(mapped.Jobs[1].Enabled);
+        Assert.Same(data, GrpcDashboardSource.ApplyPausedSchedules(data, new Kobian.Api.V1.ListSchedulesResponse())); // nic do zmiany
+    }
 }

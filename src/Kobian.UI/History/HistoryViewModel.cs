@@ -62,6 +62,12 @@ public static class ByteSize
             v /= 1024;
             u++;
         }
+        // Zaokrąglenie może dać „1024”: 1 048 575 B → „1024 KB” zamiast „1 MB” — wtedy podnosimy jednostkę.
+        if (Math.Round(v, v >= 100 ? 0 : 1, MidpointRounding.AwayFromZero) >= 1024 && u < Units.Length - 1)
+        {
+            v /= 1024;
+            u++;
+        }
         return v.ToString(v >= 100 ? "0" : "0.#", c) + " " + Units[u];
     }
 }

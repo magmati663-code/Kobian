@@ -84,7 +84,9 @@ public sealed class CatalogJobService
         var now = Iso(_time.GetUtcNow());
         await _writer.ExecuteControlAsync((c, tx) =>
         {
-            Exec(c, tx, "UPDATE run_runs SET state='Interrupted', finished_at=$t WHERE state IN ('Queued','Running');", ("$t", now));
+            // Running zawsze przerwane. Queued: ręczne (czekanie na zasoby w pamięci procesu) przerwane; wystąpienia harmonogramu/misfire (cause schedule|misfire) ZOSTAJĄ w kolejce —
+            // scheduler weźmie je po starcie. Wcześniej trafiały do Interrupted, a LastHandled już je obejmowało, więc ani wznowienia, ani wpisu Missed: wystąpienie przepadało bez śladu.
+            Exec(c, tx, "UPDATE run_runs SET state='Interrupted', finished_at=$t WHERE state='Running' OR (state='Queued' AND cause NOT IN ('schedule','misfire'));", ("$t", now));
             return 0;
         }, ct).ConfigureAwait(false);
     }

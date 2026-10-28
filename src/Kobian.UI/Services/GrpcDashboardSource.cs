@@ -56,7 +56,26 @@ public sealed class GrpcDashboardSource : IDashboardSource, IJobsSource, IHistor
     {
         var status = await Call(() => _client.GetStatusAsync(new GetStatusRequest(), _headers, Deadline(), ct).ResponseAsync).ConfigureAwait(false);
         var snaps = await Call(() => _client.ListSnapshotsAsync(new ListSnapshotsRequest(), _headers, Deadline(), ct).ResponseAsync).ConfigureAwait(false);
-        return Map(status, snaps, _time.GetUtcNow());
+        var data = Map(status, snaps, _time.GetUtcNow());
+        try
+        {
+            var sched = await Call(() => _client.ListSchedulesAsync(new ListSchedulesRequest(), _headers, Deadline(), ct).ResponseAsync).ConfigureAwait(false);
+            return ApplyPausedSchedules(data, sched);
+        }
+        catch (InvalidOperationException)
+        {
+            return data; // starszy Agent bez ListSchedules / odmowa roli: pulpit z samego GetStatus, jak dotąd
+        }
+    }
+
+    /// <summary>
+    /// „Wstrzymaj” w SCR-02 wyłącza tylko wyzwalacz harmonogramu — GetStatus nadal ma zadanie włączone, bez cyklu i z ostatnim wynikiem OK, więc pulpit pokazywał zielone „Chronione”,
+    /// mimo że kopie automatyczne przestały się robić (SCR-02 mówił „Wstrzymane”). Zadanie z wyłączonym harmonogramem jest dla pulpitu wyłączone — tak samo jak w SCR-02.
+    /// </summary>
+    internal static DashboardData ApplyPausedSchedules(DashboardData data, ListSchedulesResponse schedules)
+    {
+        var paused = schedules.Schedules.Where(s => !s.Enabled).Select(s => s.Job).ToHashSet(StringComparer.Ordinal);
+        return paused.Count == 0 ? data : data with { Jobs = [.. data.Jobs.Select(j => paused.Contains(j.JobId) ? j with { Enabled = false } : j)] };
     }
 
     public Task RunJobAsync(string jobId, CancellationToken ct) =>
