@@ -623,3 +623,10 @@ Odłożone (opis w raporcie sesji): wznowienie po uśpieniu/misfire (SchedulerCo
   (`Staging.ShareWithSqlServer`); (3) `SET TRUSTWORTHY OFF` wymagał sysadmin (15247) — odtwarzanie loginem dbcreator kończyło się KB-0001 mimo utworzonej bazy;
   teraz tylko gdy flaga włączona, a brak uprawnień = KB-3502.
 - Do sprawdzenia: ostrzeżenie o obcej kopii pełnej (KB-3103) nie pojawia się w wyniku kopii — tylko informacyjnie; SQL Server na Windows z Agentem na Windows nadal po stronie użytkownika.
+
+## Ponowna próba (nowy kontener, Docker dostępny)
+- Linux arm64: paczka uruchomiona pod QEMU (tryb użytkownika, rootfs mcr.microsoft.com/dotnet/runtime-deps:10.0-noble arm64): Agent, CLI, kobian-restore,
+  kopia z FIFO (KB-1405), check V3, odtworzenie bit w bit z uprawnieniami — OK.
+- UI Linux x64 (paczka) pod Xvfb: pulpit łączy się z Agentem, zadanie i stan widoczne, polskie znaki poprawne — OK.
+- Prawdziwy systemd: niezweryfikowany (kontener uprzywilejowany zablokowany, bez uprawnień systemd nie startuje). macOS: brak sprzętu.
+- Drobne: pulpit pisze „zgodnie z harmonogramem” dla zadania ręcznego; ścieżka gniazda > 108 znaków (KOBIAN_SOCKET/TMPDIR) kończy Agenta wyjątkiem zamiast komunikatu.
