@@ -39,6 +39,22 @@ public static partial class Staging
     }
 
     /// <summary>Ścieżka pliku .bak w katalogu uruchomienia; nazwa pliku losowa (Guid) — nie ujawnia nazwy bazy.</summary>
+    /// <summary>
+    /// Linux/macOS: katalog albo plik roboczy dostaje GRUPĘ katalogu stagingu i prawa grupowe (katalog 0770, plik 0640) — SQL Server działa na własnym koncie
+    /// (np. mssql) i musi zapisać .bak (kopia) albo go przeczytać (odtwarzanie). Administrator nadaje dostęp grupą katalogu stagingu
+    /// (<c>chgrp mssql staging; chmod 2770 staging</c>); przy grupie root nic nie jest otwierane szerzej niż dla roota. Windows: ACL (W-21) — tu bez zmian.
+    /// </summary>
+    public static void ShareWithSqlServer(string stagingRoot, string path, bool directory)
+    {
+        ArgumentNullException.ThrowIfNull(stagingRoot);
+        ArgumentNullException.ThrowIfNull(path);
+        if (OperatingSystem.IsWindows() || Kobian.Domain.UnixFileStat.TryLStat(stagingRoot) is not { Type: Kobian.Domain.UnixFileType.Directory } root) return;
+        Kobian.Domain.UnixFileStat.TryLChown(path, uint.MaxValue, root.Gid); // uid bez zmian (-1), grupa jak katalog stagingu
+        File.SetUnixFileMode(path, directory
+            ? UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead | UnixFileMode.GroupWrite | UnixFileMode.GroupExecute
+            : UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead);
+    }
+
     public static string FilePath(string stagingRoot, string runId, Guid fileId)
     {
         ArgumentException.ThrowIfNullOrEmpty(stagingRoot);

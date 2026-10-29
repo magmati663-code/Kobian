@@ -35,9 +35,9 @@ public static class MsSqlBackupCommand
         ArgumentException.ThrowIfNullOrEmpty(stagingPath);
         if (stagingPath.Length > 4000 || stagingPath.Contains('\0', StringComparison.Ordinal))
             throw new ArgumentException("Invalid staging path.", nameof(stagingPath));
-        // Ścieżka po stronie hosta SQL Server (Windows), niezależnie od systemu, na którym budujemy polecenie.
-        if (!IsWindowsAbsolute(stagingPath))
-            throw new ArgumentException("Staging path must be an absolute Windows path.", nameof(stagingPath));
+        // Ścieżka po stronie hosta SQL Server (Windows albo Linux), niezależnie od systemu, na którym budujemy polecenie.
+        if (!SqlServerPath.IsAbsolute(stagingPath))
+            throw new ArgumentException("Staging path must be an absolute path on the SQL Server host.", nameof(stagingPath));
         var p = new Dictionary<string, object>(StringComparer.Ordinal)
         {
             ["@db"] = database,
@@ -54,7 +54,7 @@ public static class MsSqlBackupCommand
     public static SqlCommandSpec VerifyOnly(string stagingPath)
     {
         ArgumentException.ThrowIfNullOrEmpty(stagingPath);
-        if (stagingPath.Length > 4000 || stagingPath.Contains('\0', StringComparison.Ordinal) || !IsWindowsAbsolute(stagingPath))
+        if (stagingPath.Length > 4000 || stagingPath.Contains('\0', StringComparison.Ordinal) || !SqlServerPath.IsAbsolute(stagingPath))
             throw new ArgumentException("Invalid staging path.", nameof(stagingPath));
         return new SqlCommandSpec(VerifyOnlyText, new Dictionary<string, object>(StringComparer.Ordinal) { ["@stagingPath"] = stagingPath });
     }
@@ -62,6 +62,33 @@ public static class MsSqlBackupCommand
     public static bool IsWindowsAbsolute(string path) =>
         (path.Length >= 3 && char.IsAsciiLetter(path[0]) && path[1] == ':' && path[2] == '\\')
         || (path.Length >= 5 && path.StartsWith(@"\\", StringComparison.Ordinal) && !path.StartsWith(@"\\?\", StringComparison.Ordinal) && !path.StartsWith(@"\\.\", StringComparison.Ordinal));
+}
+
+/// <summary>
+/// Ścieżki widziane przez SQL Server: Windows (<c>C:\…</c>, <c>\\serwer\udział\…</c>) albo Linux (<c>/var/opt/mssql/…</c> — SQL Server 2017+ na Linuksie
+/// i w kontenerach). Styl wynika z korzenia, a nie z systemu Agenta — Agent na Linuksie może kopiować SQL Server na Windows i odwrotnie.
+/// </summary>
+public static class SqlServerPath
+{
+    public static bool IsPosixAbsolute(string path) =>
+        path.Length >= 2 && path[0] == '/' && path[1] != '/' && !path.Contains('\\', StringComparison.Ordinal);
+
+    public static bool IsAbsolute(string path) => MsSqlBackupCommand.IsWindowsAbsolute(path) || IsPosixAbsolute(path);
+
+    /// <summary>Łączy korzeń z segmentami separatorem stylu korzenia (segmenty: nazwy plików/katalogów tworzone przez Kobian, bez separatorów).</summary>
+    public static string Join(string root, params string[] segments)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        ArgumentNullException.ThrowIfNull(segments);
+        var sep = MsSqlBackupCommand.IsWindowsAbsolute(root) ? '\\' : '/';
+        var result = root.TrimEnd(sep);
+        foreach (var s in segments)
+        {
+            if (s.Length == 0 || s.IndexOfAny(['/', '\\', '\0']) >= 0 || s is "." or "..") throw new ArgumentException("Invalid path segment.", nameof(segments));
+            result += sep + s;
+        }
+        return result;
+    }
 }
 
 /// <summary>Neutralny znacznik NULL (bez zależności od System.Data w kontrakcie).</summary>

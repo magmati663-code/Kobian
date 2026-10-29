@@ -615,3 +615,11 @@ Odłożone (opis w raporcie sesji): wznowienie po uśpieniu/misfire (SchedulerCo
 - `kobian-restore` wieloplatformowy; RID-y w plikach blokady (Directory.Build.props); `tools/package-unix.sh` → dist/kobian-<wersja>-<rid>.tar.gz; install.sh/uninstall.sh.
 - Test e2e: paczka linux-x64 zainstalowana w kontenerze (systemctl zaślepką — brak systemd jako PID 1), użytkownicy root/admin/operator/zwykły — wszystkie bramki zgodnie z założeniem.
 - Do zrobienia: test na prawdziwym systemd i macOS (launchd, podpis, Gatekeeper, LOCAL_PEERCRED, lstat$INODE64 na x64); UI na pulpicie Linux/macOS; właściciel/ACL/xattr w kopii; podpis Developer ID + notaryzacja.
+
+## SQL Server — test na prawdziwym serwerze (SQL Server 2022 w kontenerze, Agent na Linuksie)
+- Działa: certyfikat (pobranie/zatwierdzenie), discovery, złe hasło KB-3002, kopia COPY_ONLY+CHECKSUM (msdb), kopie kolejne, staging sprzątany, check V3,
+  restore-db (nazwa z datą, sufiks _2, KB-3501 dla istniejącej), odtworzenie po DROP DATABASE pod oryginalną nazwą — dane identyczne, DBCC czyste.
+- Naprawione: (1) ścieżki SQL tylko w stylu Windows → `SqlServerPath` (Windows i Linux); (2) staging na Linuksie bez dostępu dla konta SQL → grupa katalogu stagingu
+  (`Staging.ShareWithSqlServer`); (3) `SET TRUSTWORTHY OFF` wymagał sysadmin (15247) — odtwarzanie loginem dbcreator kończyło się KB-0001 mimo utworzonej bazy;
+  teraz tylko gdy flaga włączona, a brak uprawnień = KB-3502.
+- Do sprawdzenia: ostrzeżenie o obcej kopii pełnej (KB-3103) nie pojawia się w wyniku kopii — tylko informacyjnie; SQL Server na Windows z Agentem na Windows nadal po stronie użytkownika.

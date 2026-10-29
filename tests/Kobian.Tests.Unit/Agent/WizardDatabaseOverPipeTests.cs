@@ -120,27 +120,20 @@ public sealed class WizardDatabaseOverPipeTests : IAsyncLifetime
     [Fact, Trait("BL", "BL-40"), Trait("Plan", "D5.10"), Trait("Category", "Integration")]
     public async Task Unusable_staging_or_agent_without_databases_refuses_before_touching_destination()
     {
-        // Agent poza Windows bez skonfigurowanego stagingu: domyślny <stan>/staging nie jest ścieżką Windows dla SQL Server → KB-0103, repozytorium nie powstaje.
+        // Agent bez skonfigurowanego stagingu: domyślny <stan>/staging jest poprawny dla SQL Server na tym samym hoście — Windows („C:\…”) i Linux („/…”, SQL Server
+        // na Linuksie lub w kontenerze z tym samym katalogiem; zweryfikowane na SQL Server 2022).
         var pipe = await StartAgent(configureStaging: false);
         using (var source = new GrpcDashboardSource(pipe))
         {
             var r = await source.CreateWizardService().CreateRepositoryAsync(Draft(), _pw, _ct);
-            if (OperatingSystem.IsWindows())
-            {
-                Assert.Empty(r.Issues); // na Windows <stan>\staging jest poprawną ścieżką (Agent na hoście SQL)
-            }
-            else
-            {
-                Assert.Equal([new StepIssue("database", KbCode.JobDefinitionInvalid)], r.Issues);
-                Assert.False(File.Exists(P("repo/kobian.repo")));
-                Assert.Empty(Directory.EnumerateFileSystemEntries(P("repo")));
-            }
+            Assert.Empty(r.Issues);
         }
 
         var old = await StartAgent(databases: false);
         using var src2 = new GrpcDashboardSource(old);
         var svc = src2.CreateWizardService();
-        Assert.Equal([new StepIssue("database", KbCode.OperationNotAvailable)], await svc.ValidateStepAsync(WizardState.S1Sources, Draft(dest: "repo2"), _ct));
+        // Zadanie „ERP” już istnieje (utworzone wyżej) — obok KB-7012 może wrócić „nazwa zajęta”; tu liczy się odmowa części „database”.
+        Assert.Contains(new StepIssue("database", KbCode.OperationNotAvailable), await svc.ValidateStepAsync(WizardState.S1Sources, Draft(dest: "repo2"), _ct));
         var refused = await svc.CreateRepositoryAsync(Draft(dest: "repo2"), _pw, _ct);
         Assert.Contains(new StepIssue("database", KbCode.OperationNotAvailable), refused.Issues);
         Assert.Empty(Directory.EnumerateFileSystemEntries(P("repo2")));

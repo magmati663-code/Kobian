@@ -232,7 +232,7 @@ public sealed class MsSqlBackupServiceTests : IDisposable
         var sql = Server();
         var svc = new MsSqlBackupService(sql);
         await Assert.ThrowsAsync<ArgumentException>(() => svc.PrepareAsync(Request("../x"), _ct));
-        await Assert.ThrowsAsync<ArgumentException>(() => svc.PrepareAsync(Request() with { SqlStagingRoot = "/var/staging" }, _ct));
+        await Assert.ThrowsAsync<ArgumentException>(() => svc.PrepareAsync(Request() with { SqlStagingRoot = "var/staging" }, _ct)); // względna; „/var/…” = SQL Server na Linuksie (poprawna)
         await Assert.ThrowsAsync<ArgumentException>(() => svc.PrepareAsync(Request() with { Database = "a\u0001b" }, _ct));
         Assert.Equal(0, sql.Queries);
 

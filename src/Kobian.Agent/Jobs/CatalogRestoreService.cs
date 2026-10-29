@@ -284,6 +284,7 @@ public sealed class CatalogRestoreService : IDisposable
             }
             stagingDir = Path.Combine(db.StagingRoot, "restore-" + runHex);
             Directory.CreateDirectory(stagingDir);
+            Kobian.Providers.Sources.MsSql.Staging.ShareWithSqlServer(db.StagingRoot, stagingDir, directory: true);
             using (var keys = KeyFileLoader.Load(def.KeyFile, def.PasswordFile, def.RepoHeader))
             {
                 await using var session = await factory.OpenAsync(def.ToDestination(DestinationId(def)), CredentialRole.Backup, ct).ConfigureAwait(false);
@@ -299,9 +300,11 @@ public sealed class CatalogRestoreService : IDisposable
                 if (r.Status != RestoreStatus.Succeeded) throw new KobianException(WorstCode(r) ?? KbCode.RestorePackMissing, ErrorClass.Integrity, "Backup file could not be restored to staging.");
                 bytes = r.Bytes;
                 dbMeta = snap.DbMeta;
+                // Linux/macOS: SQL Server (własne konto) czyta odtworzony .bak — grupa katalogu stagingu, 0640.
+                Kobian.Providers.Sources.MsSql.Staging.ShareWithSqlServer(db.StagingRoot, Path.Combine(stagingDir, DbSnapshotMeta.EntryName), directory: false);
             }
             var sqlRoot = db.SqlStagingRoot ?? db.StagingRoot;
-            var sqlPath = sqlRoot.TrimEnd('\\') + "\\restore-" + runHex + "\\" + DbSnapshotMeta.EntryName;
+            var sqlPath = Kobian.Providers.Sources.MsSql.SqlServerPath.Join(sqlRoot, "restore-" + runHex, DbSnapshotMeta.EntryName);
             var sql = await MsSqlSessions(db, ct).ConfigureAwait(false);
             try
             {

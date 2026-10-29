@@ -35,10 +35,24 @@ public sealed class MsSqlRestoreService(IMsSqlSession session, TimeProvider time
     public const string CanCreateText = "SELECT CAST(HAS_PERMS_BY_NAME(NULL, NULL, N'CREATE ANY DATABASE') AS int) AS can_create;";
     public const string DefaultPathsText = "SELECT CAST(SERVERPROPERTY('InstanceDefaultDataPath') AS nvarchar(4000)) AS data_path, CAST(SERVERPROPERTY('InstanceDefaultLogPath') AS nvarchar(4000)) AS log_path;";
     public const string FileListText = "RESTORE FILELISTONLY FROM DISK = @path;";
+    /// <summary>
+    /// RESTORE zawsze ustawia TRUSTWORTHY = OFF, a ALTER DATABASE … SET TRUSTWORTHY wymaga roli sysadmin — wykonane bezwarunkowo kończyło odtwarzanie loginem
+    /// z minimalnymi uprawnieniami (dbcreator) błędem 15247, mimo że baza już powstała (znalezione na SQL Server 2022). Teraz tylko sprawdzenie i — gdyby flaga
+    /// była jednak włączona — próba wyłączenia (błąd uprawnień = KB-3502, baza nie zostaje uznana za bezpieczną po cichu).
+    /// </summary>
     public const string TrustworthyOffText = """
-        DECLARE @sql nvarchar(max) = N'ALTER DATABASE ' + QUOTENAME(@name) + N' SET TRUSTWORTHY OFF';
-        EXEC sp_executesql @sql;
+        IF EXISTS (SELECT 1 FROM sys.databases WHERE name = @name AND is_trustworthy_on = 1)
+        BEGIN
+            DECLARE @sql nvarchar(max) = N'ALTER DATABASE ' + QUOTENAME(@name) + N' SET TRUSTWORTHY OFF';
+            EXEC sp_executesql @sql;
+        END
         """;
+
+    /// <summary>Brak uprawnień w trakcie odtwarzania: 262 (CREATE DATABASE), 229/300 (odmowa uprawnienia), 15247 (operacja wymaga wyższej roli).</summary>
+    private static (string Code, ErrorClass Class) MapRestoreError(IReadOnlyCollection<int> numbers) =>
+        numbers.Any(n => n is 262 or 229 or 300 or 15247)
+            ? (KbCode.SqlRestorePermissionMissing, ErrorClass.Permanent)
+            : SqlErrorMap.MapMany(numbers);
 
     public static string DefaultTargetName(string source, DateTimeOffset nowUtc) =>
         source + "_restore_" + nowUtc.UtcDateTime.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
@@ -47,9 +61,9 @@ public sealed class MsSqlRestoreService(IMsSqlSession session, TimeProvider time
     {
         ArgumentNullException.ThrowIfNull(request);
         TSql.RequireSysname(request.SourceDatabase, nameof(request.SourceDatabase));
-        _ = MsSqlBackupCommand.VerifyOnly(request.BackupPath); // walidacja ścieżki (Windows, bez NUL, ≤ 4000)
+        _ = MsSqlBackupCommand.VerifyOnly(request.BackupPath); // walidacja ścieżki (Windows albo Linux, bez NUL, ≤ 4000)
         foreach (var dir in new[] { request.DataDirectory, request.LogDirectory })
-            if (dir is not null && (!MsSqlBackupCommand.IsWindowsAbsolute(dir) || dir.Contains('\0', StringComparison.Ordinal) || dir.Length > 3000))
+            if (dir is not null && (!SqlServerPath.IsAbsolute(dir) || dir.Contains('\0', StringComparison.Ordinal) || dir.Length > 3000))
                 throw new KobianException(KbCode.JobDefinitionInvalid, ErrorClass.Permanent, "Invalid target directory.");
 
         try
@@ -67,7 +81,7 @@ public sealed class MsSqlRestoreService(IMsSqlSession session, TimeProvider time
                 dataDir ??= paths.GetValueOrDefault("data_path") as string;
                 logDir ??= paths.GetValueOrDefault("log_path") as string;
             }
-            if (string.IsNullOrWhiteSpace(dataDir) || string.IsNullOrWhiteSpace(logDir) || !MsSqlBackupCommand.IsWindowsAbsolute(dataDir) || !MsSqlBackupCommand.IsWindowsAbsolute(logDir))
+            if (string.IsNullOrWhiteSpace(dataDir) || string.IsNullOrWhiteSpace(logDir) || !SqlServerPath.IsAbsolute(dataDir) || !SqlServerPath.IsAbsolute(logDir))
                 throw new KobianException(KbCode.SqlDefaultPathUnknown, ErrorClass.Permanent, "Default data/log path unknown.");
 
             var moves = PlanMoves(files, target, dataDir, logDir);
@@ -85,7 +99,7 @@ public sealed class MsSqlRestoreService(IMsSqlSession session, TimeProvider time
         }
         catch (MsSqlServerException e)
         {
-            var (code, cls) = SqlErrorMap.MapMany(e.ErrorNumbers);
+            var (code, cls) = MapRestoreError(e.ErrorNumbers);
             throw new KobianException(code, cls, "SQL Server rejected the restore.");
         }
     }
@@ -104,7 +118,7 @@ public sealed class MsSqlRestoreService(IMsSqlSession session, TimeProvider time
         }
         catch (MsSqlServerException e)
         {
-            var (code, cls) = SqlErrorMap.MapMany(e.ErrorNumbers);
+            var (code, cls) = MapRestoreError(e.ErrorNumbers);
             throw new KobianException(code, cls, "SQL Server rejected the restore preflight.");
         }
     }
@@ -185,7 +199,7 @@ public sealed class MsSqlRestoreService(IMsSqlSession session, TimeProvider time
         return new SqlCommandSpec("RESTORE DATABASE @db FROM DISK = @path WITH " + string.Join(", ", parts) + ", CHECKSUM, RECOVERY, STATS = 5;", p);
     }
 
-    private static string Join(string dir, string file) => dir.TrimEnd('\\') + "\\" + file;
+    private static string Join(string dir, string file) => SqlServerPath.Join(dir, file);
 
     private async Task<IReadOnlyDictionary<string, object?>> One(string text, (string, object)? param, CancellationToken ct)
     {

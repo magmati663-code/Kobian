@@ -48,3 +48,17 @@ Po wymianie certyfikatu kopie zgłoszą KB-3004 (zadanie nie łączy się z niez
 
 ## Serwer SQL na innym komputerze niż usługa Kobian
 Domyślnie usługa łączy się tylko z SQL Server na tym samym komputerze. Aby kopiować bazę z innego serwera, administrator ustawia zmienną środowiskową usługi `KOBIAN_SQL_ALLOWED_SERVERS` (np. `sql01;sql02\ERP`) i restartuje usługę. Bez tego kreator pokaże KB-3009.
+
+## SQL Server na Linuksie (lub w kontenerze) i Kobian na Linux/macOS
+Zweryfikowane na SQL Server 2022 (16.0, kontener `mcr.microsoft.com/mssql/server:2022-latest`) z Agentem Kobian na Linuksie: wykrycie bazy, certyfikat,
+kopia COPY_ONLY + CHECKSUM, kopie kolejne, `check`, odtworzenie do nowej bazy (nazwa z datą, sufiks `_2`), odmowa istniejącej nazwy (KB-3501)
+i odtworzenie po utracie bazy (`restore-db --as <nazwa>`) — dane identyczne, DBCC CHECKDB bez błędów.
+
+- Ścieżki po stronie SQL Server mogą być linuksowe (`/var/opt/mssql/…`); styl wynika z korzenia stagingu.
+- Staging musi być widoczny dla SQL Server pod tą samą ścieżką (`KOBIAN_DB_STAGING`) albo pod inną (`KOBIAN_DB_SQL_STAGING`, np. punkt montowania w kontenerze).
+- Dostęp konta SQL Server do stagingu nadaje GRUPA katalogu: Agent zakłada katalogi robocze z grupą katalogu stagingu (0770, plik do odtworzenia 0640):
+  ```sh
+  install -d -m 2770 -o root -g mssql /srv/kobian-staging     # kontener: grupa o gid konta mssql (10001)
+  ```
+  Przy grupie root SQL Server nie zapisze kopii (KB-3106 — brak dostępu do stagingu).
+- Login SQL z minimalnymi uprawnieniami: `db_backupoperator` w bazie, `dbcreator` (odtwarzanie do nowej bazy), odczyt `msdb`. Rola sysadmin nie jest potrzebna.

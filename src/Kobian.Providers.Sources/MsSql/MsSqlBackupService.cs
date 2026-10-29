@@ -17,7 +17,7 @@ public enum MsSqlVerifyMode
 /// <param name="Database">Nazwa bazy (sysname) z discovery.</param>
 /// <param name="StagingRoot">Katalog stagingu widziany przez Agenta (lokalny NTFS — D5.10).</param>
 /// <param name="RunId">Identyfikator uruchomienia (wzorzec <see cref="Staging.IsValidRunId"/>).</param>
-/// <param name="SqlStagingRoot">Ten sam katalog widziany przez SQL Server (absolutna ścieżka Windows); <see langword="null"/> = <paramref name="StagingRoot"/>.</param>
+/// <param name="SqlStagingRoot">Ten sam katalog widziany przez SQL Server (absolutna ścieżka Windows albo Linux); <see langword="null"/> = <paramref name="StagingRoot"/>.</param>
 public sealed record MsSqlBackupRequest(
     string Database,
     string StagingRoot,
@@ -121,7 +121,7 @@ public sealed class MsSqlBackupService
         TSql.RequireSysname(request.Database, nameof(request));
         if (!Staging.IsValidRunId(request.RunId)) throw new ArgumentException("Invalid run id.", nameof(request));
         var sqlRoot = request.SqlStagingRoot ?? request.StagingRoot;
-        if (!MsSqlBackupCommand.IsWindowsAbsolute(sqlRoot)) throw new ArgumentException("SQL staging root must be an absolute Windows path.", nameof(request));
+        if (!SqlServerPath.IsAbsolute(sqlRoot)) throw new ArgumentException("SQL staging root must be an absolute path on the SQL Server host.", nameof(request));
         var db = new Dictionary<string, object>(StringComparer.Ordinal) { ["@db"] = request.Database };
         var warnings = new List<MsSqlWarning>();
 
@@ -175,12 +175,13 @@ public sealed class MsSqlBackupService
 
         var fileId = Guid.NewGuid();
         var localFile = Staging.FilePath(request.StagingRoot, request.RunId, fileId);
-        var sqlFile = sqlRoot.TrimEnd('\\') + "\\" + request.RunId + "\\" + fileId.ToString("N") + ".bak";
+        var sqlFile = SqlServerPath.Join(sqlRoot, request.RunId, fileId.ToString("N") + ".bak");
         var runDir = Path.GetDirectoryName(localFile)!;
         if (Directory.Exists(runDir)) throw new KobianException(KbCode.Internal, ErrorClass.Permanent, "Staging run directory already exists.");
         Directory.CreateDirectory(runDir);
         try
         {
+            Staging.ShareWithSqlServer(request.StagingRoot, runDir, directory: true); // Linux/macOS: SQL Server zapisuje .bak na własnym koncie
             if (_acl is not null && request.SqlServiceSid is { Length: > 0 } sid) _acl.Apply(runDir, sid);
 
             await Execute(MsSqlBackupCommand.FullCopyOnly(request.Database, sqlFile, request.Profile), cancellationToken).ConfigureAwait(false);

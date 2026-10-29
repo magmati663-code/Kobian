@@ -78,13 +78,13 @@ public sealed record MsSqlSourceDefinition(
         if (e.TryGetProperty("sqlStaging", out var ss) && ss.ValueKind != JsonValueKind.Null)
         {
             sqlStaging = ss.ValueKind == JsonValueKind.String ? ss.GetString() : null;
-            if (sqlStaging is null || !MsSqlBackupCommand.IsWindowsAbsolute(sqlStaging) || sqlStaging.Contains('\0', StringComparison.Ordinal))
-                throw JobDefinition.Invalid("Field 'sqlStaging' must be an absolute Windows path.");
+            if (sqlStaging is null || !SqlServerPath.IsAbsolute(sqlStaging) || sqlStaging.Contains('\0', StringComparison.Ordinal))
+                throw JobDefinition.Invalid("Field 'sqlStaging' must be an absolute path on the SQL Server host.");
         }
 
-        // SQL Server zapisuje .bak pod ścieżką Windows; bez „sqlStaging” staging Agenta musi nią być (Agent na hoście SQL — D5.10).
-        if (sqlStaging is null && !MsSqlBackupCommand.IsWindowsAbsolute(staging))
-            throw JobDefinition.Invalid("Field 'staging' must be an absolute Windows path unless 'sqlStaging' is given.");
+        // Bez „sqlStaging” SQL Server widzi staging Agenta pod tą samą ścieżką (Agent na hoście SQL — D5.10; Windows albo Linux).
+        if (sqlStaging is null && !SqlServerPath.IsAbsolute(staging))
+            throw JobDefinition.Invalid("Field 'staging' must be an absolute path unless 'sqlStaging' is given.");
 
         var wait = TimeSpan.FromMinutes(30);
         if (e.TryGetProperty("conflictWaitMinutes", out var w))

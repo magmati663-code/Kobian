@@ -69,6 +69,37 @@ public sealed class MsSqlRestoreServiceTests
         Assert.Contains(sql.Calls, c => c.Text == MsSqlRestoreService.TrustworthyOffText);
     }
 
+    [Fact, Trait("Plan", "8.4")]
+    public async Task Sql_server_on_linux_gets_posix_paths_and_permission_errors_are_kb_3502()
+    {
+        // Znalezione na SQL Server 2022 w kontenerze Linux: ścieżki „/var/opt/mssql/…” były odrzucane, a TRUSTWORTHY OFF bez sysadmin (15247) dawał KB-0001.
+        var sql = new ScriptSql { DataPath = "/var/opt/mssql/data/", LogPath = "/var/opt/mssql/log" };
+        var r = await new MsSqlRestoreService(sql, new Clock()).RestoreAsync(new MsSqlRestoreRequest("/srv/kobian/staging/restore-ab/database.bak", "Firma"), _ct);
+        Assert.Equal(["/var/opt/mssql/data/Firma_restore_20261014.mdf", "/var/opt/mssql/data/Firma_restore_20261014_1.ndf", "/var/opt/mssql/log/Firma_restore_20261014_log.ldf"],
+            r.Moves.Select(m => m.PhysicalPath));
+        Assert.Contains("is_trustworthy_on = 1", MsSqlRestoreService.TrustworthyOffText, StringComparison.Ordinal);
+
+        var denied = new ScriptSql { RestoreErrors = [15247, 5069] };
+        var ex = await Assert.ThrowsAsync<KobianException>(() => new MsSqlRestoreService(denied, new Clock()).RestoreAsync(new MsSqlRestoreRequest(Bak, "Firma"), _ct));
+        Assert.Equal(KbCode.SqlRestorePermissionMissing, ex.Code);
+    }
+
+    [Theory]
+    [InlineData(@"C:\staging", true)]
+    [InlineData(@"\\sql01\staging", true)]
+    [InlineData("/var/opt/mssql/staging", true)]
+    [InlineData("//server/share", false)]
+    [InlineData("staging", false)]
+    [InlineData(@"/mix\ed", false)]
+    public void Sql_server_paths_accept_windows_and_linux_roots(string path, bool ok)
+    {
+        Assert.Equal(ok, SqlServerPath.IsAbsolute(path));
+        if (!ok) return;
+        var joined = SqlServerPath.Join(path + (path.StartsWith('/') ? "/" : @"\"), "run", "a.bak");
+        Assert.Equal(path.StartsWith('/') ? path + "/run/a.bak" : path + @"\run\a.bak", joined);
+        Assert.Throws<ArgumentException>(() => SqlServerPath.Join(path, ".."));
+    }
+
     [Fact, Trait("AC", "AC-32.2")]
     public async Task Existing_target_is_never_overwritten_and_nothing_is_executed()
     {
@@ -148,7 +179,7 @@ public sealed class MsSqlRestoreServiceTests
             case "nopaths": sql.DataPath = null; break;
             case "nolog": sql.Files.RemoveAt(2); break;
             case "badname": req = req with { TargetDatabase = "x\u0001y" }; break;
-            case "badpath": req = req with { DataDirectory = "/var/sql" }; break;
+            case "badpath": req = req with { DataDirectory = "var/sql" }; break; // względna (Windows i Linux absolutne są poprawne)
             case "checksum": sql.RestoreErrors = [3013, 3043]; break;
         }
         if (c == "badpath")
