@@ -90,6 +90,8 @@
   <data name="Offline.Headline" xml:space="preserve"><value>The Kobian service is not running</value></data>
   <data name="Offline.Detail" xml:space="preserve"><value>No backups are made until the service is started.</value></data>
   <data name="Offline.Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Offline.Denied.Headline" xml:space="preserve"><value>No access to the Kobian service</value></data>
+  <data name="Offline.Denied.Detail" xml:space="preserve"><value>The service is running, but your account has no access to it. Ask an administrator to add you to the “Kobian Operators” or “Kobian Admins” group, then sign out and back in (or run the app as administrator).</value></data>
   <data name="Offline.Badge" xml:space="preserve"><value>Disconnected</value></data>
   <data name="Cron.Custom" xml:space="preserve"><value>custom schedule ({0})</value></data>
   <data name="Cron.Hourly" xml:space="preserve"><value>every hour</value></data>

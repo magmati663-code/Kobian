@@ -40,7 +40,10 @@ public sealed class FakeDashboardSource(DashboardData data) : IDashboardSource
         new("a4", "A99", AlertSeverity.Warning, AlertState.Silenced, "host", "", Now.AddHours(-1)),
     ];
 
-    public Task<DashboardData> LoadAsync(CancellationToken ct) => Fail ? Task.FromException<DashboardData>(new IOException("down")) : Task.FromResult(Data);
+    /// <summary>Wyjątek przy Fail (domyślnie „usługa nie działa”).</summary>
+    public Exception Failure { get; set; } = new IOException("down");
+
+    public Task<DashboardData> LoadAsync(CancellationToken ct) => Fail ? Task.FromException<DashboardData>(Failure) : Task.FromResult(Data);
 
     public Task RunJobAsync(string jobId, CancellationToken ct)
     {

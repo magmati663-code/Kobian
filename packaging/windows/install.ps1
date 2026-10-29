@@ -19,9 +19,14 @@ if (-not (Get-Service KobianAgent -ErrorAction SilentlyContinue)) {
 if (-not [Diagnostics.EventLog]::SourceExists('KobianAgent')) { New-EventLog -LogName Application -Source KobianAgent }
 # Katalog danych, grupy „Kobian Admins”/„Kobian Operators”, ACL i wpis VSS (to samo, co custom action MSI).
 & $exe --provision | Out-Host
+# Instalujący dostaje rolę Administrator w Kobian (grupa „Kobian Admins”) — inaczej aplikacja bez „Uruchom jako administrator” nie połączy się z usługą (ACL kanału).
+$me = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+try { Add-LocalGroupMember -Group 'Kobian Admins' -Member $me -ErrorAction Stop; Write-Host "Dodano $me do grupy „Kobian Admins” — wyloguj się i zaloguj ponownie, aby zadziałało." }
+catch [Microsoft.PowerShell.Commands.MemberExistsException] { Write-Host "$me jest już w grupie „Kobian Admins”." }
 Start-Service KobianAgent
 Get-Service KobianAgent | Format-Table -AutoSize
 $machinePath = [Environment]::GetEnvironmentVariable('Path', 'Machine')
 if ($machinePath -notlike "*$dest*") { [Environment]::SetEnvironmentVariable('Path', "$machinePath;$dest", 'Machine') }
-Write-Host "Kobian zainstalowany w $dest. Dodaj użytkowników do grupy „Kobian Operators” (kopie i odtwarzanie) lub „Kobian Admins”."
+Write-Host "Kobian zainstalowany w $dest. Innych użytkowników dodaj do grupy „Kobian Operators” (kopie i odtwarzanie) lub „Kobian Admins”:"
+Write-Host "  Add-LocalGroupMember -Group 'Kobian Operators' -Member <użytkownik>   (potem wylogowanie i ponowne zalogowanie)"
 Write-Host "Sprawdzenie (nowe okno konsoli): kobian status   |   Aplikacja: $dest\Kobian.UI.exe"

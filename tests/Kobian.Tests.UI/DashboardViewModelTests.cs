@@ -188,6 +188,20 @@ public sealed class DashboardViewModelTests
     }
 
     [Fact, Trait("Plan", "R2.6.4")]
+    public async Task Access_denied_by_a_running_service_is_not_shown_as_service_down()
+    {
+        // Zgłoszone z Windows: usługa działała, a pulpit pisał „Usługa Kobian nie działa” — ACL kanału odrzucił konto spoza grup Kobian.
+        var denied = new IOException("Kobian service is not reachable.", new HttpRequestException("pipe", new UnauthorizedAccessException("Access to the path is denied.")));
+        var src = new FakeDashboardSource(FakeDashboardSource.Mixed()) { Fail = true, Failure = denied };
+        var vm = Vm(src);
+        await InPolish(async () => { await vm.RefreshAsync(_ct); return 0; });
+        Assert.True(vm.IsOffline);
+        Assert.Equal("Brak dostępu do usługi Kobian", vm.Headline);
+        Assert.Contains("Kobian Operators", vm.Subline, StringComparison.Ordinal);
+        Assert.Equal("KB-7001", vm.OfflineCode);
+    }
+
+    [Fact, Trait("Plan", "R2.6.4")]
     public async Task Offline_without_data_is_not_an_empty_dashboard()
     {
         var src = new FakeDashboardSource(FakeDashboardSource.Mixed()) { Fail = true };

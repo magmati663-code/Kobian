@@ -90,6 +90,8 @@
   <data name="Offline.Headline" xml:space="preserve"><value>Usługa Kobian nie działa</value></data>
   <data name="Offline.Detail" xml:space="preserve"><value>Kopie nie są wykonywane, dopóki usługa nie zostanie uruchomiona.</value></data>
   <data name="Offline.Retry" xml:space="preserve"><value>Spróbuj ponownie</value></data>
+  <data name="Offline.Denied.Headline" xml:space="preserve"><value>Brak dostępu do usługi Kobian</value></data>
+  <data name="Offline.Denied.Detail" xml:space="preserve"><value>Usługa działa, ale Twoje konto nie ma do niej dostępu. Poproś administratora o dodanie Cię do grupy „Kobian Operators” albo „Kobian Admins”, a potem wyloguj się i zaloguj ponownie (albo uruchom aplikację jako administrator).</value></data>
   <data name="Offline.Badge" xml:space="preserve"><value>Brak połączenia</value></data>
   <data name="Cron.Custom" xml:space="preserve"><value>własny harmonogram ({0})</value></data>
   <data name="Cron.Hourly" xml:space="preserve"><value>co godzinę</value></data>

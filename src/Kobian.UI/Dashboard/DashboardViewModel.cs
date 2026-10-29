@@ -233,7 +233,20 @@ public sealed partial class DashboardViewModel : ObservableObject, Shell.IRefres
     public bool CanRun => Role >= CallerRole.Operator;
 
     /// <summary>Kod KB stanu „usługa nie działa” (R2.6.4) — pokazywany tylko bez połączenia.</summary>
-    public string? OfflineCode => IsOffline ? "KB-9001" : null;
+    public string? OfflineCode => IsOffline ? (AccessDenied ? "KB-7001" : "KB-9001") : null;
+
+    /// <summary>
+    /// Usługa działa, ale odmówiła połączenia (Windows: konto spoza „Kobian Operators”/„Kobian Admins” i bez podniesienia UAC — ACL pipe).
+    /// Wcześniej pokazywane jako „usługa nie działa”, co wprowadzało w błąd przy działającej usłudze.
+    /// </summary>
+    public bool AccessDenied { get; private set; }
+
+    internal static bool IsAccessDenied(Exception ex)
+    {
+        for (var e = ex; e is not null; e = e.InnerException)
+            if (e is UnauthorizedAccessException) return true;
+        return false;
+    }
 
     public string RunHint => CanRun ? "" : Strings.Get("Action.RequiresOperator");
 
@@ -245,16 +258,18 @@ public sealed partial class DashboardViewModel : ObservableObject, Shell.IRefres
         {
             var data = await _source.LoadAsync(ct).ConfigureAwait(true);
             ConnectionLost = false;
+            AccessDenied = false;
             _loaded = true;
             Apply(data);
         }
-        catch (Exception ex) when (ex is IOException or TimeoutException or InvalidOperationException)
+        catch (Exception ex) when (ex is IOException or TimeoutException or InvalidOperationException or UnauthorizedAccessException)
         {
             ConnectionLost = true; // R2.6.4: dane z poprzedniego odczytu zostają, baner „Brak połączenia”
+            AccessDenied = IsAccessDenied(ex);
             if (!_loaded)
             {
-                Headline = Strings.Get("Offline.Headline");
-                Subline = Strings.Get("Offline.Detail");
+                Headline = Strings.Get(AccessDenied ? "Offline.Denied.Headline" : "Offline.Headline");
+                Subline = Strings.Get(AccessDenied ? "Offline.Denied.Detail" : "Offline.Detail");
                 PrimaryActionText = Strings.Get("Offline.Retry");
                 Summary = "";
             }
