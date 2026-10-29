@@ -1,9 +1,13 @@
 # Wydanie Kobian: testy → paczki Linux/macOS/Windows → GitHub Release z plikami i sumami SHA-256.
-# Uruchomienie: wypchnij tag „v*” (np. git tag v1.0.0-beta.1 && git push origin v1.0.0-beta.1)
-# albo Actions → „Wydanie” → Run workflow (wymaga tego pliku w gałęzi domyślnej) z nazwą tagu.
+# Uruchomienie (dowolne):
+#  - na stronie: Releases → Draft a new release → nowy tag „v…” na gałęzi z tym plikiem → Publish; automat dołączy paczki do tego wydania;
+#  - z git: git tag v1.0.0-beta.1 && git push origin v1.0.0-beta.1 (automat utworzy wydanie);
+#  - Actions → „Wydanie” → Run workflow (gdy ten plik jest w gałęzi domyślnej).
 name: Wydanie
 
 on:
+  release:
+    types: [published]
   push:
     tags: ['v*']
   workflow_dispatch:
@@ -26,20 +30,33 @@ jobs:
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: '1'
       AVALONIA_TELEMETRY_OPTOUT: '1'
-      TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+      TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || github.event_name == 'push' && github.ref_name || inputs.tag }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || env.TAG }}
+
+      # Tag utworzony razem z wydaniem na stronie wywołuje też zdarzenie „push” — wtedy pracuje tylko przebieg „release” (bez podwójnej budowy).
+      - name: Czy wydanie już istnieje
+        id: exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = push ] && gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then echo "skip=1" >> "$GITHUB_OUTPUT"; fi
 
       - uses: actions/setup-dotnet@v4
+        if: steps.exists.outputs.skip != '1'
         with:
           global-json-file: global.json
 
       - name: Kontrola tagu
+        if: steps.exists.outputs.skip != '1'
         run: |
           [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "Niepoprawny tag: $TAG"; exit 1; }
           echo "KOBIAN_VERSION=${TAG#v}" >> "$GITHUB_ENV"
 
       - name: Budowa i testy
+        if: steps.exists.outputs.skip != '1'
         run: |
           dotnet build Kobian.sln -c Release -warnaserror -p:ContinuousIntegrationBuild=true
           for n in Unit Architecture UI; do
@@ -47,16 +64,25 @@ jobs:
           done
 
       - name: Paczki Linux i macOS
+        if: steps.exists.outputs.skip != '1'
         run: tools/package-unix.sh
 
       - name: Paczka Windows
+        if: steps.exists.outputs.skip != '1'
         run: tools/package-windows.sh
 
       - name: Wydanie GitHub
+        if: steps.exists.outputs.skip != '1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           sed "s/<wersja>/$KOBIAN_VERSION/g" packaging/release-notes.md > "$RUNNER_TEMP/notes.md"
-          pre=(); [[ "$TAG" == *-* ]] && pre=(--prerelease)   # v1.0.0-beta.1 = przedpremierowe, v1.0.0 = stabilne
-          gh release create "$TAG" dist/*.tar.gz dist/*.zip dist/*.sha256 \
-            --target "$GITHUB_SHA" --title "Kobian Backup ${KOBIAN_VERSION}" --notes-file "$RUNNER_TEMP/notes.md" "${pre[@]}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # wydanie utworzone na stronie: dołącz paczki; opis uzupełnij tylko, gdy jest pusty
+            gh release upload "$TAG" dist/*.tar.gz dist/*.zip dist/*.sha256 --clobber
+            [ -z "$(gh release view "$TAG" --json body --jq .body)" ] && gh release edit "$TAG" --notes-file "$RUNNER_TEMP/notes.md" || true
+          else
+            pre=(); [[ "$TAG" == *-* ]] && pre=(--prerelease)   # v1.0.0-beta.1 = przedpremierowe, v1.0.0 = stabilne
+            gh release create "$TAG" dist/*.tar.gz dist/*.zip dist/*.sha256 \
+              --target "$GITHUB_SHA" --title "Kobian Backup ${KOBIAN_VERSION}" --notes-file "$RUNNER_TEMP/notes.md" "${pre[@]}"
+          fi
