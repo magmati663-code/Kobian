@@ -106,10 +106,12 @@
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
-              <Grid ColumnDefinitions="*,Auto" MaxWidth="640" HorizontalAlignment="Stretch">
-                <TextBox Text="{Binding NewSource}" PlaceholderText="{l:T Wizard.S1.Watermark}" AutomationProperties.AutomationId="SCR-03.S1.NewSource"
+              <Grid ColumnDefinitions="Auto,*,Auto" MaxWidth="640" HorizontalAlignment="Stretch">
+                <!-- Główna droga: systemowe okno wyboru (kilka folderów naraz); wpisanie ścieżki zostaje dla UNC i zaawansowanych. -->
+                <Button Name="BrowseSources" Classes="primary" Content="{l:T Wizard.S1.Browse}" Margin="0,0,8,0" AutomationProperties.AutomationId="SCR-03.S1.Browse" />
+                <TextBox Grid.Column="1" Text="{Binding NewSource}" PlaceholderText="{l:T Wizard.S1.Watermark}" AutomationProperties.AutomationId="SCR-03.S1.NewSource"
                          AutomationProperties.Name="{l:T Wizard.S1.Watermark}" Margin="0,0,8,0" />
-                <Button Grid.Column="1" Classes="secondary" Content="{l:T Wizard.S1.Add}" Command="{Binding AddSourceCommand}" AutomationProperties.AutomationId="SCR-03.S1.Add" />
+                <Button Grid.Column="2" Classes="secondary" Content="{l:T Wizard.S1.Add}" Command="{Binding AddSourceCommand}" AutomationProperties.AutomationId="SCR-03.S1.Add" />
               </Grid>
               </StackPanel>
 
@@ -250,8 +252,13 @@
               </StackPanel>
               <StackPanel Classes="field">
                 <TextBlock Classes="label" Text="{l:T Wizard.S2.Path}" />
-                <TextBox Text="{Binding DestinationPath}" PlaceholderText="{Binding PathWatermark}" Classes.invalid="{Binding HasFtpsPathError}" AutomationProperties.AutomationId="SCR-03.S2.Path"
-                         AutomationProperties.Name="{l:T Wizard.S2.Path}" />
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBox Text="{Binding DestinationPath}" PlaceholderText="{Binding PathWatermark}" Classes.invalid="{Binding HasFtpsPathError}" AutomationProperties.AutomationId="SCR-03.S2.Path"
+                           AutomationProperties.Name="{l:T Wizard.S2.Path}" />
+                  <!-- Dysk lokalny/USB i udział SMB (okno systemowe pokazuje też „Sieć”); dla serwerów SFTP/FTPS/WebDAV ścieżka jest po stronie serwera. -->
+                  <Button Grid.Column="1" Name="BrowseDestination" Classes="secondary" Content="{l:T Wizard.S1.Browse}" Margin="8,0,0,0" IsVisible="{Binding CanBrowseDestination}"
+                          AutomationProperties.AutomationId="SCR-03.S2.Browse" />
+                </Grid>
                 <TextBlock Classes="fielderror" Text="{Binding FtpsPathError}" IsVisible="{Binding HasFtpsPathError}" AutomationProperties.AutomationId="SCR-03.S2.FtpsPathError"
                            AutomationProperties.LiveSetting="Assertive" />
                 <TextBlock Classes="muted" Text="{Binding PathHint}" TextWrapping="Wrap" />

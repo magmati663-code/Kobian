@@ -146,7 +146,7 @@ public sealed partial class WizardViewModel : ObservableObject
     public IReadOnlyList<WizardOption<DestinationKind>> Destinations { get; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSftp), nameof(IsSmb), nameof(IsFtps), nameof(IsWebDav), nameof(IsTlsServer), nameof(IsFtpsIdentity), nameof(IsSftpIdentity), nameof(PathWatermark), nameof(PathHint))]
+    [NotifyPropertyChangedFor(nameof(IsSftp), nameof(IsSmb), nameof(IsFtps), nameof(IsWebDav), nameof(IsTlsServer), nameof(CanBrowseDestination), nameof(IsFtpsIdentity), nameof(IsSftpIdentity), nameof(PathWatermark), nameof(PathHint))]
     public partial WizardOption<DestinationKind> SelectedDestination { get; set; }
 
     public bool IsSftp => SelectedDestination?.Value == DestinationKind.Sftp;
@@ -324,6 +324,19 @@ public sealed partial class WizardViewModel : ObservableObject
         DatabaseDraft(), IsSmb ? SmbCredential.Trim() : null, IsTlsServer ? FtpsHost.Trim() : null, FtpsPort, IsTlsServer ? FtpsCredential.Trim() : null);
 
     // ---------- polecenia ----------
+
+    /// <summary>Folder z okna wyboru: ta sama ścieżka walidacji co wpisany ręcznie (duplikaty, nakładanie — komunikat przy liście).</summary>
+    public void AddPickedSource(string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        var typed = NewSource;
+        NewSource = path;
+        AddSourceCommand.Execute(null);
+        NewSource = typed == path ? "" : typed; // pole wpisywania zostaje takie, jak było (duplikat z okna nie zostaje w polu)
+    }
+
+    /// <summary>Wybór folderu docelowego oknem systemowym — dysk lokalny/USB i udział SMB (ścieżka po stronie serwera SFTP/FTPS/WebDAV jest wpisywana).</summary>
+    public bool CanBrowseDestination => SelectedDestination?.Value is DestinationKind.Local or DestinationKind.Smb;
 
     [RelayCommand]
     private void AddSource()
