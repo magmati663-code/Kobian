@@ -19,7 +19,17 @@ public sealed class AgentCallInterceptor(ICallerRoleResolver roles, int minModif
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(continuation);
         var (caller, policy) = await AuthorizeAsync(request, context).ConfigureAwait(false);
-        if (!policy.Modifying && !policy.Audited) return await continuation(request, context).ConfigureAwait(false);
+        if (!policy.Modifying && !policy.Audited)
+        {
+            try
+            {
+                return await continuation(request, context).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not (OperationCanceledException or RpcException))
+            {
+                throw Unexpected(context, ex);
+            }
+        }
         TResponse response;
         try
         {
@@ -28,7 +38,8 @@ public sealed class AgentCallInterceptor(ICallerRoleResolver roles, int minModif
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             await AuditAsync(context, caller, request, "failed", KbCode.Internal).ConfigureAwait(false);
-            throw;
+            if (ex is RpcException) throw;
+            throw Unexpected(context, ex);
         }
         var (failed, code) = Outcome(response);
         await AuditAsync(context, caller, request, failed ? "failed" : "allowed", code).ConfigureAwait(false);
@@ -115,4 +126,12 @@ public sealed class AgentCallInterceptor(ICallerRoleResolver roles, int minModif
 
     internal static RpcException Reject(StatusCode status, string kbCode) =>
         new(new Status(status, kbCode), new Metadata { { ApiConventions.KbCodeTrailer, kbCode } });
+
+    /// <summary>Nieoczekiwany wyjątek → wpis w dzienniku błędów usługi + RpcException z kodem KB-0001 i numerem zgłoszenia (szczegóły tylko w dzienniku, nie u klienta).</summary>
+    private static RpcException Unexpected(ServerCallContext context, Exception ex)
+    {
+        var id = AgentErrorLog.Record(AgentCallAudit.Operation(context.Method), ex);
+        return new RpcException(new Status(StatusCode.Internal, "Internal error, reference " + id),
+            new Metadata { { ApiConventions.KbCodeTrailer, KbCode.Internal }, { AgentErrorLog.ReferenceTrailer, id } });
+    }
 }

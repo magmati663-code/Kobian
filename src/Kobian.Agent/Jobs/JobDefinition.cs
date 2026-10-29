@@ -6,13 +6,18 @@ namespace Kobian.Agent.Jobs;
 
 /// <summary>
 /// Definicja zadania „files” (kolumna job_jobs.definition, JSON UTF-8 ≤ 64 KiB). Wersja 1:
-/// <c>{"version":1,"sources":["/abs"],"destination":{"scheme":"local","root":"/abs"},"key":{"file":"/abs","passwordFile":"/abs","repoHeader":"/abs"},"packTargetSize":4194304}</c>.
+/// <c>{"version":1,"sources":["/abs", {"scheme":"sftp","root":"/srv/dane","host":"…","hostKey":"SHA256:…","secretRef":"file:…"}],"destination":{"scheme":"local","root":"/abs"},
+/// "key":{"file":"/abs","passwordFile":"/abs","repoHeader":"/abs"},"packTargetSize":4194304}</c> — źródła: foldery lokalne i serwery (<see cref="JobSource"/>).
 /// PROWIZORYCZNIE Qb13 (ADR-0005): klucz wskazywany ścieżkami plików (KeyFileLoader) do czasu inicjalizacji repozytorium w Agencie (it. 48, BL-24);
 /// jedno źródło; cel „local”, „smb” lub „sftp” wg <see cref="JobDestination"/> (BL-73 cz. 2, ADR-0026). Komunikaty błędów nie zawierają ścieżek (NFR-11).
 /// </summary>
 public sealed record JobDefinition(string Source, string DestinationScheme, string DestinationRoot, string KeyFile, string? PasswordFile, string? RepoHeader, long? PackTargetSize,
-    Kobian.Application.Jobs.RetentionPolicy? Retention = null, MsSqlSourceDefinition? MsSql = null, RemoteDestination? Remote = null, VerifyPolicy? Verify = null)
+    Kobian.Application.Jobs.RetentionPolicy? Retention = null, MsSqlSourceDefinition? MsSql = null, RemoteDestination? Remote = null, VerifyPolicy? Verify = null,
+    IReadOnlyList<JobSource>? SourceList = null)
 {
+    /// <summary>Wszystkie źródła zadania „files” (foldery lokalne i serwery); <see cref="Source"/> = pierwsze (etykieta, zgodność wstecz).</summary>
+    public IReadOnlyList<JobSource> Sources => SourceList ?? (MsSql is null ? [JobSource.Local(Source)] : []);
+
     /// <summary>Polityka V3 z harmonogramu (3.7); brak sekcji „verify” = <see cref="VerifyPolicy.Default"/>.</summary>
     public VerifyPolicy EffectiveVerify => Verify ?? VerifyPolicy.Default;
 
@@ -50,6 +55,7 @@ public sealed record JobDefinition(string Source, string DestinationScheme, stri
                 throw Invalid("Unsupported definition version.");
             string source;
             MsSqlSourceDefinition? mssql = null;
+            JobSourceList? sources = null;
             if (jobType == "database")
             {
                 if (r.TryGetProperty("sources", out _)) throw Invalid("A 'database' job has a 'database' section instead of 'sources'.");
@@ -58,9 +64,11 @@ public sealed record JobDefinition(string Source, string DestinationScheme, stri
             }
             else
             {
-                if (!r.TryGetProperty("sources", out var src) || src.ValueKind != JsonValueKind.Array || src.GetArrayLength() != 1)
-                    throw Invalid("Exactly one source is supported in this version.");
-                source = AbsolutePath(src[0], "source");
+                // Wiele źródeł (foldery lokalne i serwery SFTP/FTPS/WebDAV) — każde jako osobny folder w kopii; jedno źródło lokalne = układ kopii jak dotąd.
+                if (!r.TryGetProperty("sources", out var src) || src.ValueKind != JsonValueKind.Array || src.GetArrayLength() is 0 or > JobSource.MaxSources)
+                    throw Invalid("Between 1 and 32 sources are supported.");
+                sources = new JobSourceList(src.EnumerateArray().Select(JobSource.Parse));
+                source = sources[0].Label;
             }
             var dest = JobDestination.Parse(Obj(r, "destination"));
             var key = Obj(r, "key");
@@ -78,7 +86,7 @@ public sealed record JobDefinition(string Source, string DestinationScheme, stri
             VerifyPolicy? verify = null;
             if (r.TryGetProperty("verify", out var ver) && ver.ValueKind != JsonValueKind.Null) verify = VerifyPolicy.Parse(ver); // BL-26: V3 z harmonogramu (opcjonalne)
             var remote = dest.Scheme == "local" ? null : new RemoteDestination(dest.SecretRef, dest.Host, dest.Port, dest.HostKey);
-            return new JobDefinition(source, dest.Scheme, dest.Root, keyFile, pw, header, target, retention, mssql, remote, verify);
+            return new JobDefinition(source, dest.Scheme, dest.Root, keyFile, pw, header, target, retention, mssql, remote, verify, sources);
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException or KeyNotFoundException)
         {

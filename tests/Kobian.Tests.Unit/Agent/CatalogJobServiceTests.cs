@@ -183,7 +183,8 @@ public sealed class CatalogJobServiceTests : IAsyncLifetime
     }
 
     [Theory]
-    [InlineData("""{"version":1,"sources":["/a","/b"],"destination":{"scheme":"local","root":"/r"},"key":{"file":"/k"}}""")]
+    [InlineData("""{"version":1,"sources":[],"destination":{"scheme":"local","root":"/r"},"key":{"file":"/k"}}""")]
+    [InlineData("""{"version":1,"sources":["/a",{"scheme":"smb","root":"\\\\nas\\k","secretRef":"file:x"}],"destination":{"scheme":"local","root":"/r"},"key":{"file":"/k"}}""")]
     [InlineData("""{"version":1,"sources":["rel"],"destination":{"scheme":"local","root":"/r"},"key":{"file":"/k"}}""")]
     [InlineData("""{"version":1,"sources":["/a"],"destination":{"scheme":"sftp","root":"/r"},"key":{"file":"/k"}}""")]
     [InlineData("""{"version":1,"sources":["/a"],"destination":{"scheme":"local","root":"/r"},"key":{"file":"/k"},"packTargetSize":5}""")]

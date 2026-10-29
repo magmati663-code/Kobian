@@ -52,7 +52,7 @@ public sealed class WebDavStorageProviderFactory(IWebDavConnector connector) : I
     }
 }
 
-internal sealed class WebDavStorageSession : StorageSessionBase
+internal sealed class WebDavStorageSession : StorageSessionBase, IRemoteSourceReader
 {
     private const long PackSize = 16 * 1024 * 1024;
 
@@ -226,6 +226,43 @@ internal sealed class WebDavStorageSession : StorageSessionBase
     }
 
     public override ValueTask DisposeAsync() => _t.DisposeAsync();
+
+    // ---- serwer jako ŹRÓDŁO kopii (IRemoteSourceReader): dowolne nazwy pod korzeniem ----
+
+    public async ValueTask<IReadOnlyList<RemoteSourceEntry>> ListDirectoryAsync(string relativeDir, CancellationToken ct)
+    {
+        try
+        {
+            var full = RemoteSourcePath.Join(_root, relativeDir);
+            var st = await _t.StatAsync(full, ct).ConfigureAwait(false)
+                     ?? throw new StorageException(ErrorClass.Permanent, KbCode.DestinationNotFound, "Source folder not found.");
+            if (st.Kind != WebDavEntryKind.Collection)
+                throw new StorageException(ErrorClass.Permanent, KbCode.InvalidObjectName, "Source path is not a folder.");
+            var entries = await _t.ListAsync(full, ct).ConfigureAwait(false);
+            return [.. entries.Select(e => new RemoteSourceEntry(e.Name, e.Kind == WebDavEntryKind.Collection ? RemoteSourceKind.Directory : RemoteSourceKind.File, e.Length, e.Modified))];
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw WebDavErrorMap.FromException(ex, null);
+        }
+    }
+
+    public async ValueTask<Stream> OpenFileAsync(string relativePath, CancellationToken ct)
+    {
+        try
+        {
+            var full = RemoteSourcePath.Join(_root, relativePath);
+            var st = await _t.StatAsync(full, ct).ConfigureAwait(false)
+                     ?? throw new StorageException(ErrorClass.Permanent, KbCode.DestinationNotFound, "Source file not found.");
+            if (st.Kind != WebDavEntryKind.File)
+                throw new StorageException(ErrorClass.Permanent, KbCode.InvalidObjectName, "Source path is not a file.");
+            return await _t.GetAsync(full, 0, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw WebDavErrorMap.FromException(ex, null);
+        }
+    }
 
     internal static StorageException Exists() =>
         new(ErrorClass.Permanent, KbCode.ObjectExists, "Object already exists on destination; never overwritten.");

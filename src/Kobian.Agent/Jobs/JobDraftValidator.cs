@@ -5,7 +5,8 @@ using Kobian.Scheduler.Timing;
 namespace Kobian.Agent.Jobs;
 
 /// <summary>Szkic zadania z kreatora (bez sekretów). <c>Cron</c> = null → zadanie ręczne. <c>Database</c> ≠ null → zadanie „database” (bez <c>Sources</c>).</summary>
-public sealed record JobDraft(string Name, IReadOnlyList<string> Sources, DestinationRequest Destination, string? Cron, DatabaseDraft? Database = null);
+public sealed record JobDraft(string Name, IReadOnlyList<string> Sources, DestinationRequest Destination, string? Cron, DatabaseDraft? Database = null,
+    IReadOnlyList<DestinationRequest>? SourceServers = null);
 
 /// <summary>Źródło bazodanowe z kreatora S1-db (bez sekretów): jak <see cref="DatabaseDiscoveryRequest"/> + nazwa bazy.</summary>
 public sealed record DatabaseDraft(DatabaseDiscoveryRequest Server, string Name);
@@ -36,26 +37,40 @@ public sealed class JobDraftValidator(string catalogPath, DestinationProbeServic
         else if (JobExists(draft.Name))
             problems.Add(new("name", KbCode.JobNameTaken));
 
-        string? source = null;
+        var locals = new List<string>();
+        var servers = draft.SourceServers ?? [];
+        var localCount = draft.Sources?.Count ?? 0;
         if (draft.Database is not null)
         {
-            if (draft.Sources is { Count: > 0 }) problems.Add(new("sources", KbCode.JobDefinitionInvalid)); // zadanie „database” nie ma „sources” (ADR-0018)
+            if (localCount > 0 || servers.Count > 0) problems.Add(new("sources", KbCode.JobDefinitionInvalid)); // zadanie „database” nie ma „sources” (ADR-0018)
             if (ResolveDatabase(draft.Database).Code is { } dbc) problems.Add(new("database", dbc));
         }
-        else if (draft.Sources is null || draft.Sources.Count == 0)
+        else if (localCount + servers.Count == 0)
             problems.Add(new("sources", KbCode.SourcesNotReadable));
-        else if (draft.Sources.Count > 1)
-            problems.Add(new("sources", KbCode.JobDefinitionInvalid)); // definicja v1: dokładnie jedno źródło (ADR-0005)
-        else if (!ReadableDirectory(draft.Sources[0]))
-            problems.Add(new("sources", KbCode.SourcesNotReadable));
+        else if (localCount + servers.Count > JobSource.MaxSources)
+            problems.Add(new("sources", KbCode.JobDefinitionInvalid));
         else
-            source = Path.TrimEndingDirectorySeparator(Path.GetFullPath(draft.Sources[0]));
+        {
+            // Kilka źródeł w jednym zadaniu (foldery i serwery) — każde jako folder w kopii. Foldery nie mogą się zawierać nawzajem (KB-0102: te same pliki dwa razy).
+            string? sourceCode = null;
+            foreach (var s in draft.Sources ?? [])
+            {
+                if (!ReadableDirectory(s)) sourceCode ??= KbCode.SourcesNotReadable;
+                else locals.Add(Path.TrimEndingDirectorySeparator(Path.GetFullPath(s)));
+            }
+            for (var i = 0; i < locals.Count && sourceCode is null; i++)
+                for (var j = i + 1; j < locals.Count; j++)
+                    if (Overlaps(locals[i], locals[j])) sourceCode = KbCode.SourcesOverlap;
+            foreach (var srv in servers)
+                sourceCode ??= destinations.ValidateShape(srv) ?? JobSource.ValidateRemote(srv); // dostawca dostępny + reguły jak dla celu (poświadczenie, przypięty klucz SFTP)
+            if (sourceCode is not null) problems.Add(new("sources", sourceCode));
+        }
 
         if (destinations.ValidateShape(draft.Destination) is { } dc)
             problems.Add(new("destination", dc));
         else if (JobDestination.Validate(draft.Destination) is { } jc)
             problems.Add(new("destination", jc)); // reguły definicji zadania (BL-73 cz. 2, ADR-0026): zdalny cel wymaga poświadczenia, SFTP — przypiętego klucza
-        else if (draft.Destination.Scheme == "local" && source is not null && Overlaps(source, Path.TrimEndingDirectorySeparator(Path.GetFullPath(draft.Destination.Root))))
+        else if (draft.Destination.Scheme == "local" && locals.Any(src => Overlaps(src, Path.TrimEndingDirectorySeparator(Path.GetFullPath(draft.Destination.Root)))))
             problems.Add(new("destination", KbCode.SourcesOverlap)); // kopia do wnętrza źródła (lub odwrotnie) = rekurencja i utrata sensu kopii
 
         if (draft.Cron is not null && !ValidCron(draft.Cron))

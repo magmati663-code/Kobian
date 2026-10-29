@@ -123,7 +123,11 @@ public sealed class WizardBackendTests : IDisposable
         Assert.Contains(new FieldProblem("name", KbCode.JobDefinitionInvalid), v.Validate(new JobDraft(" spacja", [Src], new DestinationRequest("local", Dst), null)));
         Assert.Contains(new FieldProblem("name", KbCode.JobDefinitionInvalid), v.Validate(new JobDraft(new string('x', 201), [Src], new DestinationRequest("local", Dst), null)));
         Assert.Contains(new FieldProblem("sources", KbCode.SourcesNotReadable), v.Validate(new JobDraft("A", [], new DestinationRequest("local", Dst), null)));
-        Assert.Contains(new FieldProblem("sources", KbCode.JobDefinitionInvalid), v.Validate(new JobDraft("A", [Src, Dst], new DestinationRequest("local", Dst), null)));
+        // Kilka źródeł jest dozwolonych; źródło będące celem = nakładanie z celem, foldery zawierające się nawzajem = KB-0102.
+        Assert.Contains(new FieldProblem("destination", KbCode.SourcesOverlap), v.Validate(new JobDraft("A", [Src, Dst], new DestinationRequest("local", Dst), null)));
+        Assert.Contains(new FieldProblem("sources", KbCode.SourcesOverlap), v.Validate(new JobDraft("A", [Src, Path.Combine(Src, ".")], new DestinationRequest("local", Dst), null)));
+        Assert.Contains(new FieldProblem("sources", KbCode.JobDefinitionInvalid), v.Validate(new JobDraft("A", [Src], new DestinationRequest("local", Dst), null, null,
+            [new DestinationRequest("smb", @"\\nas\k", SecretRef: "file:x")])));
         Assert.Contains(new FieldProblem("schedule", KbCode.ScheduleInvalid), v.Validate(new JobDraft("A", [Src], new DestinationRequest("local", Dst), "to nie cron")));
     }
 

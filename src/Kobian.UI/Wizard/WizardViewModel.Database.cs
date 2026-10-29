@@ -181,7 +181,7 @@ public sealed partial class WizardViewModel
         }
         catch (Exception ex) when (Kobian.UI.Services.UiFailure.IsServiceFailure(ex))
         {
-            if (version == _discoveryVersion) ShowText(ex is IOException ? $"{Strings.Get("Offline.Headline")} ({AgentOffline})" : KbText.Full(Kobian.UI.Services.UiFailure.CodeOf(ex))); // jak SCR-02 (R2.6.4)
+            if (version == _discoveryVersion) ShowText(ex is IOException ? $"{Strings.Get("Offline.Headline")} ({AgentOffline})" : Kobian.UI.Services.UiFailure.Describe(ex)); // jak SCR-02 (R2.6.4)
         }
         finally
         {
@@ -249,7 +249,7 @@ public sealed partial class WizardViewModel
         }
         catch (Exception ex) when (Kobian.UI.Services.UiFailure.IsServiceFailure(ex))
         {
-            if (version == _certificateVersion) ShowText(ex is IOException ? $"{Strings.Get("Offline.Headline")} ({AgentOffline})" : KbText.Full(Kobian.UI.Services.UiFailure.CodeOf(ex)));
+            if (version == _certificateVersion) ShowText(ex is IOException ? $"{Strings.Get("Offline.Headline")} ({AgentOffline})" : Kobian.UI.Services.UiFailure.Describe(ex));
         }
         finally
         {
@@ -288,7 +288,7 @@ public sealed partial class WizardViewModel
         }
         catch (Exception ex) when (Kobian.UI.Services.UiFailure.IsServiceFailure(ex))
         {
-            if (version == _certificateVersion) ShowText(ex is IOException ? $"{Strings.Get("Offline.Headline")} ({AgentOffline})" : KbText.Full(Kobian.UI.Services.UiFailure.CodeOf(ex)));
+            if (version == _certificateVersion) ShowText(ex is IOException ? $"{Strings.Get("Offline.Headline")} ({AgentOffline})" : Kobian.UI.Services.UiFailure.Describe(ex));
         }
         finally
         {

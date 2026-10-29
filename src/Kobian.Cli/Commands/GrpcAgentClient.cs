@@ -206,6 +206,15 @@ public sealed class GrpcAgentClient : IAgentClient, IDisposable
         if (!string.IsNullOrEmpty(request.Host)) args.Host = request.Host;
         if (request.Port is { } port) args.Port = port;
         if (!string.IsNullOrEmpty(request.HostKey)) args.HostKey = request.HostKey;
+        args.ExtraSources.AddRange(request.ExtraSources);
+        foreach (var s in request.SourceServers)
+        {
+            var spec = new DestinationSpec { Scheme = s.Scheme, Root = s.Root, Host = s.Host };
+            if (s.Port is { } sp) spec.Port = sp;
+            if (!string.IsNullOrEmpty(s.SecretRef)) spec.SecretRef = s.SecretRef;
+            if (!string.IsNullOrEmpty(s.HostKey)) spec.HostKey = s.HostKey;
+            args.SourceServers.Add(spec);
+        }
         var r = await Call(() => _client.InitJobAsync(args, _headers, DeadlineFromNow(), ct).ResponseAsync).ConfigureAwait(false);
         return new InitResult(Map(r.Result), r.HasCode ? r.Code : null, r.HasJobId ? r.JobId : null, r.HasRepoId ? r.RepoId : null, r.HasKeyId ? r.KeyId : null);
     }

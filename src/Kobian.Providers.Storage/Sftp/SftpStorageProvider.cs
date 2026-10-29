@@ -47,7 +47,7 @@ public sealed class SftpStorageProviderFactory(ISftpConnector connector) : IStor
     }
 }
 
-internal sealed class SftpStorageSession : StorageSessionBase
+internal sealed class SftpStorageSession : StorageSessionBase, IRemoteSourceReader
 {
     private const long PackSize = 16 * 1024 * 1024;
     private readonly ISftpTransport _t;
@@ -230,6 +230,45 @@ internal sealed class SftpStorageSession : StorageSessionBase
     }
 
     public override ValueTask DisposeAsync() => _t.DisposeAsync();
+
+    // ---- serwer jako ŹRÓDŁO kopii (IRemoteSourceReader): dowolne nazwy pod korzeniem, bez śledzenia dowiązań ----
+
+    public async ValueTask<IReadOnlyList<RemoteSourceEntry>> ListDirectoryAsync(string relativeDir, CancellationToken ct)
+    {
+        try
+        {
+            var full = RemoteSourcePath.Join(_root, relativeDir);
+            var st = await _t.LstatAsync(full, ct).ConfigureAwait(false)
+                     ?? throw new StorageException(ErrorClass.Permanent, KbCode.DestinationNotFound, "Source folder not found.");
+            if (st.Kind != SftpEntryKind.Directory)
+                throw new StorageException(ErrorClass.Permanent, KbCode.ReparsePointRefused, "Source path is not a folder (links are not followed).");
+            var entries = await _t.ListDirectoryAsync(full, ct).ConfigureAwait(false);
+            return [.. entries.Where(e => e.Name is not ("." or "..")).Select(e => new RemoteSourceEntry(e.Name,
+                e.Kind switch { SftpEntryKind.File => RemoteSourceKind.File, SftpEntryKind.Directory => RemoteSourceKind.Directory, _ => RemoteSourceKind.Other },
+                e.Length, e.Modified))];
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw SftpErrorMap.Map(ex);
+        }
+    }
+
+    public async ValueTask<Stream> OpenFileAsync(string relativePath, CancellationToken ct)
+    {
+        try
+        {
+            var full = RemoteSourcePath.Join(_root, relativePath);
+            var st = await _t.LstatAsync(full, ct).ConfigureAwait(false)
+                     ?? throw new StorageException(ErrorClass.Permanent, KbCode.DestinationNotFound, "Source file not found.");
+            if (st.Kind != SftpEntryKind.File)
+                throw new StorageException(ErrorClass.Permanent, KbCode.ReparsePointRefused, "Source path is not a regular file.");
+            return await _t.OpenReadAsync(full, 0, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw SftpErrorMap.Map(ex);
+        }
+    }
 
     internal static StorageException Exists() =>
         new(ErrorClass.Permanent, KbCode.ObjectExists, "Object already exists on destination; never overwritten.");

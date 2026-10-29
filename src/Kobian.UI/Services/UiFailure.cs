@@ -17,6 +17,17 @@ public static class UiFailure
     /// <summary>Wyjątki, które adapter zgłasza dla awarii usługi/transportu (reszta to błędy programistyczne i mają wychodzić).</summary>
     public static bool IsServiceFailure(Exception ex) => ex is IOException or TimeoutException or InvalidOperationException { InnerException: RpcException };
 
+    /// <summary>Numer zgłoszenia nieoczekiwanego błędu usługi (wpis w dzienniku agent-errors.log); null = brak.</summary>
+    public static string? ReferenceOf(Exception ex) =>
+        ex is InvalidOperationException { InnerException: RpcException rpc } ? rpc.Trailers.GetValue("kb-error-ref") : null;
+
+    /// <summary>Komunikat KB dla awarii usługi; przy błędzie wewnętrznym z numerem zgłoszenia — numer i gdzie szukać szczegółów.</summary>
+    public static string Describe(Exception ex)
+    {
+        var text = Kobian.UI.Wizard.KbText.Full(CodeOf(ex));
+        return ReferenceOf(ex) is { Length: > 0 } id ? text + " " + Kobian.UI.Localization.Strings.Format("Failure.Reference", id) : text;
+    }
+
     public static string CodeOf(Exception ex)
     {
         ArgumentNullException.ThrowIfNull(ex);

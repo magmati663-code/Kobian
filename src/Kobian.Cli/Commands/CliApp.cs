@@ -113,7 +113,7 @@ public static class CliApp
 
     private static int Usage(TextWriter stderr)
     {
-        stderr.WriteLine("usage: kobian status [--json] | init <name> --source <dir> --dest <dir|\\\\server\\share|/path> --password-file <file> [--dest-scheme local|smb|sftp|ftps|webdav] [--secret-ref file:<name>] [--host <host>] [--port <n>] [--host-key SHA256:<...> (sftp: klucz hosta, ftps/webdav: SPKI)] [--json] | job run <name> [--wait] [--json] | schedule list [--job <name>] [--json] | schedule set <name> --cron '<5 pól>' [--json] | schedule off <name> [--json] | check <name> [--sample <0-100>] [--rotation <n>] [--repair] [--json] | snapshots [--job <name>] [--json] | runs [--job <name>] [--limit <1-1000>] [--json] | watch <run-id> | forget <name> [--dry-run] [--json] | prune <name> [--dry-run] [--json] | retention release --confirm [--json] | alerts [list] [--json] | alerts ack <alert-id> [--json] | alerts silence <alert-id> <minuty 1-10080> [--json] | audit verify [--anchor <seq>:<sha256>] [--json] | destinations identity list [--destination <dest-id>] [--json] | destinations identity approve <dest-id> <SHA256:...> [--replace] [--json] | destinations identity reject <dest-id> <SHA256:...> [--json] | destinations identity require-pin <dest-id> on|off [--json] | restore-db --snapshot <id|latest> [--job <name>] [--as <nazwa>] [--json] | restore --snapshot <id|latest> [--job <name>] [--path <filter>] --to <dir> [--dry-run] [--json] | export [--job <name>]... [--output <file> [--force]] [--json] | import <file> [--dry-run] [--on-conflict skip|overwrite|rename] [--json]");
+        stderr.WriteLine("usage: kobian status [--json] | init <name> --source <dir|sftp://host/folder|ftps://…|webdav://…> [--source …] [--source-secret-ref file:<name>] [--source-host-key SHA256:<...>] --dest <dir|\\\\server\\share|/path> --password-file <file> [--dest-scheme local|smb|sftp|ftps|webdav] [--secret-ref file:<name>] [--host <host>] [--port <n>] [--host-key SHA256:<...> (sftp: klucz hosta, ftps/webdav: SPKI)] [--json] | job run <name> [--wait] [--json] | schedule list [--job <name>] [--json] | schedule set <name> --cron '<5 pól>' [--json] | schedule off <name> [--json] | check <name> [--sample <0-100>] [--rotation <n>] [--repair] [--json] | snapshots [--job <name>] [--json] | runs [--job <name>] [--limit <1-1000>] [--json] | watch <run-id> | forget <name> [--dry-run] [--json] | prune <name> [--dry-run] [--json] | retention release --confirm [--json] | alerts [list] [--json] | alerts ack <alert-id> [--json] | alerts silence <alert-id> <minuty 1-10080> [--json] | audit verify [--anchor <seq>:<sha256>] [--json] | destinations identity list [--destination <dest-id>] [--json] | destinations identity approve <dest-id> <SHA256:...> [--replace] [--json] | destinations identity reject <dest-id> <SHA256:...> [--json] | destinations identity require-pin <dest-id> on|off [--json] | restore-db --snapshot <id|latest> [--job <name>] [--as <nazwa>] [--json] | restore --snapshot <id|latest> [--job <name>] [--path <filter>] --to <dir> [--dry-run] [--json] | export [--job <name>]... [--output <file> [--force]] [--json] | import <file> [--dry-run] [--on-conflict skip|overwrite|rename] [--json]");
         return ExitUsage;
     }
 
@@ -208,8 +208,22 @@ public static class CliApp
                 }
                 port = pn;
             }
-            req = new InitRequest(name, Path.GetFullPath(source), scheme, scheme == "local" ? Path.GetFullPath(dest) : dest, Path.GetFullPath(passwordFile),
-                SecretRef: a.Option("--secret-ref"), Host: a.Option("--host"), Port: port, HostKey: a.Option("--host-key"));
+            // --source wiele razy: foldery (ścieżki tego komputera) i serwery „sftp://host[:port]/folder”, „ftps://…”, „webdav://…” (poświadczenie --source-secret-ref,
+            // klucz/odcisk serwera --source-host-key) — każde źródło jako osobny folder w kopii.
+            var locals = new List<string>();
+            var servers = new List<SourceServer>();
+            foreach (var s in a.Options("--source"))
+            {
+                if (SourceServer.TryParse(s, a.Option("--source-secret-ref"), a.Option("--source-host-key")) is { } srv) servers.Add(srv);
+                else locals.Add(Path.GetFullPath(s));
+            }
+            _ = source;
+            req = new InitRequest(name, locals.FirstOrDefault() ?? "", scheme, scheme == "local" ? Path.GetFullPath(dest) : dest, Path.GetFullPath(passwordFile),
+                SecretRef: a.Option("--secret-ref"), Host: a.Option("--host"), Port: port, HostKey: a.Option("--host-key"))
+            {
+                ExtraSources = [.. locals.Skip(1)],
+                SourceServers = servers,
+            };
         }
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
         {
@@ -1097,7 +1111,7 @@ public static class CliApp
         private static readonly HashSet<string> ValuedOptions = new(StringComparer.Ordinal)
         {
             "--job", "--snapshot", "--path", "--to", "--source", "--dest", "--password-file", "--dest-scheme", "--cron", "--limit", "--secret-ref", "--host", "--port",
-            "--host-key", "--destination", "--output", "--on-conflict", "--sample", "--rotation", "--as", "--anchor",
+            "--host-key", "--source-secret-ref", "--source-host-key", "--destination", "--output", "--on-conflict", "--sample", "--rotation", "--as", "--anchor",
         };
 
         private static bool IsValued(string a) => ValuedOptions.Contains(a);

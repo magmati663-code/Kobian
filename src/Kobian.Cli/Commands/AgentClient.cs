@@ -59,7 +59,32 @@ public sealed record RestorePlanResult(string? Code, string SnapshotId, long Fil
 /// <summary>Żądanie inicjalizacji repozytorium i zadania „files”. Hasło wyłącznie przez <c>PasswordFile</c> (ścieżka bezwzględna) — nigdy w argumentach ani w wiadomości.
 /// Cel zdalny (BL-73 cz. 2): <c>SecretRef</c> = odwołanie do magazynu sekretów Agenta („file:&lt;nazwa&gt;”), dla SFTP także host/port/odcisk klucza hosta.</summary>
 public sealed record InitRequest(string JobName, string Source, string DestinationScheme, string DestinationRoot, string PasswordFile, long? PackTargetSize = null,
-    string? SecretRef = null, string? Host = null, int? Port = null, string? HostKey = null);
+    string? SecretRef = null, string? Host = null, int? Port = null, string? HostKey = null)
+{
+    /// <summary>Kolejne foldery źródłowe (pierwszy w <see cref="Source"/>; pusty, gdy są tylko serwery).</summary>
+    public IReadOnlyList<string> ExtraSources { get; init; } = [];
+
+    /// <summary>Serwery jako źródła (SFTP/FTPS/WebDAV).</summary>
+    public IReadOnlyList<SourceServer> SourceServers { get; init; } = [];
+}
+
+/// <summary>Serwer jako źródło kopii (z <c>--source sftp://host:port/folder</c>): bez sekretów — poświadczenie przez secret_ref.</summary>
+public sealed record SourceServer(string Scheme, string Host, int? Port, string Root, string? SecretRef, string? HostKey)
+{
+    /// <summary>„sftp://host[:port]/folder”, „ftps://…”, „webdav://…” (HTTPS) → serwer; inny napis → null (folder lokalny).</summary>
+    public static SourceServer? TryParse(string value, string? secretRef, string? hostKey)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        var cut = value.IndexOf("://", StringComparison.Ordinal);
+        if (cut <= 0) return null;
+        var scheme = value[..cut].ToLowerInvariant();
+        if (scheme is not ("sftp" or "ftps" or "webdav")) return null;
+        if (!Uri.TryCreate("https" + value[cut..], UriKind.Absolute, out var u) || u.Host.Length == 0 || u.UserInfo.Length > 0)
+            throw new ArgumentException("Invalid server address.", nameof(value));
+        var root = Uri.UnescapeDataString(u.AbsolutePath);
+        return new SourceServer(scheme, u.Host.Trim('[', ']'), u.IsDefaultPort ? null : u.Port, root.Length == 0 ? "/" : root, secretRef, hostKey);
+    }
+}
 
 /// <summary>Wynik inicjalizacji: identyfikatory bez materiału tajnego; <c>Code</c> przy porażce.</summary>
 public sealed record InitResult(OverallState Result, string? Code, string? JobId, string? RepoId, string? KeyId);

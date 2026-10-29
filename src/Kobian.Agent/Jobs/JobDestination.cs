@@ -155,7 +155,14 @@ public static class JobDestination
     /// <summary>Zapis sekcji „destination” (te same nazwy pól co <see cref="Parse"/>; pola puste pomijane).</summary>
     internal static void Write(Utf8JsonWriter w, DestinationRequest d)
     {
-        w.WriteStartObject("destination");
+        w.WritePropertyName("destination");
+        WriteObject(w, d);
+    }
+
+    /// <summary>Obiekt celu/serwera bez nazwy właściwości (także element „sources” — serwer jako źródło, <see cref="JobSource"/>).</summary>
+    internal static void WriteObject(Utf8JsonWriter w, DestinationRequest d)
+    {
+        w.WriteStartObject();
         w.WriteString("scheme", d.Scheme);
         w.WriteString("root", d.Root);
         if (d.Host is not null) w.WriteString("host", d.Host);

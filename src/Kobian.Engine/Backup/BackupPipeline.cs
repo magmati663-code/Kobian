@@ -457,7 +457,7 @@ public sealed class BackupPipeline
             var snapId = RandomNumberGenerator.GetBytes(16);
             var now = (_req.Time ?? TimeProvider.System).GetUtcNow();
             var snap = new SnapshotObject(snapId, _req.HostId, _req.JobId, runId, now, _req.Mode, _req.ParentSnapId, null, rootTreeId, Stats(),
-                indexes, null, [], _req.DbMeta, [_req.Source.DisplayRoot], Skipped.Count, 0);
+                indexes, null, [], _req.DbMeta, _req.Source is IMultiRootSource multi ? [.. multi.DisplayRoots] : [_req.Source.DisplayRoot], Skipped.Count, 0);
             var sealedSnap = MetadataStore.Seal(_p._keys, MetadataKind.Snapshot, snapId, SnapshotCodec.Encode(snap));
             await _p._up.UploadAsync(RepoPaths.Snapshot(snapId), sealedSnap, ct).ConfigureAwait(false); // ostatni zapis (D3.14 pkt 3)
             return snapId;

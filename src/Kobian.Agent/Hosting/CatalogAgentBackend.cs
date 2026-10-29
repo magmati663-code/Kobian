@@ -232,8 +232,10 @@ public sealed class CatalogAgentBackend(string catalogPath, string agentVersion,
         if (init is null) return new InitJobReply { Result = OverallState.Failed, Code = KbCode.OperationNotAvailable };
         try
         {
-            var r = await init.InitAsync(new InitJobRequest(args.JobName, args.Source, args.DestinationScheme, args.DestinationRoot, args.PasswordFile,
-                args.HasPackTargetSize ? args.PackTargetSize : null, RemoteOf(args)), ct).ConfigureAwait(false);
+            List<JobSource> sources = [.. new[] { args.Source }.Concat(args.ExtraSources).Where(s => s.Length > 0).Select(JobSource.Local), .. args.SourceServers.Select(s => JobSource.Server(ToRequest(s)))];
+            if (sources.Count == 0) return new InitJobReply { Result = OverallState.Failed, Code = KbCode.SourcesNotReadable };
+            var r = await init.InitAsync(new InitJobRequest(args.JobName, sources[0].Label, args.DestinationScheme, args.DestinationRoot, args.PasswordFile,
+                args.HasPackTargetSize ? args.PackTargetSize : null, RemoteOf(args), sources), ct).ConfigureAwait(false);
             return new InitJobReply { Result = OverallState.Ok, JobId = r.JobId, RepoId = r.RepoIdHex, KeyId = r.KeyIdHex };
         }
         catch (KobianException ex)
@@ -347,7 +349,7 @@ public sealed class CatalogAgentBackend(string catalogPath, string agentVersion,
         var reply = new UpsertJobReply();
         if (args.ValidateOnly)
         {
-            foreach (var p in validator.Validate(ToDraft(args.JobName, args.Sources, args.Destination, args.HasCron ? args.Cron : null, args.Database)))
+            foreach (var p in validator.Validate(ToDraft(args.JobName, args.Sources, args.Destination, args.HasCron ? args.Cron : null, args.Database, args.SourceServers)))
                 reply.Issues.Add(new FieldIssue { Field = p.Field, Code = p.Code });
         }
         else if (args.HasCron && !validator.ValidCron(args.Cron))
@@ -380,7 +382,7 @@ public sealed class CatalogAgentBackend(string catalogPath, string agentVersion,
         ArgumentNullException.ThrowIfNull(args);
         var reply = new InitRepositoryReply();
         if (validator is null || init is null) return Fail(reply, KbCode.OperationNotAvailable);
-        var draft = ToDraft(args.JobName, args.Sources, args.Destination, args.HasCron ? args.Cron : null, args.Database);
+        var draft = ToDraft(args.JobName, args.Sources, args.Destination, args.HasCron ? args.Cron : null, args.Database, args.SourceServers);
         foreach (var p in validator.Validate(draft)) reply.Issues.Add(new FieldIssue { Field = p.Field, Code = p.Code });
         foreach (var p in JobValidator.ValidatePassword(args.Password, null, Environment.MachineName, CommonPasswords))
             reply.Issues.Add(new FieldIssue { Field = "password", Code = p.KbCode });
@@ -397,8 +399,9 @@ public sealed class CatalogAgentBackend(string catalogPath, string agentVersion,
                 if (dbCode is not null) return Fail(reply, dbCode);
                 db = new DatabaseInit(options!, dd.Server.SecretRef, dd.Name);
             }
-            var r = await init.InitFromWizardAsync(new WizardInitRequest(args.JobName, db is null ? draft.Sources[0] : "", draft.Destination.Scheme, draft.Destination.Root, args.Password,
-                args.CreateRecoveryKey, JobDraftValidator.DefaultTimeZone, draft.Cron, policy, db, RemoteOf(draft.Destination)), ct).ConfigureAwait(false);
+            List<JobSource> sources = [.. draft.Sources.Select(JobSource.Local), .. (draft.SourceServers ?? []).Select(JobSource.Server)];
+            var r = await init.InitFromWizardAsync(new WizardInitRequest(args.JobName, db is null ? sources[0].Label : "", draft.Destination.Scheme, draft.Destination.Root, args.Password,
+                args.CreateRecoveryKey, JobDraftValidator.DefaultTimeZone, draft.Cron, policy, db, RemoteOf(draft.Destination), db is null ? sources : null), ct).ConfigureAwait(false);
             reply.JobId = r.JobId;
             reply.RepoId = r.RepoIdHex;
             if (r.RecoveryKey is not null) reply.RecoveryKey = r.RecoveryKey;
@@ -576,8 +579,8 @@ public sealed class CatalogAgentBackend(string catalogPath, string agentVersion,
         return r;
     }
 
-    private static JobDraft ToDraft(string name, IEnumerable<string> sources, DestinationSpec? d, string? cron, DatabaseSourceSpec? db = null) =>
-        new(name, [.. sources], d is null ? new DestinationRequest("", "") : ToRequest(d), cron, db is null ? null : ToDraft(db));
+    private static JobDraft ToDraft(string name, IEnumerable<string> sources, DestinationSpec? d, string? cron, DatabaseSourceSpec? db = null, IEnumerable<DestinationSpec>? servers = null) =>
+        new(name, [.. sources], d is null ? new DestinationRequest("", "") : ToRequest(d), cron, db is null ? null : ToDraft(db), servers is null ? null : [.. servers.Select(ToRequest)]);
 
     internal static DatabaseDraft ToDraft(DatabaseSourceSpec db) => new(
         new DatabaseDiscoveryRequest(db.Server, db.HasAuth ? db.Auth : null, db.HasSecretRef ? db.SecretRef : null, db.HasCertificate ? db.Certificate : null,
@@ -607,6 +610,27 @@ public sealed class CatalogAgentBackend(string catalogPath, string agentVersion,
 
     /// <summary>Eksport/import zadań (US-29, BL-47); ustawiane przez host (Program.cs). Brak → KB-7012.</summary>
     public JobTransferService? JobTransfer { get; init; }
+
+    /// <summary>Magazyn sekretów dla poświadczeń wpisanych w kreatorze (SaveCredential); null = KB-7012.</summary>
+    public CredentialStore? Credentials { get; init; }
+
+    public Task<SaveCredentialReply> SaveCredentialAsync(SaveCredentialArgs args, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        if (Credentials is null) return Task.FromResult(new SaveCredentialReply { Result = OverallState.Failed, Code = KbCode.OperationNotAvailable });
+        try
+        {
+            return Task.FromResult(new SaveCredentialReply { Result = OverallState.Ok, SecretRef = Credentials.Save(args.Name, args.User, args.Password) });
+        }
+        catch (KobianException ex)
+        {
+            return Task.FromResult(new SaveCredentialReply { Result = OverallState.Failed, Code = ex.Code });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return Task.FromResult(new SaveCredentialReply { Result = OverallState.Failed, Code = KbCode.AccessDenied });
+        }
+    }
 
     /// <summary>ExportJobs (US-29): dokument kanoniczny kobian-export v1, bez sekretów. Nieistniejąca nazwa → KB-0104, za duży → KB-0121.</summary>
     public Task<ExportJobsReply> ExportJobsAsync(ExportJobsArgs args, CancellationToken ct)

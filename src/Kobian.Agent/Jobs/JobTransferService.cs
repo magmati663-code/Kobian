@@ -121,7 +121,8 @@ public sealed class JobTransferService(string catalogPath, CatalogWriter writer,
             problems.Add(new(path + ".definition.key", KbCode.JobDefinitionInvalid, "key material must be on a local path"));
         if (job.Type == "files")
         {
-            foreach (var p in validator.Validate(new JobDraft("x", [def.Source], def.Destination, null)).Where(p => p.Field != "name"))
+            foreach (var p in validator.Validate(new JobDraft("x", [.. def.Sources.Where(s => s.Path is not null).Select(s => s.Path!)], def.Destination, null, null,
+                         [.. def.Sources.Where(s => s.Remote is not null).Select(s => s.Remote!)])).Where(p => p.Field != "name"))
                 problems.Add(new(path + p.Field switch { "sources" => ".definition.sources", "destination" => ".definition.destination", _ => "." + p.Field }, p.Code, "rejected by job validator"));
         }
         else if (destinations.ValidateShape(def.Destination) is { } dc)
@@ -204,7 +205,7 @@ public sealed class JobTransferService(string catalogPath, CatalogWriter writer,
     private (bool NeedsCredentials, bool MissingKey) Readiness(ExportedJob j)
     {
         var def = JobDefinition.Parse(j.Type, j.Definition);
-        var refs = new[] { def.Remote?.SecretRef, def.MsSql?.SecretRef }.Where(r => r is not null);
+        var refs = new[] { def.Remote?.SecretRef, def.MsSql?.SecretRef }.Concat(def.Sources.Select(s => s.Remote?.SecretRef)).Where(r => r is not null);
         // secretRef z importowanego pliku jest niezaufany: krótszy niż prefiks wyrzucał ArgumentOutOfRangeException (RPC kończył się błędem wewnętrznym także w dry-run),
         // a „file:../../x” sondowało dowolną ścieżkę. Poprawny wpis ma kształt walidowany przez ValidSecretRef; niepoprawny liczy się jako brak poświadczeń.
         var needs = SecretsDirectory is not null && refs.Any(r => !JobDestination.ValidSecretRef(r) || !File.Exists(Path.Combine(SecretsDirectory, r!["file:".Length..] + ".json")));

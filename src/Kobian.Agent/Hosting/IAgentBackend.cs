@@ -38,6 +38,10 @@ public interface IAgentBackend
 
     Task<InitRepositoryReply> InitRepositoryAsync(InitRepositoryArgs args, CancellationToken ct);
 
+    /// <summary>Login i hasło z kreatora → magazyn sekretów Agenta (secret_ref „file:&lt;nazwa&gt;”). Bez implementacji → KB-7012.</summary>
+    Task<SaveCredentialReply> SaveCredentialAsync(SaveCredentialArgs args, CancellationToken ct) =>
+        Task.FromResult(new SaveCredentialReply { Result = OverallState.Failed, Code = Kobian.Domain.KbCode.OperationNotAvailable });
+
     Task<ApplyRetentionReply> ApplyRetentionAsync(ApplyRetentionArgs args, CancellationToken ct);
 
     Task<PreviewRetentionReply> PreviewRetentionAsync(PreviewRetentionArgs args, CancellationToken ct);

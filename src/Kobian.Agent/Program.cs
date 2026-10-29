@@ -46,6 +46,7 @@ var version = typeof(AgentHost).Assembly.GetName().Version?.ToString(3) ?? "0.0.
 await using var writer = new CatalogWriter(catalog);
 // Katalog stanu Agenta (Qb14): KOBIAN_STATE_DIR, domyślnie katalog z catalog.db; sekrety (Qb16): KOBIAN_SECRETS_DIR, domyślnie <stan>/secrets — AgentPaths.
 var stateDir = paths.StateDir;
+AgentErrorLog.Directory = Path.Combine(stateDir, "logs"); // nieoczekiwane błędy z numerem zgłoszenia (KB-0001) — patrz AgentErrorLog
 var secretsDir = paths.SecretsDir;
 // BL-73: cel SMB tylko na Windows (WNetAddConnection2 bez litery dysku; połączenia współdzielone przez równoległe sesje, rozłączane po ostatniej).
 // BL-35 (D4.11, SEC-14.5): piny SFTP/FTPS z katalogu tożsamości (zatwierdzanie przez Administratora — ApproveServerIdentity); piny z pól hostKey
@@ -174,6 +175,7 @@ var app = AgentHost.Create(new AgentHostOptions(ApiConventions.DefaultPipeName)
     Alerts = alertService,
     // US-29 (BL-47): eksport/import zadań kobian-export v1 (Administrator); import sprawdza istnienie wpisów magazynu sekretów (AC-29.1).
     JobTransfer = new JobTransferService(catalog, writer, jobValidator, probe, version, TimeProvider.System) { SecretsDirectory = secretsDir },
+    Credentials = new CredentialStore(secretsDir),
 }, CallerRoles(runningAsService), audit);
 // Wyzwalacze czasowe (RD-26): KOBIAN_SCHEDULER=0 wyłącza pętlę (diagnostyka); domyślnie włączona.
 Task schedulerLoop = Task.CompletedTask;

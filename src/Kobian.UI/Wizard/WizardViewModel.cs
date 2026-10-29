@@ -399,7 +399,7 @@ public sealed partial class WizardViewModel : ObservableObject
             // Awaria usługi w trakcie kroku (zerwany pipe, przekroczony termin InitRepository 5 min, odmowa roli, starszy Agent): komunikat KB zamiast zamknięcia aplikacji.
             // Po przekroczeniu terminu InitRepository/Upsert Agent mógł już dokończyć operację — kreator zostaje na tym kroku, a kolejne „Dalej” może zwrócić „repozytorium istnieje”
             // albo „nazwa zajęta” (to NIE jest ponowienie idempotentne); wtedy zadanie jest już na liście zadań (SCR-02).
-            ShowText(KbText.Full(Kobian.UI.Services.UiFailure.CodeOf(ex)));
+            ShowText(Kobian.UI.Services.UiFailure.Describe(ex));
         }
         finally
         {

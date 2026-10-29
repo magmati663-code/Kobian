@@ -23,6 +23,7 @@ public static class AgentCallAudit
         AckAlertArgs a => (a.AlertId, null),
         SilenceAlertArgs s => (s.AlertId, new Dictionary<string, string> { ["minutes"] = s.DurationMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture) }),
         InitRepositoryArgs i => (i.JobName, HostKey(i.Destination)),
+        SaveCredentialArgs c => (c.Name, null), // tylko nazwa wpisu — bez loginu i hasła (NFR-11, SEC-11.5)
         UpsertJobArgs u => (u.JobName, HostKey(u.Destination)),
         SetScheduleArgs s => (s.Job, s.HasCron ? new Dictionary<string, string> { ["cron"] = s.Cron } : null),
         RunJobRequest r => (r.Job, null),

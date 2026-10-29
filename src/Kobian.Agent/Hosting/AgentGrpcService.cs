@@ -142,6 +142,9 @@ public sealed class AgentGrpcService(IAgentBackend backend, ICallerRoleResolver 
                 ? Task.FromResult(new RestorePlanReply { Code = denied })
                 : backend.PlanRestoreAsync(request, context.CancellationToken);
 
+    public override Task<SaveCredentialReply> SaveCredential(SaveCredentialArgs request, ServerCallContext context) =>
+        backend.SaveCredentialAsync(request, context.CancellationToken);
+
     public override Task<InitJobReply> InitJob(InitJobArgs request, ServerCallContext context) =>
         (DenyDestination(context, request.DestinationScheme, request.DestinationRoot)
          ?? RestoreTargetGate.DenyPath(roles.ResolveCaller(context).Role, request.PasswordFile, p => restoreTargets.CheckReadableFile(context, p), Kobian.Domain.KbCode.AccessDenied)) is { } denied

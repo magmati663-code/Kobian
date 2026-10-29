@@ -32,6 +32,9 @@ service Agent {
   // Repozytorium + zadanie z kreatora (BL-60/BL-61, Qb20/Qb24): hasło w wiadomości po uwierzytelnionym pipe (nie w pliku po stronie klienta).
   // Zadanie powstaje wyłączone; UpsertJob (validate_only=false) je włącza. Rola Operator.
   rpc InitRepository(InitRepositoryArgs) returns (InitRepositoryReply);
+  // Login i hasło do serwera (SFTP/FTPS/FTP/WebDAV/SMB) wpisane w kreatorze → magazyn sekretów Agenta (plik tylko dla konta usługi), wynik = secret_ref „file:<nazwa>”.
+  // Hasło nie wraca w odpowiedzi ani do audytu. Rola Operator (jak hasło repozytorium w InitRepository).
+  rpc SaveCredential(SaveCredentialArgs) returns (SaveCredentialReply);
   // Retencja GFS zadania (BL-25, D3.12): dry_run = podgląd; inaczej logiczne zapomnienie snapshotów (bez usuwania danych na celu — prune osobno). Rola Operator.
   rpc ApplyRetention(ApplyRetentionArgs) returns (ApplyRetentionReply);
   // Podgląd polityki retencji dla kreatora (D3.12 „dry-run w UI przed zapisem polityki”): symulacja na wystąpieniach harmonogramu z przeszłości.
@@ -232,6 +235,9 @@ message InitJobArgs {
   optional string host = 8;
   optional int32 port = 9;
   optional string host_key = 10;
+  // Kolejne foldery źródłowe (pierwszy w „source”) i serwery jako źródła (SFTP/FTPS/WebDAV). „source” może być pusty, gdy są tylko serwery.
+  repeated string extra_sources = 11;
+  repeated DestinationSpec source_servers = 12;
 }
 
 message InitJobReply {
@@ -398,6 +404,8 @@ message UpsertJobArgs {
   optional RetentionSpec retention = 6;
   // Zadanie „database” (S1-db): zamiast „sources”. Walidacja pola „database” (KB-0103, KB-7012 gdy Agent bez obsługi baz).
   optional DatabaseSourceSpec database = 7;
+  // Serwery jako źródła (SFTP/FTPS/WebDAV — te same pola co cel; bez sekretów). Razem z „sources”: 1–32 źródeł, każde jako folder w kopii.
+  repeated DestinationSpec source_servers = 8;
 }
 
 // Źródło bazodanowe z kreatora (BL-40 cz. 4, R2.5.2): bez sekretów (AC-01.3) — login SQL tylko jako secret_ref, pin certyfikatu jako NAZWA pliku .cer
@@ -487,6 +495,8 @@ message InitRepositoryArgs {
   optional RetentionSpec retention = 7;
   // Zadanie „database” zamiast „sources” (job_jobs.type = 'database').
   optional DatabaseSourceSpec database = 8;
+  // Serwery jako źródła (SFTP/FTPS/WebDAV), obok „sources”.
+  repeated DestinationSpec source_servers = 9;
 }
 
 message InitRepositoryReply {
@@ -876,4 +886,18 @@ message ImportJobsReply {
   repeated ImportIssue issues = 3;
   repeated ImportChange changes = 4;
   bool applied = 5;
+}
+
+message SaveCredentialArgs {
+  // Nazwa wpisu [A-Za-z0-9][A-Za-z0-9._-]{0,63}; istniejący wpis jest zastępowany (zmiana hasła).
+  string name = 1;
+  string user = 2;
+  string password = 3;
+}
+
+message SaveCredentialReply {
+  OverallState result = 1;
+  optional string code = 2;
+  // „file:<nazwa>” — do pól secret_ref celu/źródła.
+  string secret_ref = 3;
 }

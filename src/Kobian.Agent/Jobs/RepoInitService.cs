@@ -11,16 +11,22 @@ namespace Kobian.Agent.Jobs;
 
 /// <summary>Żądanie inicjalizacji repozytorium i zadania „files”. <c>PasswordFile</c> wskazuje plik z hasłem opakowującym klucz główny (≤ 1 KiB, pierwsza linia).</summary>
 public sealed record InitJobRequest(string JobName, string Source, string DestinationScheme, string DestinationRoot, string PasswordFile, long? PackTargetSize = null,
-    RemoteDestination? Remote = null)
+    RemoteDestination? Remote = null, IReadOnlyList<JobSource>? Sources = null)
 {
+    /// <summary>Wszystkie źródła (domyślnie jedno lokalne <see cref="Source"/>).</summary>
+    public IReadOnlyList<JobSource> AllSources => Sources ?? [JobSource.Local(Source)];
+
     /// <summary>Cel jako żądanie (poświadczenie i parametry SFTP z <see cref="Remote"/>).</summary>
     public DestinationRequest Destination => new(DestinationScheme, DestinationRoot, Remote?.Host, Remote?.Port, Remote?.SecretRef, Remote?.HostKey);
 }
 
 /// <summary>Żądanie z kreatora: hasło w pamięci (nigdy w wyniku/logach), opcjonalny klucz odzyskiwania i harmonogram (strefa = strefa zadania).</summary>
 public sealed record WizardInitRequest(string JobName, string Source, string DestinationScheme, string DestinationRoot, string Password, bool CreateRecoveryKey, string TimeZone, string? Cron,
-    Kobian.Application.Jobs.RetentionPolicy? Retention = null, DatabaseInit? Database = null, RemoteDestination? Remote = null)
+    Kobian.Application.Jobs.RetentionPolicy? Retention = null, DatabaseInit? Database = null, RemoteDestination? Remote = null, IReadOnlyList<JobSource>? Sources = null)
 {
+    /// <summary>Wszystkie źródła (domyślnie jedno lokalne <see cref="Source"/>).</summary>
+    public IReadOnlyList<JobSource> AllSources => Sources ?? [JobSource.Local(Source)];
+
     /// <summary>Cel jako żądanie (poświadczenie i parametry SFTP z <see cref="Remote"/>).</summary>
     public DestinationRequest Destination => new(DestinationScheme, DestinationRoot, Remote?.Host, Remote?.Port, Remote?.SecretRef, Remote?.HostKey);
 }
@@ -73,11 +79,12 @@ public sealed class RepoInitService
     public async Task<InitJobResult> InitAsync(InitJobRequest req, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(req);
-        Check(req.JobName, req.Destination, req.Source, req.PasswordFile);
+        Check(req.JobName, req.Destination, req.PasswordFile);
+        CheckSources(req.AllSources);
         var pwText = KeyFileLoader.ReadPasswordFile(req.PasswordFile);
         if (pwText.Length == 0) throw new KobianException(KbCode.KeyUnwrapFailed, ErrorClass.Security, "Password must not be empty.");
         var prov = RepoProvisioner.Create(pwText, _time.GetUtcNow());
-        var (jobId, localKey, localHeader) = await ProvisionAsync(req.JobName, req.Source, req.Destination, prov, null,
+        var (jobId, localKey, localHeader) = await ProvisionAsync(req.JobName, req.AllSources, req.Destination, prov, null,
             _ => req.PasswordFile, enabled: true, timeZone: "UTC", req.PackTargetSize, cron: null, retention: null, ct).ConfigureAwait(false);
         return new InitJobResult(jobId, prov.RepoIdHex, prov.KeyIdHex, localKey, localHeader);
     }
@@ -99,7 +106,8 @@ public sealed class RepoInitService
         }
         else
         {
-            Check(req.JobName, req.Destination, req.Source);
+            Check(req.JobName, req.Destination);
+            CheckSources(req.AllSources);
         }
         if (string.IsNullOrEmpty(req.Password)) throw new KobianException(KbCode.PasswordWeak, ErrorClass.Permanent, "Password must not be empty.");
         ProvisionedRepo prov;
@@ -113,7 +121,7 @@ public sealed class RepoInitService
         {
             prov = RepoProvisioner.Create(req.Password, _time.GetUtcNow());
         }
-        var (jobId, _, _) = await ProvisionAsync(req.JobName, req.Source, req.Destination, prov, withRecovery,
+        var (jobId, _, _) = await ProvisionAsync(req.JobName, req.AllSources, req.Destination, prov, withRecovery,
             p => WritePasswordFile(p.RepoIdHex, req.Password), enabled: false, req.TimeZone, null, req.Cron, req.Retention, ct, databaseSection).ConfigureAwait(false);
         return new WizardInitResult(jobId, prov.RepoIdHex, withRecovery?.RecoveryKey);
     }
@@ -122,6 +130,25 @@ public sealed class RepoInitService
     /// Nazwa, dostępność dostawcy, cel wg schematu (<see cref="JobDestination.Validate"/> — UNC i ścieżka SFTP nie są „fully qualified” w sensie lokalnym)
     /// i ścieżki lokalne (źródło, plik hasła) jako bezwzględne.
     /// </summary>
+    /// <summary>Źródła: 1–32; lokalne — ścieżki bezwzględne; serwery — reguły jak dla celu i dostępny dostawca.</summary>
+    private void CheckSources(IReadOnlyList<JobSource> sources)
+    {
+        if (sources.Count is 0 or > JobSource.MaxSources) throw new KobianException(KbCode.JobDefinitionInvalid, ErrorClass.Permanent, "Between 1 and 32 sources are supported.");
+        foreach (var s in sources)
+        {
+            if (s.Path is { } p)
+            {
+                if (string.IsNullOrWhiteSpace(p) || p.Contains('\0', StringComparison.Ordinal) || !Path.IsPathFullyQualified(p))
+                    throw new KobianException(KbCode.JobDefinitionInvalid, ErrorClass.Permanent, "Paths must be absolute.");
+            }
+            else
+            {
+                var bad = JobSource.ValidateRemote(s.Remote!) ?? (_providers.ContainsKey(s.Remote!.Scheme) ? null : KbCode.JobDefinitionInvalid);
+                if (bad is not null) throw new KobianException(bad, ErrorClass.Permanent, "The source server is not valid.");
+            }
+        }
+    }
+
     private void Check(string jobName, DestinationRequest destination, params string[] paths)
     {
         if (string.IsNullOrWhiteSpace(jobName) || jobName.Length > 128 || jobName.Any(char.IsControl))
@@ -158,7 +185,7 @@ public sealed class RepoInitService
         return path;
     }
 
-    private async Task<(string JobId, string LocalKey, string LocalHeader)> ProvisionAsync(string jobName, string source, DestinationRequest destination,
+    private async Task<(string JobId, string LocalKey, string LocalHeader)> ProvisionAsync(string jobName, IReadOnlyList<JobSource> sources, DestinationRequest destination,
         ProvisionedRepo prov, ProvisionedRepoWithRecovery? recovery, Func<ProvisionedRepo, string> passwordFile, bool enabled, string timeZone, long? packTarget,
         string? cron, Kobian.Application.Jobs.RetentionPolicy? retention, CancellationToken ct, string? databaseSection = null)
     {
@@ -181,7 +208,7 @@ public sealed class RepoInitService
         await File.WriteAllTextAsync(localKey, prov.KeyFileJson, new UTF8Encoding(false), ct).ConfigureAwait(false);
         await File.WriteAllTextAsync(localHeader, prov.HeaderJson, new UTF8Encoding(false), ct).ConfigureAwait(false);
 
-        var def = Definition(databaseSection is null ? source : null, destination, localKey, passwordFile(prov), localHeader, packTarget, retention, databaseSection);
+        var def = Definition(databaseSection is null ? sources : null, destination, localKey, passwordFile(prov), localHeader, packTarget, retention, databaseSection);
         var jobId = "job-" + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(8));
         var now = Iso(_time.GetUtcNow());
         var defBytes = Encoding.UTF8.GetBytes(def);
@@ -236,7 +263,7 @@ public sealed class RepoInitService
         return json;
     }
 
-    private static string Definition(string? source, DestinationRequest destination, string keyFile, string passwordFile, string header, long? packTarget,
+    private static string Definition(IReadOnlyList<JobSource>? sources, DestinationRequest destination, string keyFile, string passwordFile, string header, long? packTarget,
         Kobian.Application.Jobs.RetentionPolicy? retention, string? databaseSection = null)
     {
         using var ms = new MemoryStream();
@@ -252,7 +279,7 @@ public sealed class RepoInitService
             else
             {
                 w.WriteStartArray("sources");
-                w.WriteStringValue(source);
+                foreach (var s in sources ?? []) s.Write(w);
                 w.WriteEndArray();
             }
             JobDestination.Write(w, destination);

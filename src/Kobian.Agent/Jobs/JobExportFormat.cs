@@ -63,6 +63,9 @@ public static class JobExportFormat
         Obj,
         StrArray,
         ObjArray,
+
+        /// <summary>Tablica „sources”: napis (folder) albo obiekt serwera (pola jak cel) — <see cref="JobSource"/>.</summary>
+        SourceArray,
     }
 
     private sealed record Node(K Kind, bool Required = false, IReadOnlyDictionary<string, Node>? Children = null);
@@ -86,7 +89,7 @@ public static class JobExportFormat
         ("conflictWaitMinutes", new(K.Int))));
 
     private static readonly Node FilesDefinition = new(K.Obj, true, Fields(
-        ("version", new(K.Int, true)), ("sources", new(K.StrArray, true)), ("destination", Destination), ("key", Key), ("packTargetSize", new(K.Int)), ("retention", Retention), ("verify", Verify)));
+        ("version", new(K.Int, true)), ("sources", new(K.SourceArray, true, Destination.Children)), ("destination", Destination), ("key", Key), ("packTargetSize", new(K.Int)), ("retention", Retention), ("verify", Verify)));
 
     private static readonly Node DatabaseDefinition = new(K.Obj, true, Fields(
         ("version", new(K.Int, true)), ("database", Database), ("destination", Destination), ("key", Key), ("packTargetSize", new(K.Int)), ("retention", Retention), ("verify", Verify)));
@@ -379,6 +382,12 @@ public static class JobExportFormat
                 if (e.ValueKind != JsonValueKind.Array) { problems.Add(new(path, KbCode.ImportFormatInvalid, "expected array")); return; }
                 var si = 0;
                 foreach (var x in e.EnumerateArray()) CheckNode(x, new Node(K.Str), string.Create(CultureInfo.InvariantCulture, $"{path}[{si++}]"), problems);
+                return;
+            case K.SourceArray:
+                if (e.ValueKind != JsonValueKind.Array) { problems.Add(new(path, KbCode.ImportFormatInvalid, "expected array")); return; }
+                var ri = 0;
+                foreach (var x in e.EnumerateArray())
+                    CheckNode(x, x.ValueKind == JsonValueKind.Object ? new Node(K.Obj, Children: n.Children) : new Node(K.Str), string.Create(CultureInfo.InvariantCulture, $"{path}[{ri++}]"), problems);
                 return;
             case K.ObjArray:
                 if (e.ValueKind != JsonValueKind.Array) { problems.Add(new(path, KbCode.ImportFormatInvalid, "expected array")); return; }

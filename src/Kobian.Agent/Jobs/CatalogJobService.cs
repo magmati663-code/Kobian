@@ -138,6 +138,34 @@ public sealed class CatalogJobService
         return await RunWithLocksAsync(job, owner, queuedId, ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Drzewo źródeł zadania „files”: jedno źródło lokalne = <see cref="FileSystemSource"/> (układ kopii jak dotąd); serwer (SFTP/FTPS/WebDAV) = sesja dostawcy
+    /// z poświadczeniem roli Backup i tożsamością serwera z katalogu (ta sama bramka co cel) → <see cref="RemoteSourceTree"/>; kilka źródeł = <see cref="CompositeSourceTree"/>
+    /// (każde jako folder w kopii). Otwarte sesje trafiają do <paramref name="sessions"/> — zamyka je wywołujący.
+    /// </summary>
+    private async Task<ISourceTree> SourceTreeAsync(JobDefinition def, List<IStorageSession> sessions, CancellationToken ct)
+    {
+        var parts = new List<(string Label, ISourceTree Tree)>();
+        foreach (var s in def.Sources)
+        {
+            if (s.Path is { } path)
+            {
+                parts.Add((s.Label, new FileSystemSource(path)));
+                continue;
+            }
+            var remote = s.Remote!;
+            if (!_providers.TryGetValue(remote.Scheme, out var factory))
+                throw new KobianException(KbCode.JobDefinitionInvalid, ErrorClass.Permanent, "Source server provider is not available.");
+            var config = JobDestination.ToConfig("src-" + JobDestination.Id(remote.Scheme, remote.Root, JobDestination.Options(remote)), remote);
+            var session = await factory.OpenAsync(config, CredentialRole.Backup, ct).ConfigureAwait(false);
+            sessions.Add(session);
+            if (session is not IRemoteSourceReader reader)
+                throw new KobianException(KbCode.JobDefinitionInvalid, ErrorClass.Permanent, "This server type cannot be used as a source.");
+            parts.Add((s.Label, new RemoteSourceTree(reader, s.Label)));
+        }
+        return parts.Count == 1 ? parts[0].Tree : new CompositeSourceTree(parts);
+    }
+
     private async Task<JobOutcome> RunWithLocksAsync(JobRow job, string owner, string? queuedRunIdHex, CancellationToken ct)
     {
         try
@@ -330,7 +358,7 @@ public sealed class CatalogJobService
         var destId = def.DestinationId;
         var headerSha = def.RepoHeader is null ? new byte[32] : SHA256.HashData(await File.ReadAllBytesAsync(def.RepoHeader, ct).ConfigureAwait(false)); // 32 zera = repozytorium bez nagłówka (klucz deweloperski, ADR-0002)
         await EnsureRepoAsync(repoHex, destId, headerSha, ct).ConfigureAwait(false);
-        if (def.MsSql is null && !Directory.Exists(def.Source)) throw new KobianException(KbCode.SourcesNotReadable, ErrorClass.Permanent, "Source does not exist.");
+        if (def.MsSql is null && def.Sources.Any(s => s.Path is { } p && !Directory.Exists(p))) throw new KobianException(KbCode.SourcesNotReadable, ErrorClass.Permanent, "Source does not exist.");
         if (def.MsSql is not null && MsSqlSessions is null) throw new KobianException(KbCode.JobDefinitionInvalid, ErrorClass.Permanent, "MSSQL source is not available in this Agent.");
         if (def.MsSql is { } allowed) AllowedSqlServers.Demand(allowed.Connection.Server);
 
@@ -369,7 +397,16 @@ public sealed class CatalogJobService
         }
         else
         {
-            result = await pipeline.RunAsync(new BackupRequest(new FileSystemSource(def.Source), job.Id, _hostId, mode, null, parent, def.PackTargetSize, Time: _time, RunId: runId, BaselineStream: baseline), ct).ConfigureAwait(false);
+            var remoteSessions = new List<IStorageSession>();
+            try
+            {
+                var tree = await SourceTreeAsync(def, remoteSessions, ct).ConfigureAwait(false);
+                result = await pipeline.RunAsync(new BackupRequest(tree, job.Id, _hostId, mode, null, parent, def.PackTargetSize, Time: _time, RunId: runId, BaselineStream: baseline), ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                foreach (var s in remoteSessions) await s.DisposeAsync().ConfigureAwait(false);
+            }
         }
         if (result.SnapId is null) return (result.ToJobOutcome(), result.Stats);
         var snap = await MetadataStore.LoadSnapshotAsync(session, keys, result.SnapId, ct).ConfigureAwait(false);

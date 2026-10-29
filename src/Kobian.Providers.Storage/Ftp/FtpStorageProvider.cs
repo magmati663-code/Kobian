@@ -62,7 +62,7 @@ public sealed class FtpStorageProviderFactory : IStorageProviderFactory
         config.Options is not null && config.Options.TryGetValue(InsecureOption, out var v) && v == "1";
 }
 
-internal sealed class FtpStorageSession : StorageSessionBase
+internal sealed class FtpStorageSession : StorageSessionBase, IRemoteSourceReader
 {
     private const long PackSize = 16 * 1024 * 1024;
 
@@ -320,6 +320,45 @@ internal sealed class FtpStorageSession : StorageSessionBase
     }
 
     public override ValueTask DisposeAsync() => _t.DisposeAsync();
+
+    // ---- serwer jako ŹRÓDŁO kopii (IRemoteSourceReader): dowolne nazwy pod korzeniem, bez śledzenia dowiązań; jeden kanał danych naraz ----
+
+    public async ValueTask<IReadOnlyList<RemoteSourceEntry>> ListDirectoryAsync(string relativeDir, CancellationToken ct)
+    {
+        try
+        {
+            var full = RemoteSourcePath.Join(_root, relativeDir);
+            var st = await _t.StatAsync(full, ct).ConfigureAwait(false)
+                     ?? throw new StorageException(ErrorClass.Permanent, KbCode.DestinationNotFound, "Source folder not found.");
+            if (st.Kind != FtpEntryKind.Directory)
+                throw new StorageException(ErrorClass.Permanent, KbCode.ReparsePointRefused, "Source path is not a folder (links are not followed).");
+            var entries = await _t.ListDirectoryAsync(full, ct).ConfigureAwait(false);
+            return [.. entries.Where(e => e.Name is not ("." or "..")).Select(e => new RemoteSourceEntry(e.Name,
+                e.Kind switch { FtpEntryKind.File => RemoteSourceKind.File, FtpEntryKind.Directory => RemoteSourceKind.Directory, _ => RemoteSourceKind.Other },
+                e.Length, e.Modified))];
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw FtpErrorMap.Map(ex);
+        }
+    }
+
+    public async ValueTask<Stream> OpenFileAsync(string relativePath, CancellationToken ct)
+    {
+        try
+        {
+            var full = RemoteSourcePath.Join(_root, relativePath);
+            var st = await _t.StatAsync(full, ct).ConfigureAwait(false)
+                     ?? throw new StorageException(ErrorClass.Permanent, KbCode.DestinationNotFound, "Source file not found.");
+            if (st.Kind != FtpEntryKind.File)
+                throw new StorageException(ErrorClass.Permanent, KbCode.ReparsePointRefused, "Source path is not a regular file.");
+            return await _t.OpenReadAsync(full, 0, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw FtpErrorMap.Map(ex);
+        }
+    }
 
     internal static StorageException Exists() =>
         new(ErrorClass.Permanent, KbCode.ObjectExists, "Object already exists on destination; never overwritten.");

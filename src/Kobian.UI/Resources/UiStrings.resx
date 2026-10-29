@@ -93,6 +93,7 @@
   <data name="Offline.Denied.Headline" xml:space="preserve"><value>Brak dostępu do usługi Kobian</value></data>
   <data name="Offline.Denied.Detail" xml:space="preserve"><value>Usługa działa, ale Twoje konto nie ma do niej dostępu. Poproś administratora o dodanie Cię do grupy „Kobian Operators” albo „Kobian Admins”, a potem wyloguj się i zaloguj ponownie (albo uruchom aplikację jako administrator).</value></data>
   <data name="Offline.Badge" xml:space="preserve"><value>Brak połączenia</value></data>
+  <data name="Failure.Reference" xml:space="preserve"><value>Numer zgłoszenia: {0} — szczegóły w dzienniku usługi agent-errors.log (Windows: C:\ProgramData\Kobian\logs, Linux: /var/lib/kobian/logs).</value></data>
   <data name="Cron.Custom" xml:space="preserve"><value>własny harmonogram ({0})</value></data>
   <data name="Cron.Hourly" xml:space="preserve"><value>co godzinę</value></data>
   <data name="Cron.HourlyAt" xml:space="preserve"><value>co godzinę, w minucie :{0}</value></data>
