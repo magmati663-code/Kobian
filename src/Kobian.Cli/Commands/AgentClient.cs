@@ -1,3 +1,4 @@
+using Kobian.Domain;
 namespace Kobian.Cli.Commands;
 
 public enum OverallState
@@ -211,6 +212,10 @@ public interface IAgentClient
     Task<RunOutcome> RestoreDetachedAsync(string snapshot, string? pathFilter, string target, CancellationToken ct) => throw new AgentUnavailableException();
 
     Task<InitResult> InitJobAsync(InitRequest request, CancellationToken ct);
+
+    /// <summary>Login i hasło → magazyn sekretów Agenta (SaveCredential). Wynik: kod KB (null = zapisane) i secret_ref.</summary>
+    Task<(string? Code, string? SecretRef)> SaveCredentialAsync(string name, string user, string password, CancellationToken ct) =>
+        Task.FromResult<(string?, string?)>((KbCode.OperationNotAvailable, null));
 
     Task<IReadOnlyList<ScheduleItem>> ListSchedulesAsync(string? job, CancellationToken ct);
 

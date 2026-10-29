@@ -29,6 +29,7 @@ public sealed class GrpcWizardService(Agent.AgentClient client, Metadata headers
         if (fields.Count == 0) return [];
         var args = new UpsertJobArgs { JobName = draft.JobName.Trim(), Destination = Destination(draft), ValidateOnly = true, Retention = Retention(draft) };
         args.Sources.Add(draft.Sources);
+        args.SourceServers.Add(Servers(draft));
         if (draft.Cron is not null) args.Cron = draft.Cron;
         if (Database(draft) is { } db) args.Database = db;
         var r = await Call(() => client.UpsertJobAsync(args, headers, Deadline(), ct).ResponseAsync).ConfigureAwait(false);
@@ -42,6 +43,28 @@ public sealed class GrpcWizardService(Agent.AgentClient client, Metadata headers
         return Map(r);
     }
 
+    public async Task<ProbeResult> ProbeServerAsync(ServerSource server, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(server);
+        var r = await Call(() => client.ProbeDestinationAsync(new ProbeDestinationArgs { Destination = Spec(server) }, headers, Deadline(TimeSpan.FromSeconds(60)), ct).ResponseAsync).ConfigureAwait(false);
+        return Map(r);
+    }
+
+    public async Task<string?> SaveCredentialAsync(string name, string login, string password, CancellationToken ct)
+    {
+        var r = await Call(() => client.SaveCredentialAsync(new SaveCredentialArgs { Name = name, User = login, Password = password }, headers, Deadline(), ct).ResponseAsync).ConfigureAwait(false);
+        return r.Result == OverallState.Failed ? (r.HasCode ? r.Code : GrpcDashboardSource.KbUnknown) : null;
+    }
+
+    internal static DestinationSpec Spec(ServerSource s)
+    {
+        var spec = new DestinationSpec { Scheme = s.Scheme, Root = s.Root, Host = s.Host, Port = s.Port, SecretRef = "file:" + s.SecretName };
+        if (!string.IsNullOrEmpty(s.HostKey)) spec.HostKey = s.HostKey;
+        return spec;
+    }
+
+    internal static IEnumerable<DestinationSpec> Servers(WizardDraft d) => (d.SourceServers ?? []).Select(Spec);
+
     internal static ProbeResult Map(ProbeDestinationReply r) => r.Status switch
     {
         ProbeStatus.Ok => new ProbeResult(ProbeOutcome.Ok),
@@ -54,6 +77,7 @@ public sealed class GrpcWizardService(Agent.AgentClient client, Metadata headers
         ArgumentNullException.ThrowIfNull(draft);
         var args = new InitRepositoryArgs { JobName = draft.JobName.Trim(), Destination = Destination(draft), Password = repositoryPassword, CreateRecoveryKey = true, Retention = Retention(draft) };
         args.Sources.Add(draft.Sources);
+        args.SourceServers.Add(Servers(draft));
         if (draft.Cron is not null) args.Cron = draft.Cron;
         if (Database(draft) is { } db) args.Database = db;
         // Init (PBKDF2 600 000 + zapis na cel) bywa długi — termin 5 min.
@@ -76,6 +100,7 @@ public sealed class GrpcWizardService(Agent.AgentClient client, Metadata headers
         // Retencja z S5 (po utworzeniu repozytorium w S4) zapisywana w definicji zadania przy zapisie.
         var args = new UpsertJobArgs { JobName = draft.JobName.Trim(), Destination = Destination(draft), ValidateOnly = false, Retention = Retention(draft) };
         args.Sources.Add(draft.Sources);
+        args.SourceServers.Add(Servers(draft));
         if (draft.Cron is not null) args.Cron = draft.Cron;
         if (Database(draft) is { } db) args.Database = db;
         var r = await Call(() => client.UpsertJobAsync(args, headers, Deadline(), ct).ResponseAsync).ConfigureAwait(false);

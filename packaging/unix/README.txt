@@ -23,6 +23,16 @@ Dodanie użytkownika do grupy (potem wyloguj się i zaloguj):
 Poświadczenia celów sieciowych (SFTP, FTPS, WebDAV, SMB): pliki JSON w katalogu sekretów (Linux: /var/lib/kobian/secrets, macOS:
 /Library/Application Support/Kobian/secrets), właściciel root, prawa 0600 — zob. dokumentacja celów (docs/admin/cel-*.md).
 
+Najprościej: aplikacja „Kobian” (kreator) — foldery wybierasz oknem, login i hasło do serwera wpisujesz w kreatorze (zapisze je usługa),
+serwer SFTP/FTPS/WebDAV możesz dodać także jako ŹRÓDŁO („Dodaj folder z serwera…”).
+
+Hasło do serwera z wiersza poleceń (bez ręcznego pisania plików):
+  kobian credential set nas-kopie --user kopie --password-file ~/haslo-nas.txt     # → file:nas-kopie
+
+Kilka źródeł, także z serwera:
+  kobian init Biuro --source /home/jan/Dokumenty --source sftp://nas.firma.pl/dane --source-secret-ref file:nas-kopie \
+      --source-host-key SHA256:<odcisk> --dest /mnt/usb/kopie --password-file ~/haslo.txt
+
 Pierwsza kopia z wiersza poleceń:
   echo 'moje-dlugie-haslo-repo' > ~/haslo.txt && chmod 600 ~/haslo.txt
   kobian init Dom --source /home/jan/Dokumenty --dest /mnt/usb/kopie --password-file ~/haslo.txt

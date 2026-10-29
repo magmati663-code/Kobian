@@ -148,6 +148,21 @@
   <data name="Wizard.S1.Hint" xml:space="preserve"><value>Add at least one folder. Subfolders of a selected folder are protected automatically.</value></data>
   <data name="Wizard.S1.Watermark" xml:space="preserve"><value>Folder path, e.g. C:\Users\Anna\Documents</value></data>
   <data name="Wizard.S1.Add" xml:space="preserve"><value>Add folder</value></data>
+  <data name="Wizard.Cred.Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Wizard.Cred.Hint" xml:space="preserve"><value>The password is stored by the Kobian service in its protected store (only the service and administrators can read it). Leave it empty if an administrator has already prepared an entry named as the “Login” field.</value></data>
+  <data name="Wizard.Cred.LoginRequired" xml:space="preserve"><value>Enter the server address and login.</value></data>
+  <data name="Wizard.Src.AddServer" xml:space="preserve"><value>Add a folder from a server (SFTP / FTPS / WebDAV)…</value></data>
+  <data name="Wizard.Src.Title" xml:space="preserve"><value>Folder on a server</value></data>
+  <data name="Wizard.Src.Kind.Sftp" xml:space="preserve"><value>SFTP</value></data>
+  <data name="Wizard.Src.Kind.Ftps" xml:space="preserve"><value>FTPS</value></data>
+  <data name="Wizard.Src.Kind.WebDav" xml:space="preserve"><value>WebDAV (HTTPS)</value></data>
+  <data name="Wizard.Src.Path" xml:space="preserve"><value>Folder on the server (from “/”, e.g. /data/office)</value></data>
+  <data name="Wizard.Src.Check" xml:space="preserve"><value>Check and add</value></data>
+  <data name="Wizard.Src.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Wizard.Src.ApproveHint" xml:space="preserve"><value>First connection to this server. Compare the fingerprint below with the one from the server administrator and approve only if they are identical.</value></data>
+  <data name="Wizard.Src.Approve" xml:space="preserve"><value>Fingerprints match — approve</value></data>
+  <data name="Wizard.Src.Servers" xml:space="preserve"><value>Folders from servers</value></data>
+  <data name="Wizard.Src.Remove" xml:space="preserve"><value>Remove</value></data>
   <data name="Wizard.S1.Browse" xml:space="preserve"><value>Choose folders…</value></data>
   <data name="Wizard.S1.BrowseTitle" xml:space="preserve"><value>Choose folders to back up</value></data>
   <data name="Wizard.S2.BrowseTitle" xml:space="preserve"><value>Choose a folder for backups</value></data>
@@ -156,11 +171,11 @@
   <data name="Wizard.Dest.Local" xml:space="preserve"><value>Local or USB drive</value></data>
   <data name="Wizard.Dest.Sftp" xml:space="preserve"><value>SFTP server</value></data>
   <data name="Wizard.Dest.Smb" xml:space="preserve"><value>Network share (SMB)</value></data>
-  <data name="Wizard.S2.SmbCredential" xml:space="preserve"><value>Credential (entry name in the service secret store)</value></data>
-  <data name="Wizard.S2.SmbHint" xml:space="preserve"><value>Enter the folder as a UNC path, e.g. \\nas\backups\office. The share password is stored by an administrator in the service secret store — the wizard does not accept it.</value></data>
+  <data name="Wizard.S2.SmbCredential" xml:space="preserve"><value>Login (e.g. NAS\backup or backup)</value></data>
+  <data name="Wizard.S2.SmbHint" xml:space="preserve"><value>Enter the folder as a UNC path, e.g. \\nas\backups\office, or pick it with the button.</value></data>
   <data name="Wizard.S2.Host" xml:space="preserve"><value>Server</value></data>
   <data name="Wizard.S2.Port" xml:space="preserve"><value>Port</value></data>
-  <data name="Wizard.S2.User" xml:space="preserve"><value>User</value></data>
+  <data name="Wizard.S2.User" xml:space="preserve"><value>Login</value></data>
   <data name="Wizard.S2.Path" xml:space="preserve"><value>Destination folder</value></data>
   <data name="Wizard.S2.PathWatermark" xml:space="preserve"><value>e.g. E:\KobianBackups</value></data>
   <data name="Wizard.S2.Hint" xml:space="preserve"><value>Preferably a different drive than the protected data. After “Next” we check that the destination is reachable and writable.</value></data>
@@ -395,8 +410,8 @@
   <data name="Wizard.Ftps.ModeHint" xml:space="preserve"><value>Both modes encrypt the password and data. If unsure, keep “Standard”; choose port 990 only when the server manual or administrator says so.</value></data>
   <data name="Wizard.Ftps.ModeShort.Explicit" xml:space="preserve"><value>Explicit TLS</value></data>
   <data name="Wizard.Ftps.ModeShort.Implicit" xml:space="preserve"><value>Implicit TLS</value></data>
-  <data name="Wizard.Ftps.Credential" xml:space="preserve"><value>Credential (entry name in the service secret store)</value></data>
-  <data name="Wizard.Ftps.CredentialHint" xml:space="preserve"><value>The server login and password are stored by an administrator in the service secret store — the wizard does not accept them. An account without delete rights is recommended.</value></data>
+  <data name="Wizard.Ftps.Credential" xml:space="preserve"><value>Login</value></data>
+  <data name="Wizard.Ftps.CredentialHint" xml:space="preserve"><value>A separate server account without delete rights is recommended.</value></data>
   <data name="Wizard.Ftps.PathWatermark" xml:space="preserve"><value>e.g. /backups/office</value></data>
   <data name="Wizard.Ftps.PathHint" xml:space="preserve"><value>Folder on the server, starting with “/”. After “Next” we check the connection, the server certificate and write access.</value></data>
   <data name="Wizard.Ftps.PlainFtp" xml:space="preserve"><value>Plain FTP without encryption is not available in the wizard — the password and data would travel in clear text. Use FTPS or SFTP.</value></data>

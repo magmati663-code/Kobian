@@ -42,6 +42,27 @@ public sealed class FakeWizardService : IWizardService
         return Task.FromResult<IReadOnlyList<StepIssue>>(issues);
     }
 
+    /// <summary>Zapisane poświadczenia: nazwa → (login, długość hasła) — samego hasła atrapa nie przechowuje.</summary>
+    public Dictionary<string, (string Login, int PasswordLength)> SavedCredentials { get; } = [];
+
+    public Queue<ProbeResult> ServerProbeResults { get; } = new();
+
+    public List<ServerSource> ProbedServers { get; } = [];
+
+    public Task<string?> SaveCredentialAsync(string name, string login, string password, CancellationToken ct)
+    {
+        Calls.Add("credential:" + name);
+        SavedCredentials[name] = (login, password.Length);
+        return Task.FromResult<string?>(null);
+    }
+
+    public Task<ProbeResult> ProbeServerAsync(ServerSource server, CancellationToken ct)
+    {
+        Calls.Add("probe-server");
+        ProbedServers.Add(server);
+        return Task.FromResult(ServerProbeResults.Count > 0 ? ServerProbeResults.Dequeue() : new ProbeResult(ProbeOutcome.Ok));
+    }
+
     public Task<ProbeResult> ProbeAsync(WizardDraft draft, CancellationToken ct)
     {
         Calls.Add("probe");

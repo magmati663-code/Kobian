@@ -140,18 +140,28 @@ public sealed partial class WizardViewModel
     partial void OnSelectedDestinationChanged(WizardOption<DestinationKind> value)
     {
         ForgetApprovedIdentity();
+        ForgetDestinationCredential();
         ClearFtpsErrors();
         // Pola serwera TLS są wspólne dla FTPS i WebDAV — domyślny port podąża za rodzajem celu, chyba że użytkownik wpisał własny.
         if (value?.Value == DestinationKind.WebDav && FtpsPort is FtpsFieldRules.ExplicitPort or FtpsFieldRules.ImplicitPort) FtpsPort = FtpsFieldRules.HttpsPort;
         else if (value?.Value == DestinationKind.Ftps && FtpsPort == FtpsFieldRules.HttpsPort) FtpsPort = FtpsFieldRules.ExplicitPort;
     }
 
-    partial void OnSftpHostChanged(string value) => ForgetApprovedIdentity();
+    partial void OnSftpHostChanged(string value)
+    {
+        ForgetApprovedIdentity();
+        ForgetDestinationCredential();
+    }
+
+    partial void OnSftpUserChanged(string value) => ForgetDestinationCredential();
+
+    partial void OnSmbCredentialChanged(string value) => ForgetDestinationCredential();
 
     partial void OnSftpPortChanged(int value) => ForgetApprovedIdentity();
 
     partial void OnDestinationPathChanged(string value)
     {
+        if (IsSmb) ForgetDestinationCredential(); // serwer SMB jest częścią ścieżki UNC
         if (FtpsPathError.Length > 0) FtpsPathError = ErrorText(FtpsFieldRules.PathError(value));
     }
 
@@ -188,12 +198,14 @@ public sealed partial class WizardViewModel
 
     partial void OnFtpsHostChanged(string value)
     {
+        ForgetDestinationCredential();
         ForgetApprovedIdentity();
         if (FtpsHostError.Length > 0) FtpsHostError = ErrorText(FtpsFieldRules.HostError(value)); // poprawka zdejmuje komunikat od razu, nowy pojawia się dopiero po „Dalej”
     }
 
     partial void OnFtpsCredentialChanged(string value)
     {
+        ForgetDestinationCredential();
         if (FtpsCredentialError.Length > 0) FtpsCredentialError = ErrorText(FtpsFieldRules.CredentialError(value));
     }
 
@@ -211,7 +223,10 @@ public sealed partial class WizardViewModel
         FtpsHostError = ErrorText(FtpsFieldRules.HostError(FtpsHost));
         FtpsPortError = ErrorText(FtpsFieldRules.PortError(FtpsPort));
         FtpsPathError = ErrorText(FtpsFieldRules.PathError(DestinationPath));
-        FtpsCredentialError = ErrorText(FtpsFieldRules.CredentialError(FtpsCredential));
+        // Z hasłem pole jest LOGINEM (dowolny, niepusty — np. jan.kowalski@firma.pl); bez hasła — nazwą istniejącego wpisu (bezpieczne znaki).
+        FtpsCredentialError = ErrorText(ServerPassword.Length > 0 || _savedDestinationCredential is not null
+            ? (FtpsCredential.Trim().Length == 0 ? "Wizard.Ftps.Err.CredentialRequired" : null)
+            : FtpsFieldRules.CredentialError(FtpsCredential));
         return !(HasFtpsHostError || HasFtpsPortError || HasFtpsPathError || HasFtpsCredentialError);
     }
 

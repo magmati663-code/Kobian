@@ -113,6 +113,60 @@
                          AutomationProperties.Name="{l:T Wizard.S1.Watermark}" Margin="0,0,8,0" />
                 <Button Grid.Column="2" Classes="secondary" Content="{l:T Wizard.S1.Add}" Command="{Binding AddSourceCommand}" AutomationProperties.AutomationId="SCR-03.S1.Add" />
               </Grid>
+              <!-- Serwer jako źródło: lista dodanych + panel „Sprawdź i dodaj” (login i hasło zapisuje usługa; odcisk serwera zatwierdzany na miejscu). -->
+              <StackPanel Spacing="6" IsVisible="{Binding HasSourceServers}" MaxWidth="640" HorizontalAlignment="Stretch">
+                <TextBlock Classes="label" Text="{l:T Wizard.Src.Servers}" />
+                <ItemsControl ItemsSource="{Binding SourceServers}" AutomationProperties.AutomationId="SCR-03.S1.Servers">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="w:ServerSource">
+                      <Border Classes="card" Padding="12,8" Margin="0,0,0,6">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Classes="body" Text="{Binding Label}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Label}" />
+                          <Button Grid.Column="1" Classes="secondary" Content="{l:T Wizard.Src.Remove}" CommandParameter="{Binding}"
+                                  Command="{Binding $parent[UserControl].((w:WizardViewModel)DataContext).RemoveSourceServerCommand}" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+              <Button Classes="secondary" Content="{l:T Wizard.Src.AddServer}" Command="{Binding ShowAddServerCommand}" IsVisible="{Binding !IsAddingServer}"
+                      AutomationProperties.AutomationId="SCR-03.S1.AddServer" />
+              <Border Classes="card" Padding="16" MaxWidth="640" HorizontalAlignment="Stretch" IsVisible="{Binding IsAddingServer}" AutomationProperties.AutomationId="SCR-03.S1.ServerPanel">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="title" Text="{l:T Wizard.Src.Title}" />
+                  <ListBox Classes="segmented" ItemsSource="{Binding SourceServerKinds}" SelectedItem="{Binding SrcKind}" AutomationProperties.AutomationId="SCR-03.S1.SrcKind">
+                    <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate></ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                      <DataTemplate DataType="w:WizardOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                  <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                    <TextBlock Classes="label" Text="{l:T Wizard.S2.Host}" Margin="0,0,0,6" />
+                    <TextBlock Grid.Column="1" Classes="label" Text="{l:T Wizard.S2.Port}" Margin="0,0,0,6" />
+                    <TextBox Grid.Row="1" Text="{Binding SrcHost}" PlaceholderText="{l:T Wizard.Ftps.HostWatermark}" Margin="0,0,8,0" AutomationProperties.AutomationId="SCR-03.S1.SrcHost" AutomationProperties.Name="{l:T Wizard.S2.Host}" />
+                    <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding SrcPort}" Minimum="1" Maximum="65535" FormatString="0" Width="130" AutomationProperties.Name="{l:T Wizard.S2.Port}" />
+                  </Grid>
+                  <TextBlock Classes="label" Text="{l:T Wizard.Src.Path}" />
+                  <TextBox Text="{Binding SrcPath}" PlaceholderText="/dane/biuro" AutomationProperties.AutomationId="SCR-03.S1.SrcPath" AutomationProperties.Name="{l:T Wizard.Src.Path}" />
+                  <TextBlock Classes="label" Text="{l:T Wizard.S2.User}" />
+                  <TextBox Text="{Binding SrcLogin}" AutomationProperties.AutomationId="SCR-03.S1.SrcLogin" AutomationProperties.Name="{l:T Wizard.S2.User}" />
+                  <TextBlock Classes="label" Text="{l:T Wizard.Cred.Password}" />
+                  <TextBox Text="{Binding SrcPassword}" PasswordChar="●" AutomationProperties.AutomationId="SCR-03.S1.SrcPassword" AutomationProperties.Name="{l:T Wizard.Cred.Password}" />
+                  <TextBlock Classes="muted" Text="{l:T Wizard.Cred.Hint}" TextWrapping="Wrap" />
+                  <TextBlock Classes="body" Text="{Binding SrcMessage}" IsVisible="{Binding HasSrcMessage}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Assertive"
+                             AutomationProperties.AutomationId="SCR-03.S1.SrcMessage" />
+                  <SelectableTextBlock Text="{Binding SrcPendingFingerprint}" IsVisible="{Binding HasSrcPendingFingerprint}" FontFamily="Consolas, Cascadia Mono, monospace"
+                                       TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-03.S1.SrcFingerprint" />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Classes="primary" Content="{l:T Wizard.Src.Check}" Command="{Binding AddSourceServerCommand}" IsVisible="{Binding !HasSrcPendingFingerprint}"
+                            AutomationProperties.AutomationId="SCR-03.S1.SrcCheck" />
+                    <Button Classes="primary" Content="{l:T Wizard.Src.Approve}" Command="{Binding ApproveSourceServerCommand}" IsVisible="{Binding HasSrcPendingFingerprint}"
+                            AutomationProperties.AutomationId="SCR-03.S1.SrcApprove" />
+                    <Button Classes="secondary" Content="{l:T Wizard.Src.Cancel}" Command="{Binding CancelAddServerCommand}" AutomationProperties.AutomationId="SCR-03.S1.SrcCancel" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
               </StackPanel>
 
               <!-- S1-db: serwer → lista baz (tylko odczyt) → jedna baza; bez sekretów w UI (AC-01.3). -->
@@ -213,10 +267,16 @@
                 </Grid>
                 <TextBlock Classes="label" Text="{l:T Wizard.S2.User}" />
                 <TextBox Text="{Binding SftpUser}" AutomationProperties.AutomationId="SCR-03.S2.User" AutomationProperties.Name="{l:T Wizard.S2.User}" />
+                <TextBlock Classes="label" Text="{l:T Wizard.Cred.Password}" />
+                <TextBox Text="{Binding ServerPassword}" PasswordChar="●" AutomationProperties.AutomationId="SCR-03.S2.SftpPassword" AutomationProperties.Name="{l:T Wizard.Cred.Password}" />
+                <TextBlock Classes="muted" Text="{l:T Wizard.Cred.Hint}" TextWrapping="Wrap" />
               </StackPanel>
               <StackPanel Classes="field" IsVisible="{Binding IsSmb}">
                 <TextBlock Classes="label" Text="{l:T Wizard.S2.SmbCredential}" />
                 <TextBox Text="{Binding SmbCredential}" AutomationProperties.AutomationId="SCR-03.S2.SmbCredential" AutomationProperties.Name="{l:T Wizard.S2.SmbCredential}" />
+                <TextBlock Classes="label" Text="{l:T Wizard.Cred.Password}" />
+                <TextBox Text="{Binding ServerPassword}" PasswordChar="●" AutomationProperties.AutomationId="SCR-03.S2.SmbPassword" AutomationProperties.Name="{l:T Wizard.Cred.Password}" />
+                <TextBlock Classes="muted" Text="{l:T Wizard.Cred.Hint}" TextWrapping="Wrap" />
                 <TextBlock Classes="muted" Text="{l:T Wizard.S2.SmbHint}" TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-03.S2.SmbHint" />
               </StackPanel>
               <!-- S2 FTPS (BL-34, it. 120): serwer + port, szyfrowanie słownie (tryb ↔ port, Qb68), poświadczenie jako odwołanie (AC-01.3); błędy przy polach. -->
@@ -248,6 +308,9 @@
                          AutomationProperties.Name="{l:T Wizard.Ftps.Credential}" />
                 <TextBlock Classes="fielderror" Text="{Binding FtpsCredentialError}" IsVisible="{Binding HasFtpsCredentialError}" AutomationProperties.AutomationId="SCR-03.S2.FtpsCredentialError"
                            AutomationProperties.LiveSetting="Assertive" />
+                <TextBlock Classes="label" Text="{l:T Wizard.Cred.Password}" />
+                <TextBox Text="{Binding ServerPassword}" PasswordChar="●" AutomationProperties.AutomationId="SCR-03.S2.FtpsPassword" AutomationProperties.Name="{l:T Wizard.Cred.Password}" />
+                <TextBlock Classes="muted" Text="{l:T Wizard.Cred.Hint}" TextWrapping="Wrap" />
                 <TextBlock Classes="muted" Text="{l:T Wizard.Ftps.CredentialHint}" TextWrapping="Wrap" />
               </StackPanel>
               <StackPanel Classes="field">

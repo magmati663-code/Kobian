@@ -190,6 +190,12 @@ public sealed class GrpcAgentClient : IAgentClient, IDisposable
         r.ConflictBytes, [.. r.ConflictSample], r.InvalidNames, r.Links, r.MissingBlocks, r.Packs, r.ReadBytes, r.HasFreeBytes ? r.FreeBytes : null,
         r.HasBlockingCode ? r.BlockingCode : null, r.Resumable);
 
+    public async Task<(string? Code, string? SecretRef)> SaveCredentialAsync(string name, string user, string password, CancellationToken ct)
+    {
+        var r = await Call(() => _client.SaveCredentialAsync(new SaveCredentialArgs { Name = name, User = user, Password = password }, _headers, DeadlineFromNow(), ct).ResponseAsync).ConfigureAwait(false);
+        return r.Result == Api.V1.OverallState.Failed ? (r.HasCode ? r.Code : KbCode.Internal, null) : (null, r.SecretRef);
+    }
+
     public async Task<InitResult> InitJobAsync(InitRequest request, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(request);

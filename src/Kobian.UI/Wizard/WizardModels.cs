@@ -81,7 +81,30 @@ public sealed record WizardDraft(
     string? SmbSecret = null,
     string? FtpsHost = null,
     int FtpsPort = 21,
-    string? FtpsSecret = null);
+    string? FtpsSecret = null,
+    IReadOnlyList<ServerSource>? SourceServers = null);
+
+/// <summary>Serwer jako źródło kopii (S1): SFTP/FTPS/WebDAV, folder na serwerze, wpis poświadczenia (nazwa w magazynie usługi) i zatwierdzony odcisk.</summary>
+public sealed record ServerSource(string Scheme, string Host, int Port, string Root, string SecretName, string? HostKey)
+{
+    public string Label => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{Scheme}://{(Host.Contains(':', StringComparison.Ordinal) ? "[" + Host + "]" : Host)}:{Port}{Root}");
+}
+
+/// <summary>Nazwa wpisu poświadczenia z adresu serwera i loginu („NAS.firma.pl” + „jan” → „nas.firma.pl-jan”) — jak <c>CredentialStore.SuggestName</c> w Agencie.</summary>
+public static class CredentialNames
+{
+    public static string Suggest(string host, string login)
+    {
+        var raw = (host.Trim() + "-" + login.Trim()).ToLowerInvariant();
+        var sb = new System.Text.StringBuilder();
+        foreach (var c in raw) sb.Append(char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-' ? c : '-');
+        var s = sb.ToString().Trim('-', '.');
+        if (s.Length == 0 || !char.IsAsciiLetterOrDigit(s[0])) s = "serwer" + s;
+        s = s.Length > 64 ? s[..64] : s;
+        while (s.Contains("..", StringComparison.Ordinal)) s = s.Replace("..", ".", StringComparison.Ordinal);
+        return s.TrimEnd('.');
+    }
+}
 
 public enum ProbeOutcome
 {
@@ -127,6 +150,12 @@ public interface IWizardService
     /// <summary>Zatwierdzenie odcisku: Agent pobiera certyfikat ponownie, porównuje i zapisuje pin (ApproveSqlCertificate). Domyślnie brak.</summary>
     Task<SqlCertificateApproval?> ApproveSqlCertificateAsync(string server, string sha256, string fileName, CancellationToken ct) =>
         Task.FromResult<SqlCertificateApproval?>(null);
+
+    /// <summary>Login i hasło wpisane w kreatorze → magazyn sekretów usługi (SaveCredential). null = zapisane, inaczej kod KB. Hasło nie jest nigdzie zapamiętywane w UI.</summary>
+    Task<string?> SaveCredentialAsync(string name, string login, string password, CancellationToken ct) => Task.FromResult<string?>("KB-7012");
+
+    /// <summary>Sprawdzenie serwera-źródła (ProbeDestination dla podanego serwera): tożsamość do zatwierdzenia, dostęp, folder.</summary>
+    Task<ProbeResult> ProbeServerAsync(ServerSource server, CancellationToken ct) => Task.FromResult(new ProbeResult(ProbeOutcome.PermanentError, "KB-7012"));
 }
 
 /// <summary>Certyfikat przedstawiony przez serwer SQL (tylko do pokazania i zatwierdzenia): odcisk SHA-256, podmiot, wystawca, ważność.</summary>

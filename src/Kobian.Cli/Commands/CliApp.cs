@@ -51,6 +51,8 @@ public static class CliApp
                 "alerts" when a.Positional(1) == "silence" && a.Positional(2) is { } silId && int.TryParse(a.Positional(3), NumberStyles.None, CultureInfo.InvariantCulture, out var silMin)
                     && silMin is >= 1 and <= 10080 => await AlertAct(a, client, silId, silMin, stdout, ct).ConfigureAwait(false),
                 "export" => await Export(a, client, stdout, stderr, ct).ConfigureAwait(false),
+                "credential" when a.Positional(1) == "set" && a.Positional(2) is { } credName && a.Option("--user") is { } credUser && a.Option("--password-file") is { } credPw =>
+                    await CredentialSet(a, client, credName, credUser, credPw, stdout, stderr, ct).ConfigureAwait(false),
                 "import" when a.Positional(1) is { } importFile => await Import(a, client, importFile, stdout, stderr, ct).ConfigureAwait(false),
                 "audit" when a.Positional(1) == "verify" => await AuditVerify(a, client, stdout, ct).ConfigureAwait(false),
                 "check" when a.Positional(1) is { } cj => await Check(a, client, cj, stdout, stderr, ct).ConfigureAwait(false),
@@ -113,7 +115,7 @@ public static class CliApp
 
     private static int Usage(TextWriter stderr)
     {
-        stderr.WriteLine("usage: kobian status [--json] | init <name> --source <dir|sftp://host/folder|ftps://…|webdav://…> [--source …] [--source-secret-ref file:<name>] [--source-host-key SHA256:<...>] --dest <dir|\\\\server\\share|/path> --password-file <file> [--dest-scheme local|smb|sftp|ftps|webdav] [--secret-ref file:<name>] [--host <host>] [--port <n>] [--host-key SHA256:<...> (sftp: klucz hosta, ftps/webdav: SPKI)] [--json] | job run <name> [--wait] [--json] | schedule list [--job <name>] [--json] | schedule set <name> --cron '<5 pól>' [--json] | schedule off <name> [--json] | check <name> [--sample <0-100>] [--rotation <n>] [--repair] [--json] | snapshots [--job <name>] [--json] | runs [--job <name>] [--limit <1-1000>] [--json] | watch <run-id> | forget <name> [--dry-run] [--json] | prune <name> [--dry-run] [--json] | retention release --confirm [--json] | alerts [list] [--json] | alerts ack <alert-id> [--json] | alerts silence <alert-id> <minuty 1-10080> [--json] | audit verify [--anchor <seq>:<sha256>] [--json] | destinations identity list [--destination <dest-id>] [--json] | destinations identity approve <dest-id> <SHA256:...> [--replace] [--json] | destinations identity reject <dest-id> <SHA256:...> [--json] | destinations identity require-pin <dest-id> on|off [--json] | restore-db --snapshot <id|latest> [--job <name>] [--as <nazwa>] [--json] | restore --snapshot <id|latest> [--job <name>] [--path <filter>] --to <dir> [--dry-run] [--json] | export [--job <name>]... [--output <file> [--force]] [--json] | import <file> [--dry-run] [--on-conflict skip|overwrite|rename] [--json]");
+        stderr.WriteLine("usage: kobian status [--json] | init <name> --source <dir|sftp://host/folder|ftps://…|webdav://…> [--source …] [--source-secret-ref file:<name>] [--source-host-key SHA256:<...>] --dest <dir|\\\\server\\share|/path> --password-file <file> [--dest-scheme local|smb|sftp|ftps|webdav] [--secret-ref file:<name>] [--host <host>] [--port <n>] [--host-key SHA256:<...> (sftp: klucz hosta, ftps/webdav: SPKI)] [--json] | job run <name> [--wait] [--json] | schedule list [--job <name>] [--json] | schedule set <name> --cron '<5 pól>' [--json] | schedule off <name> [--json] | check <name> [--sample <0-100>] [--rotation <n>] [--repair] [--json] | snapshots [--job <name>] [--json] | runs [--job <name>] [--limit <1-1000>] [--json] | watch <run-id> | forget <name> [--dry-run] [--json] | prune <name> [--dry-run] [--json] | retention release --confirm [--json] | alerts [list] [--json] | alerts ack <alert-id> [--json] | alerts silence <alert-id> <minuty 1-10080> [--json] | audit verify [--anchor <seq>:<sha256>] [--json] | destinations identity list [--destination <dest-id>] [--json] | destinations identity approve <dest-id> <SHA256:...> [--replace] [--json] | destinations identity reject <dest-id> <SHA256:...> [--json] | destinations identity require-pin <dest-id> on|off [--json] | restore-db --snapshot <id|latest> [--job <name>] [--as <nazwa>] [--json] | restore --snapshot <id|latest> [--job <name>] [--path <filter>] --to <dir> [--dry-run] [--json] | export [--job <name>]... [--output <file> [--force]] [--json] | credential set <nazwa> --user <login> --password-file <plik> [--json] | import <file> [--dry-run] [--on-conflict skip|overwrite|rename] [--json]");
         return ExitUsage;
     }
 
@@ -191,6 +193,40 @@ public static class CliApp
     /// Inicjalizacja repozytorium i zadania (BL-24). PROWIZORYCZNIE (Qb14): hasło tylko z pliku (--password-file), nigdy z argumentu ani zmiennej środowiskowej
     /// (argumenty widać w liście procesów). Ścieżki względne rozwiązywane względem katalogu bieżącego CLI, bo Agent wymaga ścieżek bezwzględnych.
     /// </summary>
+    /// <summary>
+    /// Poświadczenie do serwera (SFTP/FTPS/WebDAV/SMB) zapisywane przez Agenta w jego magazynie sekretów — bez ręcznego tworzenia plików JSON jako administrator.
+    /// Hasło tylko z pliku (jak --password-file w init: argumenty widać w liście procesów); wynik „file:&lt;nazwa&gt;” do --secret-ref / --source-secret-ref.
+    /// </summary>
+    private static async Task<int> CredentialSet(Args a, IAgentClient c, string name, string user, string passwordFile, TextWriter o, TextWriter err, CancellationToken ct)
+    {
+        string password;
+        try
+        {
+            using var reader = new StreamReader(Path.GetFullPath(passwordFile));
+            password = (await reader.ReadLineAsync(ct).ConfigureAwait(false) ?? "").TrimEnd('\r');
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            await err.WriteLineAsync($"{KbCode.AuthRejected}: password file is not readable / nie można odczytać pliku z hasłem").ConfigureAwait(false);
+            return ExitUsage;
+        }
+        var (code, secretRef) = await c.SaveCredentialAsync(name, user, password, ct).ConfigureAwait(false);
+        if (a.Flag("--json"))
+        {
+            await Json(o, "credential", w =>
+            {
+                w.WriteString("result", code is null ? "ok" : "failed");
+                if (code is not null) w.WriteString("code", code);
+                if (secretRef is not null) w.WriteString("secretRef", secretRef);
+            }).ConfigureAwait(false);
+        }
+        else
+        {
+            await o.WriteLineAsync(code is null ? $"ok {secretRef}" : $"failed {code}").ConfigureAwait(false);
+        }
+        return code is null ? 0 : 1;
+    }
+
     private static async Task<int> Init(Args a, IAgentClient c, string name, string source, string dest, string passwordFile, TextWriter o, TextWriter err, CancellationToken ct)
     {
         InitRequest req;
@@ -1111,7 +1147,7 @@ public static class CliApp
         private static readonly HashSet<string> ValuedOptions = new(StringComparer.Ordinal)
         {
             "--job", "--snapshot", "--path", "--to", "--source", "--dest", "--password-file", "--dest-scheme", "--cron", "--limit", "--secret-ref", "--host", "--port",
-            "--host-key", "--source-secret-ref", "--source-host-key", "--destination", "--output", "--on-conflict", "--sample", "--rotation", "--as", "--anchor",
+            "--host-key", "--source-secret-ref", "--source-host-key", "--user", "--destination", "--output", "--on-conflict", "--sample", "--rotation", "--as", "--anchor",
         };
 
         private static bool IsValued(string a) => ValuedOptions.Contains(a);

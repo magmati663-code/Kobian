@@ -148,6 +148,21 @@
   <data name="Wizard.S1.Hint" xml:space="preserve"><value>Dodaj co najmniej jeden folder. Podfoldery wybranego folderu są chronione automatycznie.</value></data>
   <data name="Wizard.S1.Watermark" xml:space="preserve"><value>Ścieżka folderu, np. C:\Users\Anna\Documents</value></data>
   <data name="Wizard.S1.Add" xml:space="preserve"><value>Dodaj folder</value></data>
+  <data name="Wizard.Cred.Password" xml:space="preserve"><value>Hasło</value></data>
+  <data name="Wizard.Cred.Hint" xml:space="preserve"><value>Hasło zapisze usługa Kobian w swoim zabezpieczonym magazynie (dostęp ma tylko usługa i administrator). Zostaw puste, jeśli administrator przygotował już wpis o nazwie z pola „Login”.</value></data>
+  <data name="Wizard.Cred.LoginRequired" xml:space="preserve"><value>Podaj adres serwera i login.</value></data>
+  <data name="Wizard.Src.AddServer" xml:space="preserve"><value>Dodaj folder z serwera (SFTP / FTPS / WebDAV)…</value></data>
+  <data name="Wizard.Src.Title" xml:space="preserve"><value>Folder na serwerze</value></data>
+  <data name="Wizard.Src.Kind.Sftp" xml:space="preserve"><value>SFTP</value></data>
+  <data name="Wizard.Src.Kind.Ftps" xml:space="preserve"><value>FTPS</value></data>
+  <data name="Wizard.Src.Kind.WebDav" xml:space="preserve"><value>WebDAV (HTTPS)</value></data>
+  <data name="Wizard.Src.Path" xml:space="preserve"><value>Folder na serwerze (od „/”, np. /dane/biuro)</value></data>
+  <data name="Wizard.Src.Check" xml:space="preserve"><value>Sprawdź i dodaj</value></data>
+  <data name="Wizard.Src.Cancel" xml:space="preserve"><value>Anuluj</value></data>
+  <data name="Wizard.Src.ApproveHint" xml:space="preserve"><value>Pierwsze połączenie z tym serwerem. Porównaj odcisk poniżej z odciskiem od administratora serwera i zatwierdź tylko, gdy są identyczne.</value></data>
+  <data name="Wizard.Src.Approve" xml:space="preserve"><value>Odciski są zgodne — zatwierdź</value></data>
+  <data name="Wizard.Src.Servers" xml:space="preserve"><value>Foldery z serwerów</value></data>
+  <data name="Wizard.Src.Remove" xml:space="preserve"><value>Usuń</value></data>
   <data name="Wizard.S1.Browse" xml:space="preserve"><value>Wybierz foldery…</value></data>
   <data name="Wizard.S1.BrowseTitle" xml:space="preserve"><value>Wybierz foldery do kopii</value></data>
   <data name="Wizard.S2.BrowseTitle" xml:space="preserve"><value>Wybierz folder na kopie</value></data>
@@ -156,11 +171,11 @@
   <data name="Wizard.Dest.Local" xml:space="preserve"><value>Dysk lokalny lub USB</value></data>
   <data name="Wizard.Dest.Sftp" xml:space="preserve"><value>Serwer SFTP</value></data>
   <data name="Wizard.Dest.Smb" xml:space="preserve"><value>Udział sieciowy (SMB)</value></data>
-  <data name="Wizard.S2.SmbCredential" xml:space="preserve"><value>Poświadczenie (nazwa wpisu w magazynie sekretów usługi)</value></data>
-  <data name="Wizard.S2.SmbHint" xml:space="preserve"><value>Podaj folder jako ścieżkę UNC, np. \\nas\kopie\biuro. Hasło do udziału zapisuje administrator w magazynie sekretów usługi — kreator go nie przyjmuje.</value></data>
+  <data name="Wizard.S2.SmbCredential" xml:space="preserve"><value>Login (np. NAS\kopie albo kopie)</value></data>
+  <data name="Wizard.S2.SmbHint" xml:space="preserve"><value>Podaj folder jako ścieżkę UNC, np. \\nas\kopie\biuro, albo wybierz go przyciskiem.</value></data>
   <data name="Wizard.S2.Host" xml:space="preserve"><value>Serwer</value></data>
   <data name="Wizard.S2.Port" xml:space="preserve"><value>Port</value></data>
-  <data name="Wizard.S2.User" xml:space="preserve"><value>Użytkownik</value></data>
+  <data name="Wizard.S2.User" xml:space="preserve"><value>Login</value></data>
   <data name="Wizard.S2.Path" xml:space="preserve"><value>Folder docelowy</value></data>
   <data name="Wizard.S2.PathWatermark" xml:space="preserve"><value>np. E:\KopieKobian</value></data>
   <data name="Wizard.S2.Hint" xml:space="preserve"><value>Najlepiej inny dysk niż chronione dane. Po „Dalej” sprawdzimy, czy cel jest dostępny i zapisywalny.</value></data>
@@ -395,8 +410,8 @@
   <data name="Wizard.Ftps.ModeHint" xml:space="preserve"><value>Oba tryby szyfrują hasło i dane. Jeśli nie wiesz, zostaw „Standardowe”; port 990 wybierz, gdy tak podaje instrukcja serwera lub administrator.</value></data>
   <data name="Wizard.Ftps.ModeShort.Explicit" xml:space="preserve"><value>Explicit TLS</value></data>
   <data name="Wizard.Ftps.ModeShort.Implicit" xml:space="preserve"><value>Implicit TLS</value></data>
-  <data name="Wizard.Ftps.Credential" xml:space="preserve"><value>Poświadczenie (nazwa wpisu w magazynie sekretów usługi)</value></data>
-  <data name="Wizard.Ftps.CredentialHint" xml:space="preserve"><value>Login i hasło do serwera zapisuje administrator w magazynie sekretów usługi — kreator ich nie przyjmuje. Zalecane konto bez prawa usuwania plików.</value></data>
+  <data name="Wizard.Ftps.Credential" xml:space="preserve"><value>Login</value></data>
+  <data name="Wizard.Ftps.CredentialHint" xml:space="preserve"><value>Zalecane osobne konto na serwerze, bez prawa usuwania plików.</value></data>
   <data name="Wizard.Ftps.PathWatermark" xml:space="preserve"><value>np. /kopie/biuro</value></data>
   <data name="Wizard.Ftps.PathHint" xml:space="preserve"><value>Folder na serwerze, zaczynający się od „/”. Po „Dalej” sprawdzimy połączenie, certyfikat serwera i prawo zapisu.</value></data>
   <data name="Wizard.Ftps.PlainFtp" xml:space="preserve"><value>Zwykły FTP bez szyfrowania nie jest dostępny w kreatorze — hasło i dane szłyby otwartym tekstem. Użyj FTPS albo SFTP.</value></data>

@@ -63,6 +63,7 @@ public sealed partial class WizardViewModel : ObservableObject
         SelectedSourceKind = SourceKinds[0];
         SelectedDatabaseAuth = DatabaseAuths[0];
         Sources.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasSources));
+        SourceServers.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasSources));
     }
 
     /// <summary>Kreator zakończony (Done/Cancelled) — powłoka wraca do poprzedniego ekranu.</summary>
@@ -136,7 +137,7 @@ public sealed partial class WizardViewModel : ObservableObject
 
     public ObservableCollection<string> Sources { get; } = [];
 
-    public bool HasSources => Sources.Count > 0;
+    public bool HasSources => Sources.Count > 0 || SourceServers.Count > 0;
 
     [ObservableProperty]
     public partial string NewSource { get; set; } = "";
@@ -320,8 +321,9 @@ public sealed partial class WizardViewModel : ObservableObject
 
     /// <summary>Szkic bez sekretów; zadanie „database” nie ma folderów źródłowych (ADR-0018).</summary>
     public WizardDraft Draft() => new(JobName.Trim(), IsDatabaseSource ? [] : Sources.ToList(), SelectedDestination.Value, DestinationPath.Trim(),
-        IsSftp ? SftpHost.Trim() : null, SftpPort, IsSftp ? SftpUser.Trim() : null, IsSftp || IsTlsServer ? _approvedHostKey : null, Cron, KeepDaily, KeepWeekly, KeepMonthly,
-        DatabaseDraft(), IsSmb ? SmbCredential.Trim() : null, IsTlsServer ? FtpsHost.Trim() : null, FtpsPort, IsTlsServer ? FtpsCredential.Trim() : null);
+        IsSftp ? SftpHost.Trim() : null, SftpPort, IsSftp ? DestinationSecretName(SftpUser.Trim()) : null, IsSftp || IsTlsServer ? _approvedHostKey : null, Cron, KeepDaily, KeepWeekly, KeepMonthly,
+        DatabaseDraft(), IsSmb ? DestinationSecretName(SmbCredential.Trim()) : null, IsTlsServer ? FtpsHost.Trim() : null, FtpsPort, IsTlsServer ? DestinationSecretName(FtpsCredential.Trim()) : null,
+        IsDatabaseSource ? null : [.. SourceServers]);
 
     // ---------- polecenia ----------
 
@@ -386,6 +388,8 @@ public sealed partial class WizardViewModel : ObservableObject
                     break;
                 case WizardState.S2Destination when IsTlsServer && !ValidateFtpsFields():
                     break; // błędy przy polach; usługa nie jest wołana
+                case WizardState.S2Destination when !await SaveDestinationCredentialAsync(ct).ConfigureAwait(true):
+                    break; // login/hasło nie zapisane — komunikat pokazany
                 default:
                     var issues = await _service.ValidateStepAsync(State, Draft(), ct).ConfigureAwait(true);
                     Show(issues);
@@ -551,6 +555,7 @@ public sealed partial class WizardViewModel : ObservableObject
     {
         // string w .NET jest niezmienny — nie da się go wyzerować (ograniczenie TextBox); usuwamy referencje, by nie przetrwał w VM.
         Password = PasswordConfirm = "";
+        ServerPassword = SrcPassword = "";
     }
 
     private WizardContext Context(bool valid) => new(valid, RepositoryCreated, RunNow);
