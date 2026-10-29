@@ -1,0 +1,62 @@
+# Wydanie Kobian: testy → paczki Linux/macOS/Windows → GitHub Release z plikami i sumami SHA-256.
+# Uruchomienie: wypchnij tag „v*” (np. git tag v1.0.0-beta.1 && git push origin v1.0.0-beta.1)
+# albo Actions → „Wydanie” → Run workflow (wymaga tego pliku w gałęzi domyślnej) z nazwą tagu.
+name: Wydanie
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag wydania, np. v1.0.0-beta.1 (zostanie utworzony na wybranym commicie)'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      AVALONIA_TELEMETRY_OPTOUT: '1'
+      TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Kontrola tagu
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "Niepoprawny tag: $TAG"; exit 1; }
+          echo "KOBIAN_VERSION=${TAG#v}" >> "$GITHUB_ENV"
+
+      - name: Budowa i testy
+        run: |
+          dotnet build Kobian.sln -c Release -warnaserror -p:ContinuousIntegrationBuild=true
+          for n in Unit Architecture UI; do
+            dotnet tests/Kobian.Tests.$n/bin/Release/net10.0/Kobian.Tests.$n.dll -notrait "Category=Windows" -notrait "Category=Perf"
+          done
+
+      - name: Paczki Linux i macOS
+        run: tools/package-unix.sh
+
+      - name: Paczka Windows
+        run: tools/package-windows.sh
+
+      - name: Wydanie GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sed "s/<wersja>/$KOBIAN_VERSION/g" packaging/release-notes.md > "$RUNNER_TEMP/notes.md"
+          pre=(); [[ "$TAG" == *-* ]] && pre=(--prerelease)   # v1.0.0-beta.1 = przedpremierowe, v1.0.0 = stabilne
+          gh release create "$TAG" dist/*.tar.gz dist/*.zip dist/*.sha256 \
+            --target "$GITHUB_SHA" --title "Kobian Backup ${KOBIAN_VERSION}" --notes-file "$RUNNER_TEMP/notes.md" "${pre[@]}"
