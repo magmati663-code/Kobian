@@ -5,7 +5,13 @@
     <TargetFrameworks>net10.0;net10.0-windows10.0.17763.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <RootNamespace>Kobian.Agent</RootNamespace>
+    <!-- Usługa w tle, nie interaktywna aplikacja: GC bez wątku współbieżnego (pomiar tools/perf, 1,2 GB: kopia −15% czasu, −25 MB szczytu, −60 MB po kopii)
+         i oddawanie pamięci systemowi (ConserveMemory 7: szczyt 460 → 323 MB przy tym samym czasie). Docs: docs/plan-optymalizacji.md, runda 3–4. -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
   </PropertyGroup>
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="7" />
+  </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Kobian.Tests.Unit" />
   </ItemGroup>

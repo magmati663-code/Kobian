@@ -344,6 +344,7 @@ public sealed class CatalogJobService
 #pragma warning restore CA1031
             var state = outcome.Result switch { JobResult.Succeeded => RunState.Succeeded, JobResult.Warning => RunState.Warning, _ => RunState.Failed };
             await svc.FinishRunAsync(runId, state, outcome.Code, outcome.SnapshotId, stats, CancellationToken.None).ConfigureAwait(false);
+            MemoryTrim.AfterRun(stats.BytesRaw); // runda 4 planu optymalizacji: duży bieg nie zostawia ~190 MB w usłudze
             Last = outcome;
             return outcome;
         }

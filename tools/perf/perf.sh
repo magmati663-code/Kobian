@@ -53,7 +53,9 @@ inc1=$(run)
 inc2=$(run)
 sleep 3
 after=$(ps -o rss= -p "$AP")
+anon=$(awk '/^RssAnon:/{print $2}' "/proc/$AP/status")   # sterta zarządzana + natywna (zstd, SQLite)
+file=$(awk '/^RssFile:/{print $2}' "/proc/$AP/status")   # zmapowane biblioteki i kod
 kill "$AP"; wait "$MON" 2>/dev/null || true
 peak=$(cat "$B/peak")
-printf 'idle_rss_kb=%s\nfull_s=%.2f\nrepo_mb=%s\nincremental_unchanged_s=%.2f\nincremental_unchanged2_s=%.2f\npeak_rss_kb=%s\nafter_rss_kb=%s\n' \
-    "$idle" "$full" "$repo_mb" "$inc1" "$inc2" "$peak" "$after" | tee "$B/result.txt"
+printf 'idle_rss_kb=%s\nfull_s=%.2f\nrepo_mb=%s\nincremental_unchanged_s=%.2f\nincremental_unchanged2_s=%.2f\npeak_rss_kb=%s\nafter_rss_kb=%s\nafter_anon_kb=%s\nafter_file_kb=%s\n' \
+    "$idle" "$full" "$repo_mb" "$inc1" "$inc2" "$peak" "$after" "$anon" "$file" | tee "$B/result.txt"

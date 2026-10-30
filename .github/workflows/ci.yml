@@ -43,6 +43,30 @@ jobs:
             dist/*.zip
           retention-days: 7
 
+  # Bramka wydajności (Linux): kopia ~700 MB w usłudze; szczyt pamięci, pamięć po kopii, rozmiar repozytorium i czasy muszą mieścić się w progach (tools/perf/check.sh).
+  perf:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet build src/Kobian.Agent src/Kobian.Cli -c Release -f net10.0 -p:ContinuousIntegrationBuild=true
+      - name: Pomiar
+        run: |
+          sudo -E env "PATH=$PATH" tools/perf/perf.sh "$PWD" 200 | tee "$RUNNER_TEMP/perf.txt"
+          mkdir -p perf-out && cp /tmp/kperf/result.txt perf-out/ 2>/dev/null || sudo cp /tmp/kperf/result.txt perf-out/
+      - name: Progi
+        run: tools/perf/check.sh perf-out/result.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf
+          path: perf-out
+          retention-days: 30
+          if-no-files-found: ignore
+
   platform:
     needs: package
     strategy:
