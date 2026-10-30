@@ -147,13 +147,18 @@
                     <TextBox Grid.Row="1" Text="{Binding SrcHost}" PlaceholderText="{l:T Wizard.Ftps.HostWatermark}" Margin="0,0,8,0" AutomationProperties.AutomationId="SCR-03.S1.SrcHost" AutomationProperties.Name="{l:T Wizard.S2.Host}" />
                     <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding SrcPort}" Minimum="1" Maximum="65535" FormatString="0" Width="130" AutomationProperties.Name="{l:T Wizard.S2.Port}" />
                   </Grid>
-                  <TextBlock Classes="label" Text="{l:T Wizard.Src.Path}" />
-                  <TextBox Text="{Binding SrcPath}" PlaceholderText="/dane/biuro" AutomationProperties.AutomationId="SCR-03.S1.SrcPath" AutomationProperties.Name="{l:T Wizard.Src.Path}" />
                   <TextBlock Classes="label" Text="{l:T Wizard.S2.User}" />
                   <TextBox Text="{Binding SrcLogin}" AutomationProperties.AutomationId="SCR-03.S1.SrcLogin" AutomationProperties.Name="{l:T Wizard.S2.User}" />
                   <TextBlock Classes="label" Text="{l:T Wizard.Cred.Password}" />
                   <TextBox Text="{Binding SrcPassword}" PasswordChar="●" AutomationProperties.AutomationId="SCR-03.S1.SrcPassword" AutomationProperties.Name="{l:T Wizard.Cred.Password}" />
                   <TextBlock Classes="muted" Text="{l:T Wizard.Cred.Hint}" TextWrapping="Wrap" />
+                  <TextBlock Classes="label" Text="{l:T Wizard.Src.Path}" />
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Text="{Binding SrcPath}" PlaceholderText="/dane/biuro" AutomationProperties.AutomationId="SCR-03.S1.SrcPath" AutomationProperties.Name="{l:T Wizard.Src.Path}" />
+                    <Button Grid.Column="1" Classes="secondary" Content="{l:T Wizard.Browse.Button}" Command="{Binding BrowseServerSourceCommand}" Margin="8,0,0,0"
+                            AutomationProperties.AutomationId="SCR-03.S1.SrcBrowse" />
+                  </Grid>
+                  <w:ServerBrowserPanel IsVisible="{Binding IsBrowsingServer}" />
                   <TextBlock Classes="body" Text="{Binding SrcMessage}" IsVisible="{Binding HasSrcMessage}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Assertive"
                              AutomationProperties.AutomationId="SCR-03.S1.SrcMessage" />
                   <SelectableTextBlock Text="{Binding SrcPendingFingerprint}" IsVisible="{Binding HasSrcPendingFingerprint}" FontFamily="Consolas, Cascadia Mono, monospace"
@@ -321,7 +326,10 @@
                   <!-- Dysk lokalny/USB i udział SMB (okno systemowe pokazuje też „Sieć”); dla serwerów SFTP/FTPS/WebDAV ścieżka jest po stronie serwera. -->
                   <Button Grid.Column="1" Name="BrowseDestination" Classes="secondary" Content="{l:T Wizard.S1.Browse}" Margin="8,0,0,0" IsVisible="{Binding CanBrowseDestination}"
                           AutomationProperties.AutomationId="SCR-03.S2.Browse" />
+                  <Button Grid.Column="1" Classes="secondary" Content="{l:T Wizard.Browse.Button}" Command="{Binding BrowseServerDestinationCommand}" Margin="8,0,0,0"
+                          IsVisible="{Binding CanBrowseServerDestination}" AutomationProperties.AutomationId="SCR-03.S2.ServerBrowse" />
                 </Grid>
+                <w:ServerBrowserPanel IsVisible="{Binding IsBrowsingServer}" Margin="0,8,0,0" />
                 <TextBlock Classes="fielderror" Text="{Binding FtpsPathError}" IsVisible="{Binding HasFtpsPathError}" AutomationProperties.AutomationId="SCR-03.S2.FtpsPathError"
                            AutomationProperties.LiveSetting="Assertive" />
                 <TextBlock Classes="muted" Text="{Binding PathHint}" TextWrapping="Wrap" />

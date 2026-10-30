@@ -24,6 +24,7 @@ public static class MethodPolicy
         ["/kobian.v1.Agent/UpsertJob"] = new(AgentRole.Operator, true),
         ["/kobian.v1.Agent/InitRepository"] = new(AgentRole.Operator, true),
         ["/kobian.v1.Agent/SaveCredential"] = new(AgentRole.Operator, true),
+        ["/kobian.v1.Agent/BrowseServer"] = new(AgentRole.Operator, false),
         ["/kobian.v1.Agent/ApplyRetention"] = new(AgentRole.Operator, true),
         ["/kobian.v1.Agent/PreviewRetention"] = new(AgentRole.Reader, false),
         // Plan prune czyta cel na koncie Agenta (koszt) → Operator; tylko podgląd, bez zmian → bez kontroli rewizji.

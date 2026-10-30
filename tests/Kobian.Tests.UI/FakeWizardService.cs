@@ -63,6 +63,22 @@ public sealed class FakeWizardService : IWizardService
         return Task.FromResult(ServerProbeResults.Count > 0 ? ServerProbeResults.Dequeue() : new ProbeResult(ProbeOutcome.Ok));
     }
 
+    /// <summary>Drzewo folderów serwera: ścieżka → podfoldery. Brak ścieżki = KB-2106 (folder nie istnieje).</summary>
+    public Dictionary<string, string[]> ServerFolders { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>Odcisk, którego serwer wymaga (null = serwer zaufany bez zatwierdzania, np. certyfikat z CA).</summary>
+    public string? RequiredHostKey { get; set; }
+
+    public List<ServerSource> BrowsedServers { get; } = [];
+
+    public Task<ServerFolders> BrowseServerAsync(ServerSource server, CancellationToken ct)
+    {
+        Calls.Add("browse:" + server.Root);
+        BrowsedServers.Add(server);
+        if (RequiredHostKey is not null && server.HostKey != RequiredHostKey) return Task.FromResult(new ServerFolders(server.Scheme == "sftp" ? "KB-2104" : "KB-2109", [], false));
+        return Task.FromResult(ServerFolders.TryGetValue(server.Root, out var f) ? new ServerFolders(null, f, false) : new ServerFolders("KB-2106", [], false));
+    }
+
     public Task<ProbeResult> ProbeAsync(WizardDraft draft, CancellationToken ct)
     {
         Calls.Add("probe");

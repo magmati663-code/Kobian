@@ -163,6 +163,15 @@
   <data name="Wizard.Src.Approve" xml:space="preserve"><value>Odciski są zgodne — zatwierdź</value></data>
   <data name="Wizard.Src.Servers" xml:space="preserve"><value>Foldery z serwerów</value></data>
   <data name="Wizard.Src.Remove" xml:space="preserve"><value>Usuń</value></data>
+  <data name="Wizard.Browse.Button" xml:space="preserve"><value>Przeglądaj…</value></data>
+  <data name="Wizard.Browse.Title" xml:space="preserve"><value>Foldery na serwerze</value></data>
+  <data name="Wizard.Browse.Up" xml:space="preserve"><value>↑ W górę</value></data>
+  <data name="Wizard.Browse.Path" xml:space="preserve"><value>Folder na serwerze</value></data>
+  <data name="Wizard.Browse.Go" xml:space="preserve"><value>Przejdź</value></data>
+  <data name="Wizard.Browse.Choose" xml:space="preserve"><value>Wybierz ten folder</value></data>
+  <data name="Wizard.Browse.Empty" xml:space="preserve"><value>Ten folder nie ma podfolderów. Możesz go wybrać albo wrócić wyżej.</value></data>
+  <data name="Wizard.Browse.Truncated" xml:space="preserve"><value>Pokazano pierwsze 2000 folderów — wpisz ścieżkę, aby przejść do innego.</value></data>
+  <data name="Wizard.Browse.Hint" xml:space="preserve"><value>Kliknij dwa razy folder, aby do niego wejść. „Wybierz ten folder” wybiera folder pokazany w polu ścieżki.</value></data>
   <data name="Wizard.S1.Browse" xml:space="preserve"><value>Wybierz foldery…</value></data>
   <data name="Wizard.S1.BrowseTitle" xml:space="preserve"><value>Wybierz foldery do kopii</value></data>
   <data name="Wizard.S2.BrowseTitle" xml:space="preserve"><value>Wybierz folder na kopie</value></data>

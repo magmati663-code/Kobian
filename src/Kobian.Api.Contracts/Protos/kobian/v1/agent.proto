@@ -35,6 +35,9 @@ service Agent {
   // Login i hasło do serwera (SFTP/FTPS/FTP/WebDAV/SMB) wpisane w kreatorze → magazyn sekretów Agenta (plik tylko dla konta usługi), wynik = secret_ref „file:<nazwa>”.
   // Hasło nie wraca w odpowiedzi ani do audytu. Rola Operator (jak hasło repozytorium w InitRepository).
   rpc SaveCredential(SaveCredentialArgs) returns (SaveCredentialReply);
+  // Foldery na serwerze (SFTP/FTPS/WebDAV) do wyboru w kreatorze zamiast wpisywania ścieżki: lista podfolderów wskazanego folderu.
+  // SFTP wymaga zatwierdzonego klucza (host_key) — jak ProbeDestination, Agent łączy się na swoim koncie. Rola Operator, niemodyfikujące.
+  rpc BrowseServer(BrowseServerArgs) returns (BrowseServerReply);
   // Retencja GFS zadania (BL-25, D3.12): dry_run = podgląd; inaczej logiczne zapomnienie snapshotów (bez usuwania danych na celu — prune osobno). Rola Operator.
   rpc ApplyRetention(ApplyRetentionArgs) returns (ApplyRetentionReply);
   // Podgląd polityki retencji dla kreatora (D3.12 „dry-run w UI przed zapisem polityki”): symulacja na wystąpieniach harmonogramu z przeszłości.
@@ -893,6 +896,19 @@ message SaveCredentialArgs {
   string name = 1;
   string user = 2;
   string password = 3;
+}
+
+message BrowseServerArgs {
+  // root = folder, którego podfoldery zwrócić („/” = korzeń serwera albo udostępnienia).
+  DestinationSpec server = 1;
+}
+
+message BrowseServerReply {
+  OverallState result = 1;
+  optional string code = 2;
+  // Nazwy podfolderów (bez ścieżki), posortowane; najwyżej 2000.
+  repeated string folders = 3;
+  bool truncated = 4;
 }
 
 message SaveCredentialReply {

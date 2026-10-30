@@ -50,6 +50,13 @@ public sealed class GrpcWizardService(Agent.AgentClient client, Metadata headers
         return Map(r);
     }
 
+    public async Task<ServerFolders> BrowseServerAsync(ServerSource server, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(server);
+        var r = await Call(() => client.BrowseServerAsync(new BrowseServerArgs { Server = Spec(server) }, headers, Deadline(TimeSpan.FromSeconds(60)), ct).ResponseAsync).ConfigureAwait(false);
+        return r.Result == OverallState.Failed ? new ServerFolders(r.HasCode ? r.Code : GrpcDashboardSource.KbUnknown, [], false) : new ServerFolders(null, [.. r.Folders], r.Truncated);
+    }
+
     public async Task<string?> SaveCredentialAsync(string name, string login, string password, CancellationToken ct)
     {
         var r = await Call(() => client.SaveCredentialAsync(new SaveCredentialArgs { Name = name, User = login, Password = password }, headers, Deadline(), ct).ResponseAsync).ConfigureAwait(false);

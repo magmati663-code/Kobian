@@ -42,6 +42,10 @@ public interface IAgentBackend
     Task<SaveCredentialReply> SaveCredentialAsync(SaveCredentialArgs args, CancellationToken ct) =>
         Task.FromResult(new SaveCredentialReply { Result = OverallState.Failed, Code = Kobian.Domain.KbCode.OperationNotAvailable });
 
+    /// <summary>Podfoldery na serwerze (wybór folderu w kreatorze). Bez implementacji → KB-7012.</summary>
+    Task<BrowseServerReply> BrowseServerAsync(BrowseServerArgs args, CancellationToken ct) =>
+        Task.FromResult(new BrowseServerReply { Result = OverallState.Failed, Code = Kobian.Domain.KbCode.OperationNotAvailable });
+
     Task<ApplyRetentionReply> ApplyRetentionAsync(ApplyRetentionArgs args, CancellationToken ct);
 
     Task<PreviewRetentionReply> PreviewRetentionAsync(PreviewRetentionArgs args, CancellationToken ct);

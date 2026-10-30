@@ -104,4 +104,32 @@ public sealed class WebDavAgentWiringTests : IDisposable
         Assert.Equal(DestinationProbeStatus.Failed, bad.Status);
         Assert.Equal(KbCode.TlsIdentityMismatch, bad.Code);
     }
+
+    [Fact, Trait("SEC", "D4.11")]
+    public async Task Browse_lists_subfolders_only_and_rejects_plain_ftp_and_local()
+    {
+        using var tmp = FluentFtpAdapterTests.SelfSigned("nas.example");
+        using var cert = X509CertificateLoader.LoadPkcs12(tmp.Export(X509ContentType.Pkcs12), null);
+        await using var srv = new LoopbackWebDavServer(cert);
+        srv.AddCollection("/dane");
+        srv.AddCollection("/dane/biuro");
+        srv.AddCollection("/dane/archiwum");
+        srv.AddFile("/dane/plik.txt", "x"u8.ToArray());
+        PutSecret("dav1", srv.User, srv.Secret);
+        var probe = new DestinationProbeService(AgentProviders.Create(_dir));
+        var req = new DestinationRequest("webdav", "/dane", "127.0.0.1", srv.Port, "file:dav1");
+
+        var untrusted = await probe.BrowseAsync(req, _ct); // certyfikat bez CA i bez pinu — bez listy i bez hasła
+        Assert.Equal(KbCode.TlsIdentityMismatch, untrusted.Code);
+        Assert.False(srv.AuthorizationSeen);
+
+        var ok = await probe.BrowseAsync(req with { HostKey = TlsSpkiPin.Fingerprint(cert) }, _ct);
+        Assert.Null(ok.Code);
+        Assert.Equal(["archiwum", "biuro"], ok.Folders);
+        Assert.False(ok.Truncated);
+
+        Assert.Equal(KbCode.JobDefinitionInvalid, (await probe.BrowseAsync(new DestinationRequest("local", _dir), _ct)).Code);
+        Assert.Equal(KbCode.JobDefinitionInvalid, (await probe.BrowseAsync(req with { Scheme = "ftp" }, _ct)).Code);
+        Assert.Equal(KbCode.HostKeyMismatch, (await probe.BrowseAsync(new DestinationRequest("sftp", "/", "nas.example", 22, "file:dav1"), _ct)).Code);
+    }
 }

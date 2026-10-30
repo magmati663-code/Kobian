@@ -116,11 +116,14 @@ public sealed partial class WizardViewModel
     partial void OnSrcKindChanged(WizardOption<string>? value)
     {
         if (value is null) return;
+        _srcApprovedKey = null;
         if (SrcPort is 22 or 21 or 990 or 443) SrcPort = value.Value switch { "sftp" => 22, "ftps" => 21, _ => 443 };
         SrcPendingFingerprint = null;
     }
 
     partial void OnSrcHostChanged(string value) => ResetSrcProbe();
+
+    partial void OnSrcPortChanged(int value) => _srcApprovedKey = null;
 
     partial void OnSrcLoginChanged(string value) => ResetSrcProbe();
 
@@ -133,6 +136,7 @@ public sealed partial class WizardViewModel
     {
         SrcPendingFingerprint = null;
         _srcSavedCredential = null;
+        _srcApprovedKey = null;
     }
 
     [RelayCommand]
@@ -161,11 +165,26 @@ public sealed partial class WizardViewModel
 
     /// <summary>„Sprawdź i dodaj”: zapis loginu/hasła w usłudze → połączenie → (nieznany serwer) pytanie o odcisk → dodanie do listy źródeł.</summary>
     [RelayCommand]
-    private Task AddSourceServerAsync(CancellationToken ct) => ProbeAndAddServerAsync(null, ct);
+    private Task AddSourceServerAsync(CancellationToken ct) => ProbeAndAddServerAsync(_srcApprovedKey, ct);
 
     /// <summary>„Odciski są zgodne — zatwierdź”: ponowne połączenie z przypiętym odciskiem.</summary>
     [RelayCommand]
     private Task ApproveSourceServerAsync(CancellationToken ct) => ProbeAndAddServerAsync(SrcPendingFingerprint, ct);
+
+    /// <summary>Hasło wpisane w panelu serwera-źródła → zapis w usłudze (nazwa wpisu z serwera i loginu). false = błąd pokazany w panelu.</summary>
+    private async Task<bool> SaveSourceCredentialAsync(string host, string login, CancellationToken ct)
+    {
+        if (SrcPassword.Length == 0) return true;
+        var name = CredentialNames.Suggest(host, login);
+        if (await _service.SaveCredentialAsync(name, login, SrcPassword, ct).ConfigureAwait(true) is { } code)
+        {
+            SrcMessage = KbText.Full(code);
+            return false;
+        }
+        SrcPassword = "";
+        _srcSavedCredential = name; // po wyczyszczeniu hasła (OnSrcPasswordChanged nie zeruje przy pustym)
+        return true;
+    }
 
     private async Task ProbeAndAddServerAsync(string? hostKey, CancellationToken ct)
     {
@@ -181,14 +200,7 @@ public sealed partial class WizardViewModel
         IsBusy = true;
         try
         {
-            if (SrcPassword.Length > 0)
-            {
-                var name = CredentialNames.Suggest(host, login);
-                if (await _service.SaveCredentialAsync(name, login, SrcPassword, ct).ConfigureAwait(true) is { } code) { SrcMessage = KbText.Full(code); return; }
-                _srcSavedCredential = name;
-                SrcPassword = "";
-                _srcSavedCredential = name;
-            }
+            if (!await SaveSourceCredentialAsync(host, login, ct).ConfigureAwait(true)) return;
             var server = new ServerSource(kind, host, SrcPort, path, _srcSavedCredential ?? login, hostKey);
             if (SourceServers.Any(s => s.Label == server.Label)) { CancelAddServer(); return; }
             var r = await _service.ProbeServerAsync(server, ct).ConfigureAwait(true);
@@ -201,6 +213,7 @@ public sealed partial class WizardViewModel
                     IsAddingServer = false;
                     SrcPendingFingerprint = null;
                     SrcHost = SrcPath = SrcLogin = "";
+                    _srcApprovedKey = null;
                     break;
                 case ProbeOutcome.UnknownIdentity:
                     SrcPendingFingerprint = r.HostKeyFingerprint;

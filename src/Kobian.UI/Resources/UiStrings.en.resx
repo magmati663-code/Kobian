@@ -163,6 +163,15 @@
   <data name="Wizard.Src.Approve" xml:space="preserve"><value>Fingerprints match — approve</value></data>
   <data name="Wizard.Src.Servers" xml:space="preserve"><value>Folders from servers</value></data>
   <data name="Wizard.Src.Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Wizard.Browse.Button" xml:space="preserve"><value>Browse…</value></data>
+  <data name="Wizard.Browse.Title" xml:space="preserve"><value>Folders on the server</value></data>
+  <data name="Wizard.Browse.Up" xml:space="preserve"><value>↑ Up</value></data>
+  <data name="Wizard.Browse.Path" xml:space="preserve"><value>Folder on the server</value></data>
+  <data name="Wizard.Browse.Go" xml:space="preserve"><value>Go</value></data>
+  <data name="Wizard.Browse.Choose" xml:space="preserve"><value>Choose this folder</value></data>
+  <data name="Wizard.Browse.Empty" xml:space="preserve"><value>This folder has no subfolders. You can choose it or go up.</value></data>
+  <data name="Wizard.Browse.Truncated" xml:space="preserve"><value>Showing the first 2000 folders — type a path to go to another one.</value></data>
+  <data name="Wizard.Browse.Hint" xml:space="preserve"><value>Double-click a folder to open it. “Choose this folder” picks the folder shown in the path field.</value></data>
   <data name="Wizard.S1.Browse" xml:space="preserve"><value>Choose folders…</value></data>
   <data name="Wizard.S1.BrowseTitle" xml:space="preserve"><value>Choose folders to back up</value></data>
   <data name="Wizard.S2.BrowseTitle" xml:space="preserve"><value>Choose a folder for backups</value></data>

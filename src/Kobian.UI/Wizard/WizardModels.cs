@@ -84,6 +84,9 @@ public sealed record WizardDraft(
     string? FtpsSecret = null,
     IReadOnlyList<ServerSource>? SourceServers = null);
 
+/// <summary>Podfoldery na serwerze: kod KB przy błędzie, nazwy (bez ścieżki), czy lista była ucięta.</summary>
+public sealed record ServerFolders(string? KbCode, IReadOnlyList<string> Folders, bool Truncated);
+
 /// <summary>Serwer jako źródło kopii (S1): SFTP/FTPS/WebDAV, folder na serwerze, wpis poświadczenia (nazwa w magazynie usługi) i zatwierdzony odcisk.</summary>
 public sealed record ServerSource(string Scheme, string Host, int Port, string Root, string SecretName, string? HostKey)
 {
@@ -156,6 +159,9 @@ public interface IWizardService
 
     /// <summary>Sprawdzenie serwera-źródła (ProbeDestination dla podanego serwera): tożsamość do zatwierdzenia, dostęp, folder.</summary>
     Task<ProbeResult> ProbeServerAsync(ServerSource server, CancellationToken ct) => Task.FromResult(new ProbeResult(ProbeOutcome.PermanentError, "KB-7012"));
+
+    /// <summary>Podfoldery folderu <c>server.Root</c> na serwerze (BrowseServer) — wybór folderu zamiast wpisywania ścieżki.</summary>
+    Task<ServerFolders> BrowseServerAsync(ServerSource server, CancellationToken ct) => Task.FromResult(new ServerFolders("KB-7012", [], false));
 }
 
 /// <summary>Certyfikat przedstawiony przez serwer SQL (tylko do pokazania i zatwierdzenia): odcisk SHA-256, podmiot, wystawca, ważność.</summary>

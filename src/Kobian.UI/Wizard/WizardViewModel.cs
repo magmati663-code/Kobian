@@ -147,7 +147,7 @@ public sealed partial class WizardViewModel : ObservableObject
     public IReadOnlyList<WizardOption<DestinationKind>> Destinations { get; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSftp), nameof(IsSmb), nameof(IsFtps), nameof(IsWebDav), nameof(IsTlsServer), nameof(CanBrowseDestination), nameof(IsFtpsIdentity), nameof(IsSftpIdentity), nameof(PathWatermark), nameof(PathHint))]
+    [NotifyPropertyChangedFor(nameof(IsSftp), nameof(IsSmb), nameof(IsFtps), nameof(IsWebDav), nameof(IsTlsServer), nameof(CanBrowseDestination), nameof(CanBrowseServerDestination), nameof(IsFtpsIdentity), nameof(IsSftpIdentity), nameof(PathWatermark), nameof(PathHint))]
     public partial WizardOption<DestinationKind> SelectedDestination { get; set; }
 
     public bool IsSftp => SelectedDestination?.Value == DestinationKind.Sftp;

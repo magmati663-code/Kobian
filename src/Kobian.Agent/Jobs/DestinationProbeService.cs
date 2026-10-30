@@ -84,6 +84,37 @@ public sealed class DestinationProbeService(IReadOnlyDictionary<string, IStorage
         }
     }
 
+    public const int MaxBrowseFolders = 2000;
+
+    /// <summary>
+    /// Podfoldery folderu <see cref="DestinationRequest.Root"/> na serwerze (wybór folderu w kreatorze zamiast wpisywania ścieżki). Tylko SFTP/FTPS/WebDAV
+    /// i tylko z zaufaną tożsamością serwera (SFTP: zatwierdzony klucz; bez niego poświadczenie nie idzie do serwera — D4.11). Nic nie zapisuje.
+    /// </summary>
+    public async Task<(string? Code, IReadOnlyList<string> Folders, bool Truncated)> BrowseAsync(DestinationRequest d, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(d);
+        if (d.Scheme is not ("sftp" or "ftps" or "webdav")) return (KbCode.JobDefinitionInvalid, [], false);
+        if ((ValidateShape(d) ?? JobDestination.Validate(d)) is { } bad) return (bad, [], false);
+        // SFTP bez przypiętego klucza = tryb identity_probe (bez logowania); FTPS/WebDAV bez pinu — tylko z certyfikatem zaufanym przez system.
+        if (d.Scheme == "sftp" && string.IsNullOrEmpty(d.HostKey)) return (KbCode.HostKeyMismatch, [], false);
+        try
+        {
+            await using var session = await providers[d.Scheme].OpenAsync(ToConfig(d), CredentialRole.Backup, ct).ConfigureAwait(false);
+            if (session is not IRemoteSourceReader reader) return (KbCode.OperationNotAvailable, [], false);
+            var all = (await reader.ListDirectoryAsync("", ct).ConfigureAwait(false))
+                .Where(e => e.Kind == RemoteSourceKind.Directory).Select(e => e.Name).Order(StringComparer.CurrentCultureIgnoreCase).ToList();
+            return (null, all.Take(MaxBrowseFolders).ToList(), all.Count > MaxBrowseFolders);
+        }
+        catch (StorageException ex)
+        {
+            return (ex.Code, [], false);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return (KbCode.AccessDenied, [], false);
+        }
+    }
+
     /// <summary>Nazwa nagłówka repozytorium na celu (D3.11).</summary>
     public const string RepoHeaderName = "kobian.repo";
 

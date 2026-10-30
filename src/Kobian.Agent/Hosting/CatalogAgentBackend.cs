@@ -313,6 +313,19 @@ public sealed class CatalogAgentBackend(string catalogPath, string agentVersion,
         return reply;
     }
 
+    /// <summary>BrowseServer: podfoldery na serwerze dla kreatora; bez <see cref="DestinationProbeService"/> → KB-7012.</summary>
+    public async Task<BrowseServerReply> BrowseServerAsync(BrowseServerArgs args, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        if (probe is null) return new BrowseServerReply { Result = OverallState.Failed, Code = KbCode.OperationNotAvailable };
+        if (args.Server is null) return new BrowseServerReply { Result = OverallState.Failed, Code = KbCode.JobDefinitionInvalid };
+        var (code, folders, truncated) = await probe.BrowseAsync(ToRequest(args.Server), ct).ConfigureAwait(false);
+        var reply = new BrowseServerReply { Result = code is null ? OverallState.Ok : OverallState.Failed, Truncated = truncated };
+        if (code is not null) reply.Code = code;
+        reply.Folders.Add(folders);
+        return reply;
+    }
+
     /// <summary>ProbeDestination (BL-60): bez <see cref="DestinationProbeService"/> → KB-7012. Odpowiedź zawiera tylko publiczny odcisk i liczby.</summary>
     public async Task<ProbeDestinationReply> ProbeDestinationAsync(ProbeDestinationArgs args, CancellationToken ct)
     {
