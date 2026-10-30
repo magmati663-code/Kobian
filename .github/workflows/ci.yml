@@ -75,6 +75,7 @@ jobs:
 
       - name: Testy
         run: |
+          set +e  # krok GitHub to „bash -e -o pipefail” — błąd testów nie może przerwać zbierania adnotacji
           rc=0
           for n in Unit Architecture UI; do
             dotnet tests/Kobian.Tests.$n/bin/Release/net10.0/Kobian.Tests.$n.dll ${{ matrix.exclude }} 2>&1 | tee -a "$RUNNER_TEMP/testy.log"
@@ -154,6 +155,7 @@ jobs:
 
       - name: Kreator przeciw zainstalowanej usłudze
         run: |
+          set +e
           dll=tests/Kobian.Tests.UI/bin/Release/net10.0/Kobian.Tests.UI.dll
           if [ "${{ matrix.name }}" = windows ]; then
             dotnet "$dll" -trait "Category=ServiceSmoke" 2>&1 | tee "$RUNNER_TEMP/smoke.log"
