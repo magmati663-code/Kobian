@@ -80,7 +80,10 @@ jobs:
             dotnet tests/Kobian.Tests.$n/bin/Release/net10.0/Kobian.Tests.$n.dll ${{ matrix.exclude }} 2>&1 | tee -a "$RUNNER_TEMP/testy.log"
             [ "${PIPESTATUS[0]}" -eq 0 ] || rc=1
           done
-          [ $rc -eq 0 ] || tools/ci-annotate.sh testy "$RUNNER_TEMP/testy.log"
+          if [ $rc -ne 0 ]; then
+            tools/ci-annotate.sh testy "$RUNNER_TEMP/testy.log"
+            grep -q '\[FAIL\]' "$RUNNER_TEMP/testy.log" || tools/ci-annotate.sh plik "${{ matrix.name }}: wynik testów" "$RUNNER_TEMP/testy.log" 40
+          fi
           exit $rc
 
       - uses: actions/download-artifact@v4
@@ -159,7 +162,10 @@ jobs:
             sudo -E env "PATH=$PATH" dotnet "$dll" -trait "Category=ServiceSmoke" 2>&1 | tee "$RUNNER_TEMP/smoke.log"
           fi
           rc=${PIPESTATUS[0]}
-          [ "$rc" -eq 0 ] || tools/ci-annotate.sh testy "$RUNNER_TEMP/smoke.log"
+          if [ "$rc" -ne 0 ]; then
+            tools/ci-annotate.sh testy "$RUNNER_TEMP/smoke.log"
+            tools/ci-annotate.sh plik "${{ matrix.name }}: wynik testu usługi" "$RUNNER_TEMP/smoke.log" 40
+          fi
           exit "$rc"
 
       - name: Logi usługi
@@ -180,8 +186,9 @@ jobs:
           sudo chmod -R a+rX logi 2>/dev/null || true
           # błąd w przebiegu → ostatnie wiersze dzienników jako adnotacje
           if [ "${{ job.status }}" != success ]; then
-            for f in logi/*.txt logi/*.log logi/logs/*.log; do [ -f "$f" ] && tools/ci-annotate.sh plik "${{ matrix.name }}: $f" "$f" 40; done
+            for f in logi/*.txt logi/*.log logi/logs/*.log; do if [ -f "$f" ]; then tools/ci-annotate.sh plik "${{ matrix.name }}: $f" "$f" 40; fi; done
           fi
+          exit 0
       - uses: actions/upload-artifact@v4
         if: always()
         with:
