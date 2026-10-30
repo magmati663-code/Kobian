@@ -113,4 +113,59 @@ public sealed class ServiceSmokeTests
         TestContext.Current.TestOutputHelper?.WriteLine("Kody: " + string.Join(", ", codes));
         Assert.True(!codes.Contains("KB-0001"), "Kody: " + string.Join(", ", codes) + AgentLog());
     }
+
+    /// <summary>„host:port:login:hasło:folder” z KOBIAN_SMOKE_SFTP / KOBIAN_SMOKE_FTPS (serwery testowe uruchomione w CI na tej samej maszynie).</summary>
+    private static (string Host, int Port, string Login, string Password, string Root)? ServerEnv(string name)
+    {
+        var parts = Env(name)?.Split(':');
+        return parts is { Length: 5 } ? (parts[0], int.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture), parts[2], parts[3], parts[4]) : null;
+    }
+
+    [Fact]
+    public async Task Sftp_and_ftps_servers_as_sources_login_approve_browse_and_back_up()
+    {
+        var root = Env("KOBIAN_SMOKE_DIR");
+        var sftp = ServerEnv("KOBIAN_SMOKE_SFTP");
+        var ftps = ServerEnv("KOBIAN_SMOKE_FTPS");
+        Assert.SkipWhen(root is null || sftp is null || ftps is null, "KOBIAN_SMOKE_SFTP/KOBIAN_SMOKE_FTPS nie ustawiono — serwery testowe tylko w CI.");
+        using var source = new GrpcDashboardSource(ApiConventions.DefaultPipeName);
+        var wizard = source.CreateWizardService();
+        try
+        {
+            var servers = new List<ServerSource>();
+            foreach (var (scheme, s) in new[] { ("sftp", sftp!.Value), ("ftps", ftps!.Value) })
+            {
+                var name = CredentialNames.Suggest(s.Host, s.Login + "-" + scheme);
+                Assert.Null(await wizard.SaveCredentialAsync(name, s.Login, s.Password, _ct));
+                var server = new ServerSource(scheme, s.Host, s.Port, s.Root, name, null);
+                var probe = await wizard.ProbeServerAsync(server, _ct);
+                Assert.True(probe.Outcome == ProbeOutcome.UnknownIdentity && probe.HostKeyFingerprint is not null,
+                    scheme + ": pierwsze połączenie powinno pytać o odcisk, jest " + probe.Outcome + " " + probe.KbCode + AgentLog());
+                server = server with { HostKey = probe.HostKeyFingerprint };
+                var listed = await wizard.BrowseServerAsync(server, _ct);
+                Assert.True(listed.KbCode is null, scheme + ": przeglądanie " + s.Root + ": " + listed.KbCode + AgentLog());
+                Assert.Contains("biuro", listed.Folders);
+                Assert.Contains("zdjecia", listed.Folders);
+                var deeper = await wizard.BrowseServerAsync(server with { Root = s.Root + "/biuro" }, _ct);
+                Assert.Equal(["umowy"], deeper.Folders);
+                Assert.True((await wizard.ProbeServerAsync(server, _ct)).Outcome == ProbeOutcome.Ok);
+                servers.Add(scheme == "sftp" ? server : server with { Root = s.Root + "/biuro" });
+            }
+
+            var dest = Path.Combine(root!, "kopie-serwery-" + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(4)));
+            Directory.CreateDirectory(dest);
+            var draft = Draft("unused", dest) with { Sources = [], SourceServers = servers };
+            var issues = await wizard.ValidateStepAsync(WizardState.S6Summary, draft, _ct);
+            Assert.True(issues.Count == 0, "Walidacja: " + Show(issues) + AgentLog());
+            var repo = await wizard.CreateRepositoryAsync(draft, Password(), _ct);
+            Assert.True(repo.Issues.Count == 0, "Utwórz repozytorium: " + Show(repo.Issues) + AgentLog());
+            Assert.Null(await wizard.SaveAsync(draft, _ct));
+            var run = await wizard.RunFirstBackupAsync(draft.JobName, _ct);
+            Assert.True(run is null, "Kopia z serwerów: " + run + AgentLog());
+        }
+        catch (Exception ex) when (UiFailure.IsServiceFailure(ex))
+        {
+            Assert.Fail("Usługa: " + UiFailure.Describe(ex) + " (" + ex.GetType().Name + ": " + ex.Message + ")" + AgentLog());
+        }
+    }
 }
