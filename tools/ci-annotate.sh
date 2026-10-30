@@ -9,9 +9,12 @@ testy)
     [ -f "$2" ] || exit 0
     # blok = wiersz „[FAIL]” + 30 kolejnych (komunikat, oczekiwane/otrzymane, początek stosu); najwyżej 10 adnotacji. Bez rozszerzeń GNU (macOS: BSD awk/sed).
     clean=$(mktemp); sed -e $'s/\x1b\[[0-9;]*m//g' "$2" > "$clean"
-    grep -n '\[FAIL\]' "$clean" | head -10 | cut -d: -f1 | while read -r n; do
+    # pierwsza adnotacja: lista WSZYSTKICH nieudanych testów (limit GitHub: 10 adnotacji błędów na krok)
+    names=$(grep '\[FAIL\]' "$clean" | sed -e 's/^ *//' -e 's/ \[FAIL\]$//' | sort -u)
+    echo "::error title=Nieudane testy ($(printf '%s\n' "$names" | grep -c .))::$(printf '%s\n' "$names" | cut -c1-250 | esc)"
+    grep -n '\[FAIL\]' "$clean" | awk '{k=substr($0, index($0, ":") + 1)} !seen[k]++' | head -9 | cut -d: -f1 | while read -r n; do
         title=$(sed -n "${n}p" "$clean" | sed -e 's/^ *//' | cut -c1-200 | sed -e 's/%/%25/g' -e 's/:/%3A/g' -e 's/,/%2C/g')
-        echo "::error title=${title}::$(sed -n "${n},$((n + 30))p" "$clean" | cut -c1-400 | esc)"
+        echo "::error title=${title}::$(sed -n "${n},$((n + 12))p" "$clean" | cut -c1-400 | esc)"
     done
     rm -f "$clean"
     ;;

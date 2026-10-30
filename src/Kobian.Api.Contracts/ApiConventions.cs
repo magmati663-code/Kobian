@@ -53,7 +53,7 @@ public static class ApiConventions
     public static string SystemSocketPath => OperatingSystem.IsMacOS() ? "/var/run/kobian/agent.sock" : "/run/kobian/agent.sock";
 
     /// <summary>
-    /// Gniazdo, z którym łączy się klient (CLI, UI) poza Windows: <c>KOBIAN_SOCKET</c>, potem Agent konsolowy bieżącego użytkownika (jeśli jego gniazdo istnieje),
+    /// Gniazdo, z którym łączy się klient (CLI, UI) poza Windows: <c>KOBIAN_SOCKET</c>, potem Agent konsolowy bieżącego użytkownika (jeśli jego gniazdo istnieje i nasłuchuje),
     /// potem usługa systemowa; gdy nic nie istnieje — ścieżka konsolowa (komunikat „usługa niedostępna” jak dotąd).
     /// </summary>
     public static string ClientSocketPath(string pipeName)
@@ -61,7 +61,24 @@ public static class ApiConventions
         var env = Environment.GetEnvironmentVariable(SocketVariable);
         if (!string.IsNullOrWhiteSpace(env)) return env.Trim();
         var dev = UnixSocketPath(pipeName);
-        if (Path.Exists(dev) || pipeName != DefaultPipeName) return dev;
+        if (pipeName != DefaultPipeName) return dev;
+        // Martwy plik gniazda po zakończonym Agencie konsolowym nie może zasłaniać działającej usługi systemowej.
+        if (Path.Exists(dev) && (!Path.Exists(SystemSocketPath) || IsListening(dev))) return dev;
         return Path.Exists(SystemSocketPath) ? SystemSocketPath : dev;
+    }
+
+    /// <summary>Czy na gnieździe ktoś nasłuchuje (połączenie lokalne — natychmiastowa odpowiedź; martwe gniazdo = odmowa).</summary>
+    public static bool IsListening(string socketPath)
+    {
+        try
+        {
+            using var probe = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.Unix, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Unspecified);
+            probe.Connect(new System.Net.Sockets.UnixDomainSocketEndPoint(socketPath));
+            return true;
+        }
+        catch (Exception ex) when (ex is System.Net.Sockets.SocketException or ArgumentException or IOException)
+        {
+            return false;
+        }
     }
 }

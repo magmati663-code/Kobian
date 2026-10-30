@@ -141,4 +141,25 @@ public sealed class UnixServiceIdentityTests
         Assert.Equal("/tmp/Kobian.Agent.v1-j_n_k.sock", ApiConventions.UnixSocketPath("Kobian.Agent.v1", deep, "j n/k"));
         Assert.Equal("/tmp/Kobian.Agent.v1.sock", ApiConventions.UnixSocketPath("Kobian.Agent.v1", deep, new string('u', 200)));
     }
+
+    [Fact]
+    public void Stale_socket_file_is_not_listening_but_a_live_one_is()
+    {
+        if (OperatingSystem.IsWindows()) return;
+        var path = "/tmp/kbt-" + Guid.NewGuid().ToString("N")[..8] + ".sock";
+        try
+        {
+            using var socket = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.Unix, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Unspecified);
+            socket.Bind(new System.Net.Sockets.UnixDomainSocketEndPoint(path));
+            Assert.True(Path.Exists(path)); // plik gniazda bez nasłuchu — jak po awarii Agenta (kill -9)
+            Assert.False(ApiConventions.IsListening(path));
+            socket.Listen(1);
+            Assert.True(ApiConventions.IsListening(path));
+            Assert.False(ApiConventions.IsListening("/tmp/kbt-brak-" + Guid.NewGuid().ToString("N")[..8] + ".sock"));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 }

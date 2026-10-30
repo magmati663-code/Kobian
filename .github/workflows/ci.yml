@@ -88,12 +88,13 @@ jobs:
           exit $rc
 
       - uses: actions/download-artifact@v4
+        if: ${{ !cancelled() }}
         with:
           name: paczki
           path: paczki
 
       - name: Instalacja usługi (Windows)
-        if: matrix.name == 'windows'
+        if: ${{ !cancelled() && matrix.name == 'windows' }}
         shell: pwsh
         run: |
           $zip = Get-ChildItem paczki\*.zip | Select-Object -First 1
@@ -113,8 +114,9 @@ jobs:
           $global:LASTEXITCODE = 0  # stan „brak zadań” to nie błąd instalacji
 
       - name: Instalacja usługi (Linux / macOS)
-        if: matrix.name != 'windows'
+        if: ${{ !cancelled() && matrix.name != 'windows' }}
         run: |
+          set -e
           mkdir -p "$RUNNER_TEMP/kobian"
           tar -xzf paczki/*-${{ matrix.name == 'linux' && 'linux-x64' || 'osx-arm64' }}.tar.gz -C "$RUNNER_TEMP/kobian"
           sudo "$RUNNER_TEMP"/kobian/kobian-*/install.sh
@@ -123,12 +125,23 @@ jobs:
           if [ "${{ matrix.name }}" = linux ]; then logs=/var/lib/kobian/logs; else logs="/Library/Application Support/Kobian/logs"; fi
           echo "KOBIAN_SMOKE_LOG=$logs/agent-errors.log" >> "$GITHUB_ENV"
           echo "KOBIAN_LOGS=$logs" >> "$GITHUB_ENV"
-          sleep 5
-          sudo kobian status || echo "kobian status: kod $? (bez zadań — oczekiwane)"
+          if [ "${{ matrix.name }}" = linux ]; then sock=/run/kobian/agent.sock; else sock=/var/run/kobian/agent.sock; fi
+          for i in $(seq 60); do sudo test -S "$sock" && break; sleep 1; done
+          sudo ls -la "$(dirname "$sock")" || true
+          set +e
+          out=$(sudo kobian status 2>&1); rc=$?
+          echo "$out"
+          if [ $rc -ne 0 ]; then
+            echo "$out" > "$RUNNER_TEMP/status.txt"
+            if [ "${{ matrix.name }}" = linux ]; then sudo systemctl status kobian-agent --no-pager -l >> "$RUNNER_TEMP/status.txt" 2>&1; sudo journalctl -u kobian-agent --no-pager -n 30 >> "$RUNNER_TEMP/status.txt" 2>&1
+            else sudo launchctl print system/pl.kobian.agent >> "$RUNNER_TEMP/status.txt" 2>&1; sudo tail -30 /Library/Logs/Kobian/agent.log >> "$RUNNER_TEMP/status.txt" 2>&1; fi
+            sudo ls -la "$(dirname "$sock")" >> "$RUNNER_TEMP/status.txt" 2>&1
+            tools/ci-annotate.sh plik "${{ matrix.name }}: kobian status (kod $rc)" "$RUNNER_TEMP/status.txt" 80
+          fi
 
       # Serwer jako ŹRÓDŁO kopii: SFTP (OpenSSH) i FTPS (vsftpd, certyfikat samopodpisany) tylko na 127.0.0.1 maszyny testowej.
       - name: Serwery testowe SFTP i FTPS (Linux)
-        if: matrix.name == 'linux'
+        if: ${{ !cancelled() && matrix.name == 'linux' }}
         run: |
           sudo apt-get install -y -q openssh-server vsftpd > /dev/null
           pw="Zrodlo-$(openssl rand -hex 8)"
@@ -154,6 +167,7 @@ jobs:
           echo "KOBIAN_SMOKE_FTPS=127.0.0.1:2121:zrodlo:$pw:/home/zrodlo/dane" >> "$GITHUB_ENV"
 
       - name: Kreator przeciw zainstalowanej usłudze
+        if: ${{ !cancelled() }}
         run: |
           set +e
           dll=tests/Kobian.Tests.UI/bin/Release/net10.0/Kobian.Tests.UI.dll
