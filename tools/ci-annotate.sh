@@ -3,13 +3,17 @@
 #   tools/ci-annotate.sh testy <plik-z-wyjściem-xunit>
 #   tools/ci-annotate.sh plik <tytuł> <plik> [liczba-ostatnich-wierszy]
 set -uo pipefail
-esc() { sed -e 's/\x1b\[[0-9;]*m//g' -e 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' | sed -e 's/\r/%0D/g'; }
+esc() { sed -e $'s/\x1b\[[0-9;]*m//g' -e $'s/\r//g' -e 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}'; }
 case "${1:-}" in
 testy)
     [ -f "$2" ] || exit 0
-    # blok = wiersz „[FAIL]” + do 30 kolejnych wierszy (komunikat, oczekiwane/otrzymane, początek stosu); najwyżej 10 adnotacji
-    awk '/\[FAIL\]/{n++; if(n>10) exit; blk=1; cnt=0; print "@@@"} blk{print; cnt++; if(cnt>30) blk=0}' "$2" | sed -e 's/\x1b\[[0-9;]*m//g' |
-        awk 'BEGIN{RS="@@@\n"} NF{gsub(/%/,"%25"); gsub(/\r/,""); gsub(/\n/,"%0A"); split($0,a,"%0A"); t=substr(a[1],1,200); sub(/^ +/,"",t); gsub(/:/,"%3A",t); gsub(/,/,"%2C",t); print "::error title=" t "::" $0}'
+    # blok = wiersz „[FAIL]” + 30 kolejnych (komunikat, oczekiwane/otrzymane, początek stosu); najwyżej 10 adnotacji. Bez rozszerzeń GNU (macOS: BSD awk/sed).
+    clean=$(mktemp); sed -e $'s/\x1b\[[0-9;]*m//g' "$2" > "$clean"
+    grep -n '\[FAIL\]' "$clean" | head -10 | cut -d: -f1 | while read -r n; do
+        title=$(sed -n "${n}p" "$clean" | sed -e 's/^ *//' | cut -c1-200 | sed -e 's/%/%25/g' -e 's/:/%3A/g' -e 's/,/%2C/g')
+        echo "::error title=${title}::$(sed -n "${n},$((n + 30))p" "$clean" | cut -c1-400 | esc)"
+    done
+    rm -f "$clean"
     ;;
 plik)
     [ -f "$3" ] || { echo "::error title=$2::(brak pliku $3)"; exit 0; }
