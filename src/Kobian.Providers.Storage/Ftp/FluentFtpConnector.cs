@@ -136,7 +136,21 @@ internal sealed class FluentFtpTransport : IFtpTransport
 
     public async ValueTask<IReadOnlyList<FtpEntry>> ListDirectoryAsync(string path, CancellationToken ct)
     {
-        var items = await Run(() => _c.GetListing(path, FtpListOption.AllFiles | FtpListOption.NoPath, ct)).ConfigureAwait(false);
+        // „NoPath” = LIST bez argumentu (nazwy ze spacjami/„-” nie są brane za opcje serwera) — ale wtedy serwer listuje BIEŻĄCY katalog,
+        // więc najpierw CWD do wskazanego, potem powrót (bez tego listing pokazywał katalog domowy konta FTP zamiast wskazanego folderu).
+        var items = await Run(async () =>
+        {
+            var previous = await _c.GetWorkingDirectory(ct).ConfigureAwait(false);
+            await _c.SetWorkingDirectory(path, ct).ConfigureAwait(false);
+            try
+            {
+                return await _c.GetListing("", FtpListOption.AllFiles | FtpListOption.NoPath, ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                await _c.SetWorkingDirectory(previous, CancellationToken.None).ConfigureAwait(false);
+            }
+        }).ConfigureAwait(false);
         return items
             .Where(i => i.Name is not ("." or ".."))
             .Select(i => new FtpEntry(

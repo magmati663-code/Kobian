@@ -43,11 +43,11 @@ public sealed class CliAppTests
         public Task<RestorePlanResult> PlanRestoreAsync(string snapshot, string? pathFilter, string target, CancellationToken ct)
         {
             PlanCalls.Add((snapshot, pathFilter, target));
-            return Task.FromResult(target switch
+            return Task.FromResult(target.Replace('\\', '/') switch // CLI wysyła ścieżkę bezwzględną (Windows: „D:\tmp\full”)
             {
-                "/tmp/full" => new RestorePlanResult(null, "aa", 3, 9_000, 1, 0, 0, [], 0, 0, 0, 1, 4_000, 100, KbCode.RestoreTargetSpace),
-                "/tmp/conf" => new RestorePlanResult(null, "aa", 3, 9_000, 0, 2, 50, ["sub/b.txt", "c.txt"], 0, 0, 0, 1, 4_000, null, null),
-                "/tmp/none" => new RestorePlanResult(KbCode.SnapshotNotFound, "", 0, 0, 0, 0, 0, [], 0, 0, 0, 0, 0, null, null),
+                var t when t.EndsWith("/tmp/full", StringComparison.Ordinal) => new RestorePlanResult(null, "aa", 3, 9_000, 1, 0, 0, [], 0, 0, 0, 1, 4_000, 100, KbCode.RestoreTargetSpace),
+                var t when t.EndsWith("/tmp/conf", StringComparison.Ordinal) => new RestorePlanResult(null, "aa", 3, 9_000, 0, 2, 50, ["sub/b.txt", "c.txt"], 0, 0, 0, 1, 4_000, null, null),
+                var t when t.EndsWith("/tmp/none", StringComparison.Ordinal) => new RestorePlanResult(KbCode.SnapshotNotFound, "", 0, 0, 0, 0, 0, [], 0, 0, 0, 0, 0, null, null),
                 _ => new RestorePlanResult(null, "aa", 3, 9_000, 1, 0, 0, [], 0, 0, 0, 1, 4_000, 1_000_000, null),
             });
         }

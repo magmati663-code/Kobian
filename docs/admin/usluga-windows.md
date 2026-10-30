@@ -68,7 +68,7 @@ Instalator MSI (`installer/Package.wxs`, budowa na Windows po decyzji Q37 — W-
 | `group-operators`, `group-admins` | tworzy grupy lokalne „Kobian Operators” i „Kobian Admins” (istniejące zostają bez zmian członków) |
 | `data-dir`, `data-secrets`, `data-keys`, `data-certs`, `data-staging` | `%ProgramData%\Kobian` i podkatalogi: właściciel Administrators, ACL **bez dziedziczenia** — SYSTEM, Administrators, `NT SERVICE\KobianAgent` pełny dostęp; grupy Kobian i użytkownicy — brak (dostęp tylko przez API); katalog będący dowiązaniem → odmowa |
 | `vss-access` | `HKLM\SYSTEM\CurrentControlSet\Services\VSS\VssAccessControl\NT SERVICE\KobianAgent = 2` |
-| `lsa-rights` | prawa SeBackupPrivilege i SeRestorePrivilege dla konta usługi |
+| `lsa-rights` | prawa SeBackupPrivilege, SeRestorePrivilege i SeShutdownPrivilege dla konta usługi |
 
 Odinstalowanie uruchamia `--unprovision` (usuwa wpis VSS i prawa LSA, błędy nie blokują odinstalowania). **Dane (`%ProgramData%\Kobian`: katalog, klucze, sekrety) i grupy zostają** — usuń je ręcznie, jeśli naprawdę chcesz (repozytoria kopii na celach nie są dotykane).
 

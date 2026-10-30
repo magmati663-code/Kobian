@@ -30,8 +30,11 @@ public static class AgentServiceProfile
     public static IReadOnlyList<string> RequiredPrivileges { get; } =
         ["SeBackupPrivilege", "SeRestorePrivilege", "SeChangeNotifyPrivilege", "SeShutdownPrivilege"];
 
-    /// <summary>D2.12 pkt 2: uprawnienia LSA nadawane kontu wirtualnemu.</summary>
-    public static IReadOnlyList<string> LsaRights { get; } = ["SeBackupPrivilege", "SeRestorePrivilege"];
+    /// <summary>
+    /// D2.12 pkt 2: uprawnienia LSA nadawane kontu wirtualnemu — KAŻDE z <see cref="RequiredPrivileges"/>, którego konto wirtualne nie ma domyślnie
+    /// (SeChangeNotify ma każdy). Bez SeShutdownPrivilege SCM odmawia startu: zdarzenie 7000 „A privilege that the service requires… does not exist”.
+    /// </summary>
+    public static IReadOnlyList<string> LsaRights { get; } = ["SeBackupPrivilege", "SeRestorePrivilege", "SeShutdownPrivilege"];
 
     /// <summary>Uprawnienia, których token usługi nie może mieć (SEC-1.4; SeImpersonate — D2.9/Q44).</summary>
     public static IReadOnlyList<string> ForbiddenPrivileges { get; } =

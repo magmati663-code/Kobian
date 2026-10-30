@@ -57,7 +57,7 @@ The MSI (`installer/Package.wxs`, built on Windows after decision Q37 — W-42) 
 | `group-operators`, `group-admins` | creates local groups “Kobian Operators” and “Kobian Admins” (existing ones keep their members) |
 | `data-dir`, `data-secrets`, `data-keys`, `data-certs`, `data-staging` | `%ProgramData%\Kobian` and subfolders: owner Administrators, **non-inherited** ACL — SYSTEM, Administrators, `NT SERVICE\KobianAgent` full control; Kobian groups and users — none (API only); a folder that is a link → refused |
 | `vss-access` | `HKLM\SYSTEM\CurrentControlSet\Services\VSS\VssAccessControl\NT SERVICE\KobianAgent = 2` |
-| `lsa-rights` | SeBackupPrivilege and SeRestorePrivilege for the service account |
+| `lsa-rights` | SeBackupPrivilege, SeRestorePrivilege and SeShutdownPrivilege for the service account |
 
 Uninstall runs `--unprovision` (removes the VSS value and LSA rights; failures do not block uninstall). **Data (`%ProgramData%\Kobian`: catalog, keys, secrets) and groups are kept** — remove them manually if you really want to (backup repositories on destinations are not touched).
 

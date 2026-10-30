@@ -60,13 +60,19 @@ public sealed class WatchRunTests : IAsyncLifetime
         var seen = new List<Kobian.Api.V1.RunProgress>();
         var reader = Task.Run(async () =>
         {
-            await foreach (var p in backend.WatchRunAsync("rr1", _ct)) seen.Add(p);
+            await foreach (var p in backend.WatchRunAsync("rr1", _ct)) lock (seen) seen.Add(p);
         }, _ct);
-        await Task.Delay(100, _ct);
+        // Każdy krok dopiero po odebraniu poprzedniego (stałe pauzy zawodziły na obciążonym runnerze CI).
+        async Task Until(Func<bool> seenIt)
+        {
+            for (var i = 0; i < 500 && !seenIt(); i++) await Task.Delay(10, _ct);
+        }
+        bool Saw(long files) { lock (seen) return seen.Any(p => p.Run.Files == files); }
+        await Until(() => { lock (seen) return seen.Count > 0; });
         Exec("UPDATE run_runs SET files=10, bytes_read=1000 WHERE run_id='rr1';");
-        await Task.Delay(100, _ct);
+        await Until(() => Saw(10));
         Exec("UPDATE run_runs SET files=25, bytes_read=2500 WHERE run_id='rr1';");
-        await Task.Delay(100, _ct);
+        await Until(() => Saw(25));
         Exec("UPDATE run_runs SET state='Succeeded', finished_at='2026-10-18T08:05:00Z' WHERE run_id='rr1';");
         await reader.WaitAsync(TimeSpan.FromSeconds(10), _ct);
 

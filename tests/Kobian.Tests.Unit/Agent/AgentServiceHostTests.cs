@@ -47,7 +47,9 @@ public sealed class AgentServiceHostTests : IDisposable
         Assert.Equal(["SeBackupPrivilege", "SeRestorePrivilege", "SeChangeNotifyPrivilege", "SeShutdownPrivilege"], AgentServiceProfile.RequiredPrivileges);
         Assert.Empty(AgentServiceProfile.RequiredPrivileges.Intersect(AgentServiceProfile.ForbiddenPrivileges));
         Assert.Contains("SeImpersonatePrivilege", AgentServiceProfile.ForbiddenPrivileges);
-        Assert.Equal(["SeBackupPrivilege", "SeRestorePrivilege"], AgentServiceProfile.LsaRights);
+        Assert.Equal(["SeBackupPrivilege", "SeRestorePrivilege", "SeShutdownPrivilege"], AgentServiceProfile.LsaRights);
+        // każde wymagane uprawnienie usługi jest nadane kontu albo domyślne (SeChangeNotify) — inaczej SCM nie uruchomi usługi (zdarzenie 7000)
+        Assert.Empty(AgentServiceProfile.RequiredPrivileges.Except(AgentServiceProfile.LsaRights).Except(["SeChangeNotifyPrivilege"]));
     }
 
     [Fact, Trait("BL", "BL-72"), Trait("NFR", "NFR-09")]

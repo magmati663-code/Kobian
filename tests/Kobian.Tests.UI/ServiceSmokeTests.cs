@@ -144,8 +144,7 @@ public sealed class ServiceSmokeTests
                 server = server with { HostKey = probe.HostKeyFingerprint };
                 var listed = await wizard.BrowseServerAsync(server, _ct);
                 Assert.True(listed.KbCode is null, scheme + ": przeglądanie " + s.Root + ": " + listed.KbCode + AgentLog());
-                Assert.Contains("biuro", listed.Folders);
-                Assert.Contains("zdjecia", listed.Folders);
+                Assert.True(listed.Folders.Contains("biuro") && listed.Folders.Contains("zdjecia"), scheme + ": w " + s.Root + " jest " + string.Join(", ", listed.Folders));
                 var deeper = await wizard.BrowseServerAsync(server with { Root = s.Root + "/biuro" }, _ct);
                 Assert.Equal(["umowy"], deeper.Folders);
                 Assert.True((await wizard.ProbeServerAsync(server, _ct)).Outcome == ProbeOutcome.Ok);
