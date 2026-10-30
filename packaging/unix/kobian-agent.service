@@ -11,6 +11,7 @@ Type=simple
 Environment=KOBIAN_SERVICE=1
 Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
 ExecStart=/opt/kobian/Kobian.Agent
+WorkingDirectory=/opt/kobian
 Restart=on-failure
 RestartSec=10
 TimeoutStopSec=60

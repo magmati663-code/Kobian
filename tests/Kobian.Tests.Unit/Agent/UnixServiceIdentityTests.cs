@@ -74,6 +74,7 @@ public sealed class UnixServiceIdentityTests
     [Fact]
     public void Destination_and_password_file_follow_the_callers_own_rights()
     {
+        Assert.SkipWhen(OperatingSystem.IsWindows(), "Ścieżki i uprawnienia POSIX — usługa Linux/macOS.");
         var acc = new FakeAccounts();
         var fs = new Dictionary<string, UnixStat>(StringComparer.Ordinal)
         {

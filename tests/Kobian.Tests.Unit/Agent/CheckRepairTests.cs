@@ -39,8 +39,9 @@ public sealed class CheckRepairTests : IAsyncLifetime
         Directory.CreateDirectory(P("src"));
         Directory.CreateDirectory(P("repo"));
         File.WriteAllBytes(Path.Combine(P("src"), "a.bin"), RandomNumberGenerator.GetBytes(1_500_000)); // pierwszy plik, osobny pack (≥ 1 MiB)
-        File.WriteAllText(Path.Combine(P("src"), "b.txt"), "plik b");
-        File.WriteAllText(Path.Combine(P("src"), "c.txt"), "plik c");
+        // b i c też ≥ 1 MiB: każdy plik we własnym packu niezależnie od kolejności wyliczania katalogu (ext4/APFS — inna niż lokalnie).
+        File.WriteAllBytes(Path.Combine(P("src"), "b.txt"), RandomNumberGenerator.GetBytes(1_100_000));
+        File.WriteAllBytes(Path.Combine(P("src"), "c.txt"), RandomNumberGenerator.GetBytes(1_200_000));
         var pw = "haslo-" + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(6));
         var prov = RepoProvisioner.Create(pw, DateTimeOffset.UtcNow);
         File.WriteAllText(P("wrapped.key"), prov.KeyFileJson);
@@ -81,17 +82,17 @@ public sealed class CheckRepairTests : IAsyncLifetime
         using var keys = KeyFileLoader.Load(P("wrapped.key"), P("pw.txt"), P("kobian.repo"));
         await using var s = await new LocalStorageProviderFactory().OpenAsync(new DestinationConfig("d", "local", P("repo")), CredentialRole.Backup, _ct);
         var snap = await MetadataStore.LoadSnapshotAsync(s, keys, Convert.FromHexString(_snapId), _ct);
-        var candidates = new List<(byte[] PackId, int Entries)>();
         foreach (var (indexId, _) in snap.Indexes)
         {
             var (idx, _) = await MetadataStore.LoadIndexAsync(s, keys, indexId, _ct);
             foreach (var pk in idx.Packs)
-                if (pk.Entries.Any(e => e.BlobType == BlobType.Tree) == withTrees) candidates.Add((pk.PackId, pk.Entries.Count));
+            {
+                // pack danych = ten z blokiem a.bin (1 500 000 B); kolejność packów zależy od wyliczania katalogu i równoległego wysyłania
+                var match = withTrees ? pk.Entries.Any(e => e.BlobType == BlobType.Tree) : pk.Entries.Any(e => e.BlobType != BlobType.Tree && e.RawLength == 1_500_000);
+                if (match) return Path.Combine(P("repo"), Kobian.Format.Repo.RepoPaths.Pack(pk.PackId).Replace('/', Path.DirectorySeparatorChar));
+            }
         }
-        if (candidates.Count == 0) throw new InvalidOperationException("brak packa o żądanej zawartości");
-        // Pack z najmniejszą liczbą bloków = początek a.bin (sam); kolejność packów w indeksie zależy od równoległego wysyłania.
-        var pick = candidates.OrderBy(c => c.Entries).First();
-        return Path.Combine(P("repo"), Kobian.Format.Repo.RepoPaths.Pack(pick.PackId).Replace('/', Path.DirectorySeparatorChar));
+        throw new InvalidOperationException("brak packa o żądanej zawartości");
     }
 
     private (string? Damage, long? Files, long Suspect) Row()

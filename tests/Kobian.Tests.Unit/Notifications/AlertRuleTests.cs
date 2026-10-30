@@ -41,7 +41,7 @@ public sealed class AlertRuleCatalogTests
     {
         using var s = typeof(AlertRuleCatalog).Assembly.GetManifestResourceStream("Kobian.Notifications.Alerts.Rules.alert-rules.json")!;
         using var r = new StreamReader(s);
-        return f(r.ReadToEnd());
+        return f(r.ReadToEnd().ReplaceLineEndings("\n")); // checkout Windows (autocrlf) daje CRLF w zasobie — wzorce testu są z LF
     }
 
     [Theory, Trait("D", "D9.8"), Trait("SEC", "SEC-19.3")]

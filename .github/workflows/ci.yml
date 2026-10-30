@@ -204,6 +204,10 @@ jobs:
           if [ "${{ matrix.name }}" = windows ]; then
             cp -r "$KOBIAN_LOGS" logi/ 2>/dev/null || true
             powershell -Command "Get-EventLog -LogName Application -Source KobianAgent -Newest 50 -ErrorAction SilentlyContinue | Format-List | Out-String -Width 300" > logi/eventlog.txt || true
+            # przyczyna „Cannot start service”: SCM (dziennik System) i awarie procesu (.NET Runtime / Application Error)
+            powershell -Command "Get-WinEvent -FilterHashtable @{LogName='System'; ProviderName='Service Control Manager'} -MaxEvents 15 -ErrorAction SilentlyContinue | Where-Object { \$_.Message -match 'Kobian' } | Format-List TimeCreated,Id,Message | Out-String -Width 300" > logi/scm.txt || true
+            powershell -Command "Get-WinEvent -FilterHashtable @{LogName='Application'; ProviderName='.NET Runtime','Application Error','KobianAgent'} -MaxEvents 6 -ErrorAction SilentlyContinue | Format-List TimeCreated,ProviderName,Id,Message | Out-String -Width 300" > logi/app-errors.txt || true
+            sc.exe qc KobianAgent > logi/sc-config.txt 2>&1 || true
             sc.exe query KobianAgent > logi/sc.txt || true
           elif [ "${{ matrix.name }}" = linux ]; then
             sudo cp -r "$KOBIAN_LOGS" logi/ 2>/dev/null || true

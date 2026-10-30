@@ -151,10 +151,12 @@ public sealed class RemoteSourceTests : IAsyncDisposable
     [Fact]
     public void Definition_with_folders_and_server_round_trips()
     {
-        var json = """{"version":1,"sources":["/home/jan/Dokumenty",{"scheme":"webdav","root":"/dav/zdjecia","host":"cloud.example","secretRef":"file:dav"}],"destination":{"scheme":"local","root":"/mnt/usb"},"key":{"file":"/k"}}""";
+        string J(string unix, string win) => System.Text.Json.JsonSerializer.Serialize(OperatingSystem.IsWindows() ? win : unix);
+        var docs = OperatingSystem.IsWindows() ? @"C:\Users\jan\Dokumenty" : "/home/jan/Dokumenty";
+        var json = "{\"version\":1,\"sources\":[" + J("/home/jan/Dokumenty", docs) + ",{\"scheme\":\"webdav\",\"root\":\"/dav/zdjecia\",\"host\":\"cloud.example\",\"secretRef\":\"file:dav\"}],\"destination\":{\"scheme\":\"local\",\"root\":" + J("/mnt/usb", @"E:\") + "},\"key\":{\"file\":" + J("/k", @"C:\k") + "}}";
         var def = JobDefinition.Parse("files", Encoding.UTF8.GetBytes(json));
         Assert.Equal(2, def.Sources.Count);
-        Assert.Equal("/home/jan/Dokumenty", def.Sources[0].Path);
+        Assert.Equal(docs, def.Sources[0].Path);
         Assert.Equal(("webdav", "cloud.example", "file:dav"), (def.Sources[1].Remote!.Scheme, def.Sources[1].Remote!.Host, def.Sources[1].Remote!.SecretRef));
         Assert.Equal(def, JobDefinition.Parse("files", Encoding.UTF8.GetBytes(json)));
         var noCred = """{"version":1,"sources":[{"scheme":"sftp","root":"/x","host":"h","hostKey":"SHA256:AAAA"}],"destination":{"scheme":"local","root":"/mnt/usb"},"key":{"file":"/k"}}""";

@@ -36,7 +36,13 @@ public static class AgentHost
         if (string.IsNullOrWhiteSpace(options.PipeName) || options.PipeName.AsSpan().IndexOfAny('/', '\\') >= 0)
             throw new ArgumentException("Pipe name must be a plain name.", nameof(options));
 
-        var builder = WebApplication.CreateSlimBuilder();
+        // Katalog treści = folder programu i bez przeładowania konfiguracji: domyślnie ASP.NET obserwuje pliki od katalogu ROBOCZEGO — w usłudze systemd
+        // to „/”, więc obserwator plików przeglądał rekurencyjnie cały system plików (setki MB pamięci, gniazdo nigdy nie powstawało).
+        var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions
+        {
+            ContentRootPath = AppContext.BaseDirectory,
+            Args = ["--hostBuilder:reloadConfigOnChange=false"],
+        });
         builder.Logging.ClearProviders();
 #if KOBIAN_WINDOWS
         if (options.WindowsService)

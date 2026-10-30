@@ -168,7 +168,7 @@ public sealed class GrpcDashboardSource : IDashboardSource, IJobsSource, IHistor
         {
             return [];
         }
-        catch (RpcException ex) when (ex.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded or StatusCode.Cancelled)
+        catch (RpcException ex) when (ex.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded or StatusCode.Cancelled || IsConnectFailure(ex))
         {
             throw new IOException("Kobian service is not reachable.", ex);
         }
@@ -442,7 +442,7 @@ public sealed class GrpcDashboardSource : IDashboardSource, IJobsSource, IHistor
         {
             return await f().ConfigureAwait(false);
         }
-        catch (RpcException ex) when (ex.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded or StatusCode.Cancelled)
+        catch (RpcException ex) when (ex.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded or StatusCode.Cancelled || IsConnectFailure(ex))
         {
             throw new IOException("Kobian service is not reachable.", ex);
         }
@@ -455,6 +455,13 @@ public sealed class GrpcDashboardSource : IDashboardSource, IJobsSource, IHistor
             throw new IOException("Kobian service is not reachable.", ex);
         }
     }
+
+    /// <summary>
+    /// Windows: brak potoku usługi kończy się po czasie połączenia jako StatusCode.Internal („Error starting gRPC call”) z HttpRequestException/TimeoutException
+    /// w środku — to brak usługi (KB-9001), nie odmowa wywołania.
+    /// </summary>
+    internal static bool IsConnectFailure(RpcException ex) =>
+        ex.StatusCode == StatusCode.Internal && ex.Status.DebugException is HttpRequestException or TimeoutException or IOException or SocketException;
 
     private static async ValueTask<Stream> ConnectAsync(string pipeName, CancellationToken ct)
     {
