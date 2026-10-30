@@ -416,7 +416,7 @@ public sealed class CliAppTests
         Assert.Equal(0, ok.Code);
         Assert.Contains("files=3 bytes=9000 new-dirs=1 packs=1 read-bytes=4000 free-bytes=1000000", ok.Out, StringComparison.Ordinal);
         Assert.Contains("dry-run", ok.Out, StringComparison.Ordinal);
-        Assert.Equal(("latest:ERP-noc", "*.xlsx", "/tmp/r"), Assert.Single(agent.PlanCalls));
+        Assert.Equal(("latest:ERP-noc", "*.xlsx", Path.GetFullPath("/tmp/r")), Assert.Single(agent.PlanCalls)); // CLI wysyła ścieżkę bezwzględną (Windows: z literą dysku)
 
         var conf = await Run(agent, "restore", "--snapshot", "latest", "--to", "/tmp/conf", "--dry-run", "--json");
         Assert.Equal(1, conf.Code);

@@ -38,6 +38,7 @@ public sealed class UnixServiceIdentityTests
     [Fact]
     public void Restore_target_requires_search_on_path_and_write_on_target()
     {
+        Assert.SkipWhen(OperatingSystem.IsWindows(), "Ścieżki i uprawnienia POSIX — usługa Linux/macOS.");
         var acc = new FakeAccounts();
         acc.ByGid[50] = [1002];
         var dirs = new Dictionary<string, UnixStat>(StringComparer.Ordinal)
@@ -122,6 +123,7 @@ public sealed class UnixServiceIdentityTests
     [Fact]
     public void Service_paths_and_client_socket_resolution()
     {
+        Assert.SkipWhen(OperatingSystem.IsWindows(), "Ścieżki i uprawnienia POSIX — usługa Linux/macOS.");
         var (root, app) = AgentPaths.ServiceDataRoot();
         if (OperatingSystem.IsLinux()) Assert.Equal(("/var/lib", "kobian"), (root, app));
         var (paths, err) = AgentPaths.Resolve(_ => null, runningAsService: true, "/var/lib", "kobian");

@@ -256,7 +256,8 @@ internal static class WebDavErrorMap
             return new(ErrorClass.Security, KbCode.TlsIdentityMismatch, "Server certificate is not trusted and its key is not pinned.", ex) { PresentedIdentity = rejected };
         for (var e = ex; e is not null; e = e.InnerException)
         {
-            if (e is AuthenticationException)
+            // Linux/macOS: AuthenticationException; Windows (SChannel): HttpRequestException z SecureConnectionError i innym wyjątkiem wewnątrz.
+            if (e is AuthenticationException or HttpRequestException { HttpRequestError: HttpRequestError.SecureConnectionError })
                 return new(ErrorClass.Permanent, KbCode.FtpsNotSupported, "TLS handshake with the WebDAV server failed.", ex);
         }
         return ex switch

@@ -16,7 +16,9 @@ publish src/Kobian.UI/Kobian.UI.csproj net10.0
 publish src/Kobian.Restore.Standalone/Kobian.Restore.Standalone.csproj "$WIN"
 publish src/Kobian.Worker/Kobian.Worker.csproj "$WIN"
 for exe in Kobian.Agent.exe kobian.exe Kobian.UI.exe kobian-restore.exe Kobian.Worker.exe; do [ -f "$OUT/$exe" ] || { echo "Brak $exe" >&2; exit 1; }; done
-cp "$ROOT/packaging/windows/install.ps1" "$ROOT/packaging/windows/README.txt" "$STAGE/$name/"
+# Windows PowerShell 5.1 czyta skrypt bez BOM jako ANSI (polskie znaki i cudzysłowy „” psują się) — w paczce zawsze UTF-8 z BOM.
+{ printf '\xEF\xBB\xBF'; sed '1s/^\xEF\xBB\xBF//' "$ROOT/packaging/windows/install.ps1"; } > "$STAGE/$name/install.ps1"
+cp "$ROOT/packaging/windows/README.txt" "$STAGE/$name/"
 (cd "$STAGE" && rm -f "$ROOT/dist/$name.zip" && zip -qr9 "$ROOT/dist/$name.zip" "$name")
 (cd "$ROOT/dist" && sha256sum "$name.zip" > "$name.zip.sha256")
 rm -rf "$STAGE"

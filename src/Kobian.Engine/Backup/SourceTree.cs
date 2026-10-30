@@ -47,6 +47,10 @@ public sealed class FileSystemSource : ISourceTree
         var unix = !OperatingSystem.IsWindows();
         foreach (var fsi in dir.EnumerateFileSystemInfos("*", new EnumerationOptions { RecurseSubdirectories = false, IgnoreInaccessible = false, AttributesToSkip = 0, ReturnSpecialDirectories = false }))
         {
+            // Windows: wyliczanie katalogu podaje czas i rozmiar z WPISU katalogu NTFS, który bywa nieaktualny dla świeżo zapisanych plików
+            // (aktualizuje się przy kolejnym otwarciu — np. przez samą kopię), więc następna kopia widziałaby „zmianę” i wysyłała nowe drzewo.
+            // Refresh czyta rekord pliku (GetFileAttributesEx) — stabilne wartości między kopiami.
+            if (!unix) fsi.Refresh();
             var mtime = (fsi.LastWriteTimeUtc - DateTime.UnixEpoch).Ticks * 100;
             // Linux/macOS: typ wpisu i uprawnienia z lstat (System.IO traktuje FIFO/gniazda/urządzenia jak zwykłe pliki).
             var st = unix ? UnixFileStat.TryLStat(fsi.FullName) : null;

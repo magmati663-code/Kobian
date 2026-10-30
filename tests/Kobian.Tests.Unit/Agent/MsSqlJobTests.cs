@@ -216,7 +216,7 @@ public sealed class MsSqlJobTests : IAsyncLifetime
     [InlineData("""{"server":"srv;Trust Server Certificate=true","name":"Firma","staging":"C:\\s"}""")]
     [InlineData("""{"server":"srv","name":"","staging":"C:\\s"}""")]
     [InlineData("""{"server":"srv","name":"Firma","staging":"tmp/s"}""")]           // staging względny (Windows „C:\…” i Linux „/…” są poprawne)
-    [InlineData("""{"server":"srv","name":"Firma","staging":"C:\\s","sqlStaging":"/tmp"}""")]
+    [InlineData("""{"server":"srv","name":"Firma","staging":"C:\\s","sqlStaging":"tmp"}""")] // względny (Windows „C:\…” i Linux „/…” są poprawne — SQL Server na Linuksie)
     [InlineData("""{"server":"srv","staging":"C:\\s"}""")]
     public void Injecting_or_incomplete_database_section_is_rejected(string section)
     {

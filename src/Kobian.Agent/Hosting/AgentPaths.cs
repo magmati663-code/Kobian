@@ -75,6 +75,7 @@ public sealed record AgentPaths(string Catalog, string StateDir, string SecretsD
         {
             return (null, $"{name} is not a valid path.");
         }
+        if (!Path.IsPathFullyQualified(full)) return (null, $"{name} is not a valid path."); // Windows: np. „:\…” — GetFullPath zostawia ją niekwalifikowaną
         return IsNetworkOrDevice(full) ? (null, $"{name} must be a local path (UNC and device paths are not allowed).") : (full, null);
     }
 

@@ -91,7 +91,8 @@ public sealed class CatalogMaintenanceTests : IAsyncLifetime
         using (var c = CatalogBootstrap.Open(Catalog))
         {
             using var job = c.CreateCommand();
-            var def = $$$"""{"version":1,"database":{"server":"srv01\\SQLEXPRESS","name":"Db","staging":{{{System.Text.Json.JsonSerializer.Serialize(staging)}}},"sqlStaging":"C:\\ProgramData\\Kobian\\staging"},"destination":{"scheme":"local","root":"/x"},"key":{"file":"/k","passwordFile":"/p","repoHeader":"/h"}}""";
+            static string R(string n) => System.Text.Json.JsonSerializer.Serialize(OperatingSystem.IsWindows() ? @"C:\" + n : "/" + n); // ścieżka bezwzględna na tej platformie
+            var def = $$$"""{"version":1,"database":{"server":"srv01\\SQLEXPRESS","name":"Db","staging":{{{System.Text.Json.JsonSerializer.Serialize(staging)}}},"sqlStaging":"C:\\ProgramData\\Kobian\\staging"},"destination":{"scheme":"local","root":{{{R("x")}}}},"key":{"file":{{{R("k")}}},"passwordFile":{{{R("p")}}},"repoHeader":{{{R("h")}}}}}""";
             job.CommandText = "INSERT INTO job_jobs(job_id,name,type,definition,definition_sha256,enabled,time_zone,misfire,created_at,updated_at) VALUES ('j1','Erp','database',$d,x'00',1,'UTC','skip','2026-10-14T00:00:00Z','2026-10-14T00:00:00Z');";
             job.Parameters.AddWithValue("$d", System.Text.Encoding.UTF8.GetBytes(def));
             job.ExecuteNonQuery();

@@ -100,8 +100,13 @@ jobs:
           $zip = Get-ChildItem paczki\*.zip | Select-Object -First 1
           Expand-Archive $zip.FullName -DestinationPath $env:RUNNER_TEMP\kobian
           $dir = Get-ChildItem $env:RUNNER_TEMP\kobian -Directory | Select-Object -First 1
-          & powershell -ExecutionPolicy Bypass -File (Join-Path $dir.FullName 'install.ps1')
-          if ($LASTEXITCODE) { throw "install.ps1: $LASTEXITCODE" }
+          $log = Join-Path $env:RUNNER_TEMP 'install.txt'
+          & powershell -ExecutionPolicy Bypass -File (Join-Path $dir.FullName 'install.ps1') *>&1 | Tee-Object -FilePath $log
+          $rc = $LASTEXITCODE
+          if ($rc -or -not (Get-Service KobianAgent -ErrorAction SilentlyContinue)) {
+            & bash tools/ci-annotate.sh plik "windows: install.ps1 (kod $rc)" ($log -replace '\\','/') 60
+            throw "install.ps1: $rc"
+          }
           New-Item -ItemType Directory -Force C:\KobianSmoke | Out-Null
           New-Item -ItemType Directory -Force "$env:USERPROFILE\KobianPrywatne" | Out-Null
           "KOBIAN_SMOKE_DIR=C:\KobianSmoke" >> $env:GITHUB_ENV
@@ -137,6 +142,14 @@ jobs:
             else sudo launchctl print system/pl.kobian.agent >> "$RUNNER_TEMP/status.txt" 2>&1; sudo tail -30 /Library/Logs/Kobian/agent.log >> "$RUNNER_TEMP/status.txt" 2>&1; fi
             sudo ls -la "$(dirname "$sock")" >> "$RUNNER_TEMP/status.txt" 2>&1
             tools/ci-annotate.sh plik "${{ matrix.name }}: kobian status (kod $rc)" "$RUNNER_TEMP/status.txt" 80
+            # Agent żyje, a nie nasłuchuje → stosy wątków (gdzie stoi start)
+            if pid=$(pgrep -f 'Kobian.Agent$' | head -1) && [ -n "$pid" ]; then
+              dotnet tool install --global dotnet-stack > /dev/null 2>&1
+              sudo "$HOME/.dotnet/tools/dotnet-stack" report -p "$pid" > "$RUNNER_TEMP/stack.txt" 2>&1
+              grep -v -E '^\s*(System\.|Microsoft\.|\[Native)' "$RUNNER_TEMP/stack.txt" | head -150 > "$RUNNER_TEMP/stack-kobian.txt"
+              tools/ci-annotate.sh plik "${{ matrix.name }}: stosy wątków Agenta (bez ramek .NET)" "$RUNNER_TEMP/stack-kobian.txt" 150
+              tools/ci-annotate.sh plik "${{ matrix.name }}: stosy wątków Agenta (pełne, początek)" "$RUNNER_TEMP/stack.txt" 120
+            fi
           fi
 
       # Serwer jako ŹRÓDŁO kopii: SFTP (OpenSSH) i FTPS (vsftpd, certyfikat samopodpisany) tylko na 127.0.0.1 maszyny testowej.

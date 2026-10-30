@@ -108,13 +108,13 @@ public sealed class WizardOverPipeTests : IAsyncLifetime
             Assert.Equal(2, RepoHeader.Verify(header, keys).KeyIds.Count);
 
         // Sekrety: hasło tylko w katalogu stanu Agenta (0600), nie na celu; klucz odzyskiwania nigdzie na dysku.
-        var pwFile = Assert.Single(Directory.GetFiles(P("state/secrets")));
+        var pwFile = Path.GetFullPath(Assert.Single(Directory.GetFiles(P("state/secrets"))));
         if (!OperatingSystem.IsWindows()) Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(pwFile));
         foreach (var f in Directory.GetFiles(_dir, "*", SearchOption.AllDirectories).Where(f => !f.EndsWith(".db", StringComparison.Ordinal) && !f.Contains("catalog.db", StringComparison.Ordinal)))
         {
             var text = File.ReadAllText(f);
             Assert.DoesNotContain(repo.RecoveryKey, text, StringComparison.Ordinal);
-            if (f != pwFile) Assert.DoesNotContain(_pw, text, StringComparison.Ordinal);
+            if (Path.GetFullPath(f) != pwFile) Assert.DoesNotContain(_pw, text, StringComparison.Ordinal);
         }
 
         // Retencja z S5 trafiła do definicji zadania (BL-25): 7 dziennych / 4 tygodniowe / 12 miesięcznych.

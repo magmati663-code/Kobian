@@ -81,14 +81,17 @@ public sealed class CheckRepairTests : IAsyncLifetime
         using var keys = KeyFileLoader.Load(P("wrapped.key"), P("pw.txt"), P("kobian.repo"));
         await using var s = await new LocalStorageProviderFactory().OpenAsync(new DestinationConfig("d", "local", P("repo")), CredentialRole.Backup, _ct);
         var snap = await MetadataStore.LoadSnapshotAsync(s, keys, Convert.FromHexString(_snapId), _ct);
+        var candidates = new List<(byte[] PackId, int Entries)>();
         foreach (var (indexId, _) in snap.Indexes)
         {
             var (idx, _) = await MetadataStore.LoadIndexAsync(s, keys, indexId, _ct);
             foreach (var pk in idx.Packs)
-                if (pk.Entries.Any(e => e.BlobType == BlobType.Tree) == withTrees)
-                    return Path.Combine(P("repo"), Kobian.Format.Repo.RepoPaths.Pack(pk.PackId).Replace('/', Path.DirectorySeparatorChar));
+                if (pk.Entries.Any(e => e.BlobType == BlobType.Tree) == withTrees) candidates.Add((pk.PackId, pk.Entries.Count));
         }
-        throw new InvalidOperationException("brak packa o żądanej zawartości");
+        if (candidates.Count == 0) throw new InvalidOperationException("brak packa o żądanej zawartości");
+        // Pack z najmniejszą liczbą bloków = początek a.bin (sam); kolejność packów w indeksie zależy od równoległego wysyłania.
+        var pick = candidates.OrderBy(c => c.Entries).First();
+        return Path.Combine(P("repo"), Kobian.Format.Repo.RepoPaths.Pack(pick.PackId).Replace('/', Path.DirectorySeparatorChar));
     }
 
     private (string? Damage, long? Files, long Suspect) Row()
