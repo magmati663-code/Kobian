@@ -28,7 +28,23 @@ public static class ApiConventions
     /// Ścieżka gniazda Unix Agenta uruchomionego w konsoli (dev/testy, gniazdo tylko dla bieżącego użytkownika — PROWIZORYCZNIE ADR-0004).
     /// Usługa Linux/macOS używa <see cref="SystemSocketPath"/>.
     /// </summary>
-    public static string UnixSocketPath(string pipeName) => Path.Combine(Path.GetTempPath(), pipeName + ".sock");
+    public static string UnixSocketPath(string pipeName) => UnixSocketPath(pipeName, Path.GetTempPath(), Environment.UserName);
+
+    /// <summary>Najdłuższa ścieżka gniazda w bajtach UTF-8 (sun_path: macOS 104, Linux 108 — z kończącym NUL; zapas na obu).</summary>
+    public const int MaxUnixSocketPathBytes = 100;
+
+    /// <summary>
+    /// Gniazdo w katalogu tymczasowym; zbyt długi katalog (np. TMPDIR w głębokim folderze) → <c>/tmp/&lt;nazwa&gt;-&lt;użytkownik&gt;.sock</c>
+    /// zamiast awarii Agenta przy starcie (UnixDomainSocketEndPoint odrzuca dłuższe ścieżki). Klient liczy ścieżkę tak samo.
+    /// </summary>
+    public static string UnixSocketPath(string pipeName, string tempDirectory, string userName)
+    {
+        var path = Path.Combine(tempDirectory, pipeName + ".sock");
+        if (System.Text.Encoding.UTF8.GetByteCount(path) <= MaxUnixSocketPathBytes) return path;
+        var safeUser = new string([.. userName.Select(ch => char.IsAsciiLetterOrDigit(ch) || ch is '-' or '_' or '.' ? ch : '_')]);
+        var fallback = "/tmp/" + pipeName + "-" + (safeUser.Length > 0 ? safeUser : "user") + ".sock";
+        return System.Text.Encoding.UTF8.GetByteCount(fallback) <= MaxUnixSocketPathBytes ? fallback : "/tmp/" + pipeName + ".sock";
+    }
 
     /// <summary>Zmienna środowiskowa z jawną ścieżką gniazda Agenta (klient i usługa Linux/macOS).</summary>
     public const string SocketVariable = "KOBIAN_SOCKET";

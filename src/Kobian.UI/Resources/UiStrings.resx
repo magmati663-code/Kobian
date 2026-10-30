@@ -85,6 +85,7 @@
   <data name="Verify.Verified" xml:space="preserve"><value>Zweryfikowana</value></data>
   <data name="Job.LastSuccess" xml:space="preserve"><value>Ostatnia udana kopia</value></data>
   <data name="Reason.OkTile" xml:space="preserve"><value>Kopie wykonywane zgodnie z harmonogramem i zweryfikowane.</value></data>
+  <data name="Reason.OkTileManual" xml:space="preserve"><value>Kopie uruchamiane ręcznie — ostatnia zweryfikowana.</value></data>
   <data name="Space.FreeLow" xml:space="preserve"><value>tylko {0}% wolne</value></data>
   <data name="Verify.Level" xml:space="preserve"><value>Zweryfikowana (V{0})</value></data>
   <data name="Offline.Headline" xml:space="preserve"><value>Usługa Kobian nie działa</value></data>
@@ -227,6 +228,7 @@
   <data name="Wizard.Final.Running" xml:space="preserve"><value>Trwa pierwsza kopia…</value></data>
   <data name="Wizard.Final.Protected" xml:space="preserve"><value>Pierwsza kopia wykonana i zweryfikowana. Dane są chronione.</value></data>
   <data name="Wizard.Final.Saved" xml:space="preserve"><value>Zadanie zapisane. Pierwsza kopia wykona się zgodnie z harmonogramem.</value></data>
+  <data name="Wizard.Final.SavedManual" xml:space="preserve"><value>Zadanie zapisane. Kopie uruchamiasz ręcznie przyciskiem „Uruchom kopię teraz” na pulpicie.</value></data>
   <data name="Wizard.Final.Failed" xml:space="preserve"><value>Zadanie zapisane, ale pierwsza kopia nie powiodła się: {0}</value></data>
   <data name="History.Run.Failed" xml:space="preserve"><value>nieudana</value></data>
   <data name="History.Run.Warning" xml:space="preserve"><value>z ostrzeżeniem</value></data>

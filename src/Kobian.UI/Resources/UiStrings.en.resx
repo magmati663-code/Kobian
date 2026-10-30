@@ -85,6 +85,7 @@
   <data name="Verify.Verified" xml:space="preserve"><value>Verified</value></data>
   <data name="Job.LastSuccess" xml:space="preserve"><value>Last successful backup</value></data>
   <data name="Reason.OkTile" xml:space="preserve"><value>Backups run on schedule and are verified.</value></data>
+  <data name="Reason.OkTileManual" xml:space="preserve"><value>Backups are started manually — the last one is verified.</value></data>
   <data name="Space.FreeLow" xml:space="preserve"><value>only {0}% free</value></data>
   <data name="Verify.Level" xml:space="preserve"><value>Verified (V{0})</value></data>
   <data name="Offline.Headline" xml:space="preserve"><value>The Kobian service is not running</value></data>
@@ -227,6 +228,7 @@
   <data name="Wizard.Final.Running" xml:space="preserve"><value>First backup in progress…</value></data>
   <data name="Wizard.Final.Protected" xml:space="preserve"><value>First backup completed and verified. Your data is protected.</value></data>
   <data name="Wizard.Final.Saved" xml:space="preserve"><value>Job saved. The first backup will run on schedule.</value></data>
+  <data name="Wizard.Final.SavedManual" xml:space="preserve"><value>Job saved. Start backups manually with “Run backup now” on the dashboard.</value></data>
   <data name="Wizard.Final.Failed" xml:space="preserve"><value>Job saved, but the first backup failed: {0}</value></data>
   <data name="History.Run.Failed" xml:space="preserve"><value>failed</value></data>
   <data name="History.Run.Warning" xml:space="preserve"><value>with warnings</value></data>

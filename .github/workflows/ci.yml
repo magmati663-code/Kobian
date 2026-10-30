@@ -4,9 +4,9 @@
 name: CI
 
 on:
+  # gałąź główna przy każdym pushu; pozostałe gałęzie przez pull request (bez podwójnych przebiegów)
   push:
-    branches: ['**']
-    tags-ignore: ['**']
+    branches: [main, master]
   pull_request:
   workflow_dispatch:
 

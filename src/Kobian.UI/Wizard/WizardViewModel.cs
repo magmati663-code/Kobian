@@ -316,7 +316,7 @@ public sealed partial class WizardViewModel : ObservableObject
         WizardState.FirstBackup => Strings.Get("Wizard.Final.Running"),
         WizardState.Done when _finalCode is not null => Strings.Format("Wizard.Final.Failed", KbText.Full(_finalCode)),
         WizardState.Done when _ranFirstBackup => Strings.Get("Wizard.Final.Protected"),
-        _ => Strings.Get("Wizard.Final.Saved"),
+        _ => Strings.Get(Cron is null ? "Wizard.Final.SavedManual" : "Wizard.Final.Saved"),
     };
 
     /// <summary>Szkic bez sekretów; zadanie „database” nie ma folderów źródłowych (ADR-0018).</summary>

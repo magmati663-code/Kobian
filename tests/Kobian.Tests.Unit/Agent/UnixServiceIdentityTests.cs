@@ -131,4 +131,14 @@ public sealed class UnixServiceIdentityTests
         Assert.Equal(!OperatingSystem.IsWindows(), AgentServiceRuntime.IsUnixService(_ => "1"));
         Assert.Equal(ApiConventions.UnixSocketPath("inny-pipe"), ApiConventions.ClientSocketPath("inny-pipe"));
     }
+
+    [Fact]
+    public void Too_long_temp_directory_falls_back_to_a_short_socket_path_instead_of_crashing()
+    {
+        Assert.Equal("/tmp/x/Kobian.Agent.v1.sock", ApiConventions.UnixSocketPath("Kobian.Agent.v1", "/tmp/x", "jan").Replace('\\', '/'));
+        var deep = "/home/jan/" + new string('a', 120);
+        Assert.Equal("/tmp/Kobian.Agent.v1-jan.sock", ApiConventions.UnixSocketPath("Kobian.Agent.v1", deep, "jan"));
+        Assert.Equal("/tmp/Kobian.Agent.v1-j_n_k.sock", ApiConventions.UnixSocketPath("Kobian.Agent.v1", deep, "j n/k"));
+        Assert.Equal("/tmp/Kobian.Agent.v1.sock", ApiConventions.UnixSocketPath("Kobian.Agent.v1", deep, new string('u', 200)));
+    }
 }

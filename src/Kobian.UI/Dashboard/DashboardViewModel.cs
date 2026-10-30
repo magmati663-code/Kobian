@@ -420,7 +420,7 @@ public sealed partial class DashboardViewModel : ObservableObject, Shell.IRefres
 
     internal static string DetailText(JobStatusInfo j, JobProtection p, DateTimeOffset now, CultureInfo c) => p.Reason switch
     {
-        ProtectionReason.Ok => Strings.Get("Reason.OkTile", c), // ostatnia/następna kopia są w polach kafelka — bez powtórzeń
+        ProtectionReason.Ok => Strings.Get(j.NextRunUtc is null ? "Reason.OkTileManual" : "Reason.OkTile", c), // ostatnia/następna kopia są w polach kafelka — bez powtórzeń
         ProtectionReason.Overdue => string.Format(c, Strings.Get("Reason.Overdue", c), HumanTime.Since(now - j.LastSuccessUtc!.Value, c)),
         ProtectionReason.LowSpace => string.Format(c, Strings.Get("Reason.LowSpace", c), Math.Round(j.DestinationFreePercent ?? 0).ToString(c)),
         ProtectionReason.LastRunWarning when j.SkippedFiles > 0 => string.Format(c, Strings.Get("Reason.LastRunWarningFiles", c), Plural.Text("Plural.File", j.SkippedFiles, c)),

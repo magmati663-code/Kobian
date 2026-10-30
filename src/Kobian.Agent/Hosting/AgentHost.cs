@@ -52,6 +52,8 @@ public static class AgentHost
             else
             {
                 var socketPath = options.UnixServiceSocket ?? ApiConventions.UnixSocketPath(options.PipeName);
+                if (System.Text.Encoding.UTF8.GetByteCount(socketPath) > ApiConventions.MaxUnixSocketPathBytes)
+                    throw new ArgumentException($"Socket path is too long (max {ApiConventions.MaxUnixSocketPathBytes} bytes): {socketPath}", nameof(options));
                 if (options.UnixServiceSocket is not null && Path.GetDirectoryName(socketPath) is { Length: > 0 } dir && !Directory.Exists(dir))
                     Directory.CreateDirectory(dir, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead | UnixFileMode.GroupExecute
                         | UnixFileMode.OtherRead | UnixFileMode.OtherExecute); // 0755 (systemd tworzy go sam: RuntimeDirectory=kobian)
