@@ -1,0 +1,153 @@
+# Ciągła integracja Kobian: każda zmiana sprawdzana na Windows, Linux i macOS — nie tylko testy, ale też ZAINSTALOWANA usługa
+# (install.ps1 → usługa Windows, install.sh → systemd/launchd) i kreator przeciw niej, tak jak w aplikacji (tests/Kobian.Tests.UI/ServiceSmokeTests.cs).
+# Przy błędzie usługi dziennik nieoczekiwanych błędów Agenta trafia do wyniku testu i do artefaktu „logi-<system>”.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+    tags-ignore: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+  AVALONIA_TELEMETRY_OPTOUT: '1'
+  KOBIAN_VERSION: 0.0.0-ci
+
+jobs:
+  # Paczki budowane raz (na Linuksie, tak jak w wydaniu) — testy usługi instalują dokładnie to, co dostaje użytkownik.
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: tools/package-unix.sh linux-x64 osx-arm64
+      - run: tools/package-windows.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paczki
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+          retention-days: 7
+
+  platform:
+    needs: package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            name: windows
+            exclude: -notrait "Category=Perf" -notrait "Category=ServiceSmoke"
+          - os: ubuntu-24.04
+            name: linux
+            exclude: -notrait "Category=Windows" -notrait "Category=Perf" -notrait "Category=ServiceSmoke"
+          - os: macos-15
+            name: macos
+            exclude: -notrait "Category=Windows" -notrait "Category=Perf" -notrait "Category=ServiceSmoke"
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Budowa
+        run: dotnet build Kobian.sln -c Release -warnaserror -p:ContinuousIntegrationBuild=true
+
+      - name: Testy
+        run: |
+          rc=0
+          for n in Unit Architecture UI; do
+            dotnet tests/Kobian.Tests.$n/bin/Release/net10.0/Kobian.Tests.$n.dll ${{ matrix.exclude }} || rc=1
+          done
+          exit $rc
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: paczki
+          path: paczki
+
+      - name: Instalacja usługi (Windows)
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem paczki\*.zip | Select-Object -First 1
+          Expand-Archive $zip.FullName -DestinationPath $env:RUNNER_TEMP\kobian
+          $dir = Get-ChildItem $env:RUNNER_TEMP\kobian -Directory | Select-Object -First 1
+          & powershell -ExecutionPolicy Bypass -File (Join-Path $dir.FullName 'install.ps1')
+          if ($LASTEXITCODE) { throw "install.ps1: $LASTEXITCODE" }
+          New-Item -ItemType Directory -Force C:\KobianSmoke | Out-Null
+          New-Item -ItemType Directory -Force "$env:USERPROFILE\KobianPrywatne" | Out-Null
+          "KOBIAN_SMOKE_DIR=C:\KobianSmoke" >> $env:GITHUB_ENV
+          "KOBIAN_SMOKE_PRIVATE_DIR=$env:USERPROFILE\KobianPrywatne" >> $env:GITHUB_ENV
+          "KOBIAN_SMOKE_LOG=C:\ProgramData\Kobian\logs\agent-errors.log" >> $env:GITHUB_ENV
+          "KOBIAN_LOGS=C:\ProgramData\Kobian\logs" >> $env:GITHUB_ENV
+          Start-Sleep 5
+          & "$env:ProgramFiles\Kobian\kobian.exe" status
+
+      - name: Instalacja usługi (Linux / macOS)
+        if: matrix.name != 'windows'
+        run: |
+          mkdir -p "$RUNNER_TEMP/kobian"
+          tar -xzf paczki/*-${{ matrix.name == 'linux' && 'linux-x64' || 'osx-arm64' }}.tar.gz -C "$RUNNER_TEMP/kobian"
+          sudo "$RUNNER_TEMP"/kobian/kobian-*/install.sh
+          mkdir -p "$RUNNER_TEMP/smoke"
+          echo "KOBIAN_SMOKE_DIR=$RUNNER_TEMP/smoke" >> "$GITHUB_ENV"
+          if [ "${{ matrix.name }}" = linux ]; then logs=/var/lib/kobian/logs; else logs="/Library/Application Support/Kobian/logs"; fi
+          echo "KOBIAN_SMOKE_LOG=$logs/agent-errors.log" >> "$GITHUB_ENV"
+          echo "KOBIAN_LOGS=$logs" >> "$GITHUB_ENV"
+          sleep 5
+          sudo kobian status
+
+      - name: Kreator przeciw zainstalowanej usłudze
+        run: |
+          dll=tests/Kobian.Tests.UI/bin/Release/net10.0/Kobian.Tests.UI.dll
+          if [ "${{ matrix.name }}" = windows ]; then
+            dotnet "$dll" -trait "Category=ServiceSmoke"
+          else
+            # rola Administrator (root) — jak użytkownik z grupy kobian-admins
+            sudo -E env "PATH=$PATH" dotnet "$dll" -trait "Category=ServiceSmoke"
+          fi
+
+      - name: Logi usługi
+        if: always()
+        run: |
+          mkdir -p logi
+          if [ "${{ matrix.name }}" = windows ]; then
+            cp -r "$KOBIAN_LOGS" logi/ 2>/dev/null || true
+            powershell -Command "Get-EventLog -LogName Application -Source KobianAgent -Newest 50 -ErrorAction SilentlyContinue | Format-List | Out-String -Width 300" > logi/eventlog.txt || true
+            sc.exe query KobianAgent > logi/sc.txt || true
+          elif [ "${{ matrix.name }}" = linux ]; then
+            sudo cp -r "$KOBIAN_LOGS" logi/ 2>/dev/null || true
+            sudo journalctl -u kobian-agent --no-pager > logi/journal.txt || true
+          else
+            sudo cp -r "$KOBIAN_LOGS" logi/ 2>/dev/null || true
+            sudo cp /Library/Logs/Kobian/agent.log logi/ 2>/dev/null || true
+          fi
+          sudo chmod -R a+rX logi 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: logi-${{ matrix.name }}
+          path: logi
+          retention-days: 7
+          if-no-files-found: ignore
