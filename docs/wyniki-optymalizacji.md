@@ -14,3 +14,6 @@ Pomiary: `tools/perf/perf.sh` na 1,2 GB (Linux x64, 4 rdzenie). Plan: `docs/plan
 
 Profil pełnej kopii (1,2 GB, `KOBIAN_PROFILE=1`, sumy wątku głównego): odczyt 0,7 s · hasze 1,9 s · kompresja 3,2 s · szyfrowanie do packa 0,5 s · oczekiwanie na wysyłkę 1,5 s.
 Uwaga (pułapka): `ArrayPool.Shared` w kompresorze trzymał bufory 8 MiB poza zasięgiem sprzątania — pamięć prywatna po kopii rosła z 27 do 110 MB; bufor należy do kompresora.
+| 10–11 | Ponawianie wysyłki packa na świeżej sesji po zerwaniu połączenia (4 próby, 2/6/18 s ±25%); rozpoznanie utraconego potwierdzenia po rozmiarze i skrócie | zerwanie w trakcie wysyłki = porażka całego przebiegu, ponowienie od zera | przebieg kończy się sukcesem; błędy trwałe, niezgodność skrótu i pełny dysk nie są ponawiane |
+| 13 | Automatyczna kopia katalogu (co dobę, `VACUUM INTO` + kontrola) i samoczynne odtworzenie przy starcie z uszkodzonym plikiem | uszkodzony katalog = tryb awaryjny, usługa nie startuje | usługa startuje z kopii (uszkodzony plik zachowany jako `catalog.db.corrupt-<czas>`) |
+| 14 | Nadzór zawieszeń: brak postępu przez 30 min (`KOBIAN_STALL_MINUTES`, 0 = wyłączony) → KB-4106 (przejściowy), nawet gdy praca tkwi w nieprzerywalnym wywołaniu | uruchomienie mogło wisieć bez końca, trzymając blokady | przerwane, ponawiane przez wykonawcę; postępująca kopia nigdy nie jest przerywana |

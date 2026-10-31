@@ -1620,3 +1620,14 @@
   action.en: "Check that the address and path point to a WebDAV resource and that the server supports PROPFIND, MKCOL and MOVE."
   source: "WebDAV"
   since: "0.1"
+
+- code: KB-4106
+  name: RunStalled
+  class: transient
+  severity: error
+  message.pl: "Uruchomienie nie robiło postępu przez zbyt długi czas i zostało przerwane."
+  message.en: "The run made no progress for too long and was stopped."
+  action: "Sprawdź dostępność źródła i celu (dysk sieciowy, połączenie). Kopia ponowi się zgodnie z harmonogramem."
+  action.en: "Check that the source and destination are reachable (network drive, connection). The backup will retry on schedule."
+  source: "budowa: runda 14 optymalizacji"
+  since: "0.1"

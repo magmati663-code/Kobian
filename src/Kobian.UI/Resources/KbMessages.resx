@@ -208,6 +208,8 @@
   <data name="KB_4104_Action" xml:space="preserve"><value>Brak; przy powtórzeniach sprawdź źródło zdarzeń.</value></data>
   <data name="KB_4105_Message" xml:space="preserve"><value>Nośnik został odłączony w trakcie kopii.</value></data>
   <data name="KB_4105_Action" xml:space="preserve"><value>Podłącz dysk ponownie — kopia zostanie wznowiona.</value></data>
+  <data name="KB_4106_Message" xml:space="preserve"><value>Uruchomienie nie robiło postępu przez zbyt długi czas i zostało przerwane.</value></data>
+  <data name="KB_4106_Action" xml:space="preserve"><value>Sprawdź dostępność źródła i celu (dysk sieciowy, połączenie). Kopia ponowi się zgodnie z harmonogramem.</value></data>
   <data name="KB_4201_Message" xml:space="preserve"><value>Wykryto skok zegara systemowego.</value></data>
   <data name="KB_4201_Action" xml:space="preserve"><value>Brak.</value></data>
   <data name="KB_4901_Message" xml:space="preserve"><value>Błąd wewnętrzny: podwójne uruchomienie tego samego wystąpienia.</value></data>

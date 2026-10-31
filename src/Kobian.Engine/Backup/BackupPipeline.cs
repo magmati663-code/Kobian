@@ -102,6 +102,13 @@ public sealed class BackupPipeline
     /// <summary>Diagnostyka (testy, Bench, metryki): ile plików ostatniego <see cref="RunAsync"/> ominęło odczyt treści dzięki <see cref="ParentTree"/>.</summary>
     public long LastReusedFiles { get; private set; }
 
+    private long _activity;
+
+    /// <summary>Licznik aktywności (listowanie katalogu, odczyt bloku, wysyłka packa, commit) — nadzór zawieszeń porównuje jego kolejne odczyty.</summary>
+    public long Activity => Interlocked.Read(ref _activity);
+
+    internal void Touch() => Interlocked.Increment(ref _activity);
+
     /// <summary>
     /// Runda 9 planu: ile bloków dużego pliku jest przygotowywanych (HMAC chunkId + kompresja) równolegle, podczas gdy główny wątek czyta, liczy SHA-256 pliku, szyfruje
     /// do packa i wysyła. 1 = jak dotąd (sekwencyjnie). Domyślnie rdzenie − 1, najwyżej 3 (każdy blok w locie to bufor 4 MiB).
@@ -263,6 +270,7 @@ public sealed class BackupPipeline
         /// <summary>Wątek potoku (w kolejności plików i bloków): rejestracja w tablicy dedup, zapis do packa, ewentualna wysyłka.</summary>
         private async Task AddPreparedAsync(Prepared p, CancellationToken ct)
         {
+            _p.Touch();
             if (!_dedup.Reference(p.Id)) return;
             if (_pack is null) StartPack();
             var (alg, payload) = p.Payload is null ? _zstd.Compress(p.Buffer.AsSpan(0, p.Length)) : (p.Algorithm, p.Payload);
@@ -371,6 +379,7 @@ public sealed class BackupPipeline
         public async Task<byte[]> DirectoryAsync(string rel, CancellationToken ct, byte[]? parentTreeId = null)
         {
             ct.ThrowIfCancellationRequested();
+            _p.Touch();
             Dictionary<string, TreeEntry>? parentByName = null;
             if (parentTreeId is not null && _req.ParentTree is { } ptree && _req.Source.MetadataReliable)
             {
@@ -496,6 +505,7 @@ public sealed class BackupPipeline
         // raw: pamięć wywołującego (bufor odczytu pliku) — używana synchronicznie, przed pierwszym await; bez kopii bloku (ToArray) także dla bloków już znanych.
         private async Task AddBlobAsync(byte[] id, BlobType type, ReadOnlyMemory<byte> raw, CancellationToken ct)
         {
+            _p.Touch();
             if (!_dedup.Reference(id)) return;
             if (_pack is null) StartPack();
             var t0 = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -516,6 +526,7 @@ public sealed class BackupPipeline
             var t2 = System.Diagnostics.Stopwatch.GetTimestamp();
             await FlushPackAsync(ct).ConfigureAwait(false);
             _tUpload += System.Diagnostics.Stopwatch.GetTimestamp() - t2;
+            _p.Touch();
         }
 
         private void StartPack()
@@ -655,6 +666,7 @@ public sealed class BackupPipeline
 
         public async Task<byte[]> CommitAsync(byte[] rootTreeId, CancellationToken ct)
         {
+            _p.Touch();
             await DrainAsync().ConfigureAwait(false); // RD-73: indeks dopiero po weryfikacji wszystkich packów
             // I-3 na danych dokładnych: każdy referencjonowany blok jest w nowym zweryfikowanym packu albo w indeksie bazowym.
             if (!_dedup.AllReferencedConfirmed())

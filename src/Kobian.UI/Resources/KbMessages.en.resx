@@ -208,6 +208,8 @@
   <data name="KB_4104_Action" xml:space="preserve"><value>None; if it repeats, check the event source.</value></data>
   <data name="KB_4105_Message" xml:space="preserve"><value>The media was removed during the backup.</value></data>
   <data name="KB_4105_Action" xml:space="preserve"><value>Reconnect the drive - the backup will resume.</value></data>
+  <data name="KB_4106_Message" xml:space="preserve"><value>The run made no progress for too long and was stopped.</value></data>
+  <data name="KB_4106_Action" xml:space="preserve"><value>Check that the source and destination are reachable (network drive, connection). The backup will retry on schedule.</value></data>
   <data name="KB_4201_Message" xml:space="preserve"><value>A system clock jump was detected.</value></data>
   <data name="KB_4201_Action" xml:space="preserve"><value>None.</value></data>
   <data name="KB_4901_Message" xml:space="preserve"><value>Internal error: duplicate run of the same occurrence.</value></data>

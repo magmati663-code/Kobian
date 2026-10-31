@@ -311,6 +311,9 @@ public static class KbCode
     /// <summary>Nośnik został odłączony w trakcie kopii.</summary>
     public const string MediaRemoved = "KB-4105";
 
+    /// <summary>Uruchomienie nie robiło postępu przez zbyt długi czas i zostało przerwane.</summary>
+    public const string RunStalled = "KB-4106";
+
     /// <summary>Wykryto skok zegara systemowego.</summary>
     public const string ClockJump = "KB-4201";
 
@@ -550,6 +553,7 @@ public static class KbCode
         PreviousRunActive,
         EventBudgetExhausted,
         MediaRemoved,
+        RunStalled,
         ClockJump,
         OccurrenceDuplicate,
         IllegalTransition,

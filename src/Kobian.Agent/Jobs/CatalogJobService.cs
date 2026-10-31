@@ -373,6 +373,8 @@ public sealed class CatalogJobService
         await using var mainUploader = new VerifiedUploader(session) { Reopen = ct2 => factory.OpenAsync(def.ToDestination(destId), CredentialRole.Backup, ct2) };
         await using var uploads = await OpenUploadSessionsAsync(factory, def.ToDestination(destId), session, mainUploader, ct).ConfigureAwait(false);
         var pipeline = new BackupPipeline(keys, mainUploader) { PackUploaders = uploads.Uploaders, Parallelism = uploads.Aimd };
+        // Runda 14: brak postępu (żaden blok, katalog, wysyłka) przez StallTimeout = zawieszone uruchomienie (np. dysk sieciowy bez odpowiedzi) → KB-4106, ponowienie przez wykonawcę.
+        using var stall = new StallWatch(() => pipeline.Activity, StallTimeout, ct, _time);
         BackupResult result;
         var contentRead = true; // false = przyrost ze skrótem (treść niezmienionych plików nie była czytana)
         IReadOnlyList<MsSqlWarning> sqlWarnings = [];
@@ -391,7 +393,7 @@ public sealed class CatalogJobService
                 await using var staged = await new MsSqlBackupService(sql, MsSqlStagingVolume, null, _time).PrepareAsync(request, ct).ConfigureAwait(false);
                 sqlWarnings = staged.Warnings;
                 var source = new StagedFileSource(staged.StagedFile, DbSnapshotMeta.EntryName, JobDefinition.MsSqlSourceMarker);
-                result = await pipeline.RunAsync(new BackupRequest(source, job.Id, _hostId, SnapshotMode.Database, null, parent, def.PackTargetSize, staged.DbMeta, _time, runId, baseline), ct).ConfigureAwait(false);
+                result = await stall.RunAsync(t => pipeline.RunAsync(new BackupRequest(source, job.Id, _hostId, SnapshotMode.Database, null, parent, def.PackTargetSize, staged.DbMeta, _time, runId, baseline), t)).ConfigureAwait(false);
             }
             finally
             {
@@ -427,7 +429,7 @@ public sealed class CatalogJobService
                             parentTree = null; // bez skrótu kopia jest zawsze poprawna (czyta wszystko)
                         }
                     }
-                    result = await pipeline.RunAsync(new BackupRequest(tree, job.Id, _hostId, mode, null, parent, def.PackTargetSize, Time: _time, RunId: runId, BaselineStream: baseline, ParentTree: parentTree), ct).ConfigureAwait(false);
+                    result = await stall.RunAsync(t => pipeline.RunAsync(new BackupRequest(tree, job.Id, _hostId, mode, null, parent, def.PackTargetSize, Time: _time, RunId: runId, BaselineStream: baseline, ParentTree: parentTree), t)).ConfigureAwait(false);
                     LastReusedFiles = pipeline.LastReusedFiles;
                     if (Environment.GetEnvironmentVariable("KOBIAN_PROFILE") == "1") Console.Error.WriteLine($"profile reused={pipeline.LastReusedFiles} {pipeline.LastTimes}");
                 }
@@ -581,6 +583,9 @@ public sealed class CatalogJobService
 
     /// <summary>Co ile dni kopia czyta CAŁĄ treść (pełna weryfikacja skrótu „plik bez zmian”); 0 = zawsze (skrót wyłączony). Zmienna KOBIAN_CONTENT_CHECK_DAYS.</summary>
     public int ContentCheckDays { get; init; } = int.TryParse(Environment.GetEnvironmentVariable("KOBIAN_CONTENT_CHECK_DAYS"), out var d) && d >= 0 ? d : 7;
+
+    /// <summary>Po tylu minutach bez żadnego postępu uruchomienie jest przerywane (KB-4106); 0 = bez nadzoru. Zmienna KOBIAN_STALL_MINUTES, domyślnie 30.</summary>
+    public TimeSpan StallTimeout { get; init; } = TimeSpan.FromMinutes(int.TryParse(Environment.GetEnvironmentVariable("KOBIAN_STALL_MINUTES"), out var sm) && sm >= 0 ? sm : 30);
 
     /// <summary>Budżet pamięci podręcznej packów czytnika drzew poprzedniej migawki.</summary>
     public const long TreeCacheBudget = 16L << 20;
