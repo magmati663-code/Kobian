@@ -52,7 +52,9 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
-      - run: dotnet build src/Kobian.Agent src/Kobian.Cli -c Release -f net10.0 -p:ContinuousIntegrationBuild=true
+      - run: |
+          dotnet build src/Kobian.Agent -c Release -f net10.0 -p:ContinuousIntegrationBuild=true
+          dotnet build src/Kobian.Cli -c Release -p:ContinuousIntegrationBuild=true
       - name: Pomiar
         run: |
           sudo -E env "PATH=$PATH" tools/perf/perf.sh "$PWD" 200 | tee "$RUNNER_TEMP/perf.txt"
