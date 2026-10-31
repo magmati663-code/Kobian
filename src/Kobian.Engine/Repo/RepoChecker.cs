@@ -3,6 +3,7 @@ using Kobian.Application.Storage;
 using Kobian.Crypto;
 using Kobian.Domain;
 using Kobian.Format.Metadata;
+using Kobian.Format.Pack;
 using Kobian.Format.Repo;
 
 namespace Kobian.Engine.Repo;
@@ -158,7 +159,7 @@ public sealed class RepoChecker(IStorageSession session, RepoKeys keys)
         {
             var buckets = Buckets(options.SamplePercent);
             var slot = Slot(options.Rotation, buckets);
-            using var verifier = new RepoReader(_session, _keys);
+            using var verifier = new RepoReader(_session, _keys) { PackCacheBudget = CheckCacheBudget }; // każdy pack czytany raz — bez dużego cache
             var i = 0;
             foreach (var (hex, pk) in packsByHex)
             {
@@ -309,7 +310,7 @@ public sealed class RepoChecker(IStorageSession session, RepoKeys keys)
     private async Task CheckSnapshotAsync(IndexResolver resolver, SnapshotObject snap, string snapHex, Dictionary<string, (IndexObject Index, byte[] Sha)?> indexCache,
         SortedDictionary<string, IndexPack> packsByHex, Func<string, long, CancellationToken, ValueTask<bool>> packPresent, HashSet<string> used, State st, CancellationToken ct)
     {
-        using var reader = new RepoReader(_session, _keys);
+        using var reader = new RepoReader(_session, _keys) { PackCacheBudget = CheckCacheBudget, UseRangeReads = true }; // drzewa: odczyt zakresowy ramek (domyślny cache 256 MB zjadał pamięć, całe packi — czas)
         var indexesOk = true;
         // D3.16: odwołania rozwiązywane przez IndexResolver — indeks zastąpiony przez konsolidację zastępuje widok indeksu skonsolidowanego (ten sam SHA-256
         // w kluczu 32, packi z klucza 33); w pamięci podręcznej (klucz = id z odwołania) skrót, z którym odwołanie musi się zgadzać.
@@ -352,7 +353,7 @@ public sealed class RepoChecker(IStorageSession session, RepoKeys keys)
         }
         if (!indexesOk && reader.KnownBlocks == 0) return;
 
-        var seenChunks = new HashSet<string>(StringComparer.Ordinal);
+        var seenChunks = new HashSet<Kobian.Engine.Backup.ChunkKey>(); // struktura 32 B zamiast tekstu hex na każdy odwiedzony blok
         var stack = new Stack<byte[]>();
         stack.Push(snap.RootTreeId);
         while (stack.Count > 0)
@@ -360,7 +361,7 @@ public sealed class RepoChecker(IStorageSession session, RepoKeys keys)
             ct.ThrowIfCancellationRequested();
             var treeId = stack.Pop();
             var treeHex = Convert.ToHexStringLower(treeId);
-            if (!seenChunks.Add(treeHex)) continue;
+            if (treeId.Length != PackLayout.ChunkIdSize || !seenChunks.Add(new Kobian.Engine.Backup.ChunkKey(treeId))) continue;
             if (!Locate(reader, treeId, used))
             {
                 st.Issue(KbCode.CheckBlockNotIndexed, "tree:" + treeHex, snapHex);
@@ -395,14 +396,16 @@ public sealed class RepoChecker(IStorageSession session, RepoKeys keys)
         }
     }
 
-    private static void CheckChunk(RepoReader reader, byte[] chunkId, string snapHex, HashSet<string> seen, HashSet<string> used, State st)
+    private static void CheckChunk(RepoReader reader, byte[] chunkId, string snapHex, HashSet<Kobian.Engine.Backup.ChunkKey> seen, HashSet<string> used, State st)
     {
-        var hex = Convert.ToHexStringLower(chunkId);
-        if (!seen.Add(hex)) return;
+        if (chunkId.Length == PackLayout.ChunkIdSize && !seen.Add(new Kobian.Engine.Backup.ChunkKey(chunkId))) return;
         if (Locate(reader, chunkId, used)) return;
-        st.Issue(KbCode.CheckBlockNotIndexed, "chunk:" + hex, snapHex);
+        st.Issue(KbCode.CheckBlockNotIndexed, "chunk:" + Convert.ToHexStringLower(chunkId), snapHex);
         st.Damaged.Add(snapHex);
     }
+
+    /// <summary>Budżet cache packów czytnika w kontroli (domyślny 256 MB psuł limit pamięci procesu przy dużych migawkach: pomiar 300 tys. plików, szczyt 777 → ? MB).</summary>
+    public const long CheckCacheBudget = 24L << 20;
 
     private static bool Locate(RepoReader reader, byte[] chunkId, HashSet<string> used)
     {

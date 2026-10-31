@@ -61,6 +61,12 @@ jobs:
           mkdir -p perf-out && cp /tmp/kperf/result.txt perf-out/ 2>/dev/null || sudo cp /tmp/kperf/result.txt perf-out/
       - name: Progi
         run: tools/perf/check.sh perf-out/result.txt
+      # Wiele małych plików (100 tys.): pamięć ma rosnąć niewiele z liczbą plików (szczyt ≤ 420 MB; pomiar lokalny 300 tys. plików = 434 MB, 100 tys. ≈ 300 MB).
+      - name: Wiele plików
+        run: |
+          sudo -E env "PATH=$PATH" tools/perf/many.sh "$PWD" 100000 | tee "$RUNNER_TEMP/many.txt"
+          cp /tmp/kmany/result.txt perf-out/many.txt 2>/dev/null || sudo cp /tmp/kmany/result.txt perf-out/many.txt
+          KOBIAN_PERF_FULL_MAX_S=120 KOBIAN_PERF_INC_MAX_S=40 tools/perf/check-many.sh perf-out/many.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:

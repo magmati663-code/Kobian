@@ -10,7 +10,7 @@ using Kobian.Format.Repo;
 namespace Kobian.Engine.Repo;
 
 /// <summary>Położenie bloku: pack (id, oczekiwany rozmiar i SHA-256 z indeksu) i wpis.</summary>
-public sealed record BlockLocation(byte[] PackId, long PackSize, byte[] PackSha256, PackEntry Entry);
+public sealed record BlockLocation(byte[] PackId, long PackSize, byte[] PackSha256, PackEntry Entry, int EntryIndex = -1);
 
 /// <summary>
 /// Odczyt repozytorium (restore jest parserem niezaufanych danych — 3.x, SEC-3.3): indeksy snapshotu → mapa bloków,
@@ -22,13 +22,23 @@ public sealed record BlockLocation(byte[] PackId, long PackSize, byte[] PackSha2
 public sealed class RepoReader(IStorageSession session, RepoKeys keys) : IDisposable
 {
     private readonly BlockCompressor _zstd = new();
-    private readonly Dictionary<string, BlockLocation> _map = new(StringComparer.Ordinal);
+    private readonly Dictionary<Kobian.Engine.Backup.ChunkKey, BlockLocation> _map = []; // klucz 32 B (struktura) zamiast 64-znakowego tekstu (~150 B) na każdy blok
     private readonly LinkedList<CachedPack> _packs = new();
     private long _packBytes;
     private IndexResolver? _resolver;
 
     /// <summary>Budżet pamięci podręcznej packów (bajty packów w pamięci); ostatnio użyty pack jest trzymany nawet ponad budżet.</summary>
     public const long PackCacheBudgetBytes = 256L * 1024 * 1024;
+
+    /// <summary>
+    /// Odczyt pojedynczych bloków przez zakres bajtów (sama ramka, ~rozmiar bloku) zamiast pobierania i haszowania całego packa. Dla kontroli i czytnika drzew poprzedniej
+    /// migawki: drzewa są rozsiane po wszystkich packach, więc odczyt całych packów kosztował 16 MB na drzewo (300 tys. plików: weryfikacja 17 s → 220 s przy małym cache).
+    /// Uwierzytelnienie: AEAD ramki (repo, pack, pozycja, chunkId w danych dodatkowych) + HMAC chunkId po dekompresji; pominięty jest tylko skrót całego packa — tu nieistotny,
+    /// bo czytamy jedną ramkę, a obecność i rozmiar packów sprawdza osobno Stat. Cel bez odczytu zakresowego → odczyt całego packa jak dotąd.
+    /// </summary>
+    public bool UseRangeReads { get; init; }
+
+    private readonly Dictionary<string, AesGcmCipher> _frameCiphers = new(StringComparer.Ordinal);
 
     /// <summary>Budżet tego czytnika (domyślnie <see cref="PackCacheBudgetBytes"/>); czytnik drzew poprzedniej migawki w trakcie kopii używa małego.</summary>
     public long PackCacheBudget { get; init; } = PackCacheBudgetBytes;
@@ -67,8 +77,8 @@ public sealed class RepoReader(IStorageSession session, RepoKeys keys) : IDispos
         {
             err?.Throw();
             foreach (var pk in r!.Index.Packs)
-                foreach (var e in pk.Entries)
-                    if (e.BlobType == BlobType.Tree) _map.TryAdd(Convert.ToHexString(e.ChunkId), new BlockLocation(pk.PackId, pk.Size, pk.Sha256, e));
+                for (var i = 0; i < pk.Entries.Count; i++)
+                    if (pk.Entries[i].BlobType == BlobType.Tree) _map.TryAdd(new Kobian.Engine.Backup.ChunkKey(pk.Entries[i].ChunkId), new BlockLocation(pk.PackId, pk.Size, pk.Sha256, pk.Entries[i], i));
         }
     }
 
@@ -117,8 +127,8 @@ public sealed class RepoReader(IStorageSession session, RepoKeys keys) : IDispos
     {
         ArgumentNullException.ThrowIfNull(index);
         foreach (var pk in index.Packs)
-            foreach (var e in pk.Entries)
-                _map.TryAdd(Convert.ToHexString(e.ChunkId), new BlockLocation(pk.PackId, pk.Size, pk.Sha256, e));
+            for (var i = 0; i < pk.Entries.Count; i++)
+                _map.TryAdd(new Kobian.Engine.Backup.ChunkKey(pk.Entries[i].ChunkId), new BlockLocation(pk.PackId, pk.Size, pk.Sha256, pk.Entries[i], i));
     }
 
     /// <summary>
@@ -146,16 +156,29 @@ public sealed class RepoReader(IStorageSession session, RepoKeys keys) : IDispos
         return reader.Entries.Count;
     }
 
-    public bool TryLocate(byte[] chunkId, out BlockLocation? location) => _map.TryGetValue(Convert.ToHexString(chunkId), out location);
+    public bool TryLocate(byte[] chunkId, out BlockLocation? location)
+    {
+        ArgumentNullException.ThrowIfNull(chunkId);
+        location = null;
+        return chunkId.Length == PackLayout.ChunkIdSize && _map.TryGetValue(new Kobian.Engine.Backup.ChunkKey(chunkId), out location); // inna długość = nie ma takiego bloku
+    }
 
     public async Task<byte[]> ReadBlockAsync(byte[] chunkId, BlobType expectedType, CancellationToken ct)
     {
         if (!TryLocate(chunkId, out var loc) || loc is null)
             throw new KobianException(KbCode.ReferenceIntegrityFailed, ErrorClass.Integrity, "Block not found in snapshot indexes.");
         if (loc.Entry.BlobType != expectedType) throw new KobianException(KbCode.MetadataMalformed, ErrorClass.Integrity, "Unexpected blob type.");
-        var reader = await OpenPackAsync(loc, ct).ConfigureAwait(false);
-        var i = FindEntry(reader, chunkId);
-        var blob = reader.ReadBlob(i);
+        PackBlob blob;
+        if (UseRangeReads && loc.EntryIndex >= 0 && (session.Capabilities.Caps & StorageCaps.RangeRead) != 0 && RangePlausible(loc))
+        {
+            blob = await ReadFrameAsync(loc, ct).ConfigureAwait(false);
+        }
+        else
+        {
+            var reader = await OpenPackAsync(loc, ct).ConfigureAwait(false);
+            var i = FindEntry(reader, chunkId);
+            blob = reader.ReadBlob(i);
+        }
         if (blob.BlobType != expectedType) throw new KobianException(KbCode.MetadataMalformed, ErrorClass.Integrity, "Unexpected blob type.");
         var max = expectedType == BlobType.Tree ? PackLayout.MaxRawLengthTree : PackLayout.MaxRawLengthData;
         var raw = _zstd.Decompress(blob.Algorithm, blob.Payload, blob.RawLength, max);
@@ -186,6 +209,38 @@ public sealed class RepoReader(IStorageSession session, RepoKeys keys) : IDispos
             if (cached.ByChunk.TryGetValue(Convert.ToHexString(chunkId), out var found)) return found;
         }
         throw new KobianException(KbCode.ReferenceIntegrityFailed, ErrorClass.Integrity, "Block missing from pack trailer.");
+    }
+
+    /// <summary>Wpis z indeksu musi mieścić się w packu (indeks jest uwierzytelniony, ale to tanie zabezpieczenie przed odczytem poza plikiem).</summary>
+    private static bool RangePlausible(BlockLocation loc)
+    {
+        var e = loc.Entry;
+        return e.Offset >= PackLayout.HeaderSize && e.FrameLength is > 0 and <= PackLayout.MaxFrameLength && e.Offset + PackLayout.FrameLengthSize + e.FrameLength <= loc.PackSize;
+    }
+
+    private async Task<PackBlob> ReadFrameAsync(BlockLocation loc, CancellationToken ct)
+    {
+        var e = loc.Entry;
+        var total = PackLayout.FrameLengthSize + e.FrameLength;
+        var buf = new byte[total];
+        await using (var s = await session.OpenReadAsync(RepoPaths.Pack(loc.PackId), e.Offset, total, ct).ConfigureAwait(false))
+            await s.ReadExactlyAsync(buf, ct).ConfigureAwait(false);
+        if (System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(buf) != e.FrameLength)
+            throw new KobianException(KbCode.PackLayoutInvalid, ErrorClass.Integrity, "Frame length mismatch.");
+        var hex = Convert.ToHexString(loc.PackId);
+        if (!_frameCiphers.TryGetValue(hex, out var cipher))
+        {
+            if (_frameCiphers.Count >= 16) // niewiele packów naraz; reszta wyprowadzana ponownie (HKDF jest tani)
+            {
+                foreach (var c in _frameCiphers.Values) c.Dispose();
+                _frameCiphers.Clear();
+            }
+            var key = keys.DerivePackKey(loc.PackId);
+            try { cipher = new AesGcmCipher(key); }
+            finally { CryptographicOperations.ZeroMemory(key); }
+            _frameCiphers[hex] = cipher;
+        }
+        return PackReader.OpenFrame(cipher, keys.RepoId, loc.PackId, loc.EntryIndex, e, buf.AsSpan(PackLayout.FrameLengthSize).ToArray());
     }
 
     private async Task<PackReader> OpenPackAsync(BlockLocation loc, CancellationToken ct)
@@ -232,6 +287,8 @@ public sealed class RepoReader(IStorageSession session, RepoKeys keys) : IDispos
     {
         _zstd.Dispose();
         foreach (var p in _packs) p.Cipher.Dispose();
+        foreach (var c in _frameCiphers.Values) c.Dispose();
+        _frameCiphers.Clear();
         _packs.Clear();
         _packBytes = 0;
     }

@@ -93,12 +93,25 @@ public sealed class PackReader
         if (BinaryPrimitives.ReadInt32LittleEndian(lenBuf) != e.FrameLength) throw Layout("Frame length mismatch.");
         var sealedBuf = new byte[e.FrameLength];
         ReadAt(_in, e.Offset + 4, sealedBuf);
-        var plain = new byte[e.FrameLength - _cipher.TagSize];
+        return OpenFrame(_cipher, _repoId, _packId, index, e, sealedBuf);
+    }
+
+    /// <summary>
+    /// Odszyfrowanie jednej ramki wczytanej osobno (odczyt zakresowy bez całego packa): <paramref name="sealedFrame"/> to bajty ramki BEZ prefiksu długości.
+    /// Uwierzytelnienie AEAD obejmuje repo, pack, pozycję ramki i chunkId (dane dodatkowe), więc podmiana/przesunięcie ramki jest wykrywana tak samo jak przy odczycie całego packa.
+    /// </summary>
+    public static PackBlob OpenFrame(IAuthenticatedCipher cipher, ReadOnlySpan<byte> repoId, ReadOnlySpan<byte> packId, int index, PackEntry e, byte[] sealedFrame)
+    {
+        ArgumentNullException.ThrowIfNull(cipher);
+        ArgumentNullException.ThrowIfNull(e);
+        ArgumentNullException.ThrowIfNull(sealedFrame);
+        if (sealedFrame.Length != e.FrameLength || sealedFrame.Length < cipher.TagSize) throw Layout("Frame length mismatch.");
+        var plain = new byte[sealedFrame.Length - cipher.TagSize];
         Span<byte> nonce = stackalloc byte[12];
         PackWriter.NonceForBlob((ulong)index, nonce);
         Span<byte> aad = stackalloc byte[PackWriter.FrameAadSize];
-        PackWriter.FrameAad(_repoId, _packId, (ulong)index, e.ChunkId, aad);
-        if (!_cipher.TryOpen(nonce, sealedBuf, aad, plain))
+        PackWriter.FrameAad(repoId, packId, (ulong)index, e.ChunkId, aad);
+        if (!cipher.TryOpen(nonce, sealedFrame, aad, plain))
             throw new KobianException(KbCode.AuthenticationFailed, ErrorClass.Integrity, "Frame authentication failed.");
         try
         {

@@ -22,6 +22,7 @@ Uwaga (pułapka): `ArrayPool.Shared` w kompresorze trzymał bufory 8 MiB poza za
 | 15 | Test: CLI i aplikacja (ten sam obiekt klienta) wracają do pracy po restarcie usługi, a przy wyłączonej usłudze dostają czytelny błąd (KB-9001), nie zawieszenie | — (zachowanie było poprawne, teraz zablokowane testem) | bez zmian w produkcie |
 | 18 | `TieredPGO=false` w Agencie, CLI i narzędziu odtwarzania; pomiar startu: `kobian status` zimny 0,20 s (cel ≤ 0,25 s osiągnięty bez ReadyToRun, który zwiększyłby paczkę o ~60%) | start CLI 222 ms, pełna kopia 7,4–8,3 s, przyrost 1,1–1,4 s | start CLI 201 ms, pełna kopia 7,2 s, przyrost 0,95–1,04 s |
 | 19 | `tools/perf/soak.sh` + nocny `soak.yml`: kopie z losowymi zmianami danych, `kill -9` Agenta w trakcie kopii, odtworzenie z porównaniem bajt w bajt, `check`, nadzór pamięci | brak testu długotrwałego | 2 serie × 50 kopii, 16 zabić procesu: wszystkie odtworzenia zgodne, `check` czysty, pamięć 116 → 115 MB (bez wzrostu) |
+| 5 | Duże drzewa (300 tys. plików, `tools/perf/many.sh`): weryfikacja V2 z odczytem zakresowym ramek zamiast całych packów (`RepoReader.UseRangeReads`), cache packów kontroli 24 MB (było 256 MB), klucze bloków jako struktura 32 B zamiast tekstu hex; ten sam odczyt dla drzew poprzedniej migawki | szczyt pamięci **777 MB** (limit 500 MB), pełna kopia 19 s | szczyt **434 MB**, pełna kopia 17–18 s, przyrost 4,6 s (100 tys. plików: 338 MB, bramka w CI) |
 
 ## Pomiary końcowe (1,2 GB, Linux x64, 4 rdzenie)
 
@@ -29,7 +30,7 @@ Uwaga (pułapka): `ArrayPool.Shared` w kompresorze trzymał bufory 8 MiB poza za
 |---|---|---|
 | Pierwsza pełna kopia | 11,4–12,4 s | **7,2–8,3 s** |
 | Przyrost bez zmian | 3,4–4,3 s | **0,95–1,4 s** (0 otwartych plików) |
-| Szczyt pamięci Agenta | 474–583 MB (limit 500 MB przekraczany) | **~330 MB** |
+| Szczyt pamięci Agenta | 474–583 MB (limit 500 MB przekraczany) | **~330 MB** (1,2 GB); 434 MB przy 300 tys. plików (było 777 MB) |
 | Pamięć prywatna po kopii | 271 MB RSS | **~27 MB** prywatnej (116 MB RSS z mapowanymi bibliotekami) |
 | Rozmiar repozytorium | 732 MB | 732 MB (bez zmian) |
 | Wznawianie po zerwaniu połączenia | porażka przebiegu | ponowienie wysyłki packa (4 próby) |

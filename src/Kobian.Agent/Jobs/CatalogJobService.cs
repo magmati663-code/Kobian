@@ -419,7 +419,7 @@ public sealed class CatalogJobService
                         try
                         {
                             treeSession = await factory.OpenAsync(def.ToDestination(destId), CredentialRole.Backup, ct).ConfigureAwait(false);
-                            treeReader = new RepoReader(treeSession, keys) { PackCacheBudget = TreeCacheBudget };
+                            treeReader = new RepoReader(treeSession, keys) { PackCacheBudget = TreeCacheBudget, UseRangeReads = true };
                             await treeReader.LoadTreeIndexAsync(parentSnapshot, ct).ConfigureAwait(false);
                             parentTree = new ParentTree(parentSnapshot.RootTreeId, parentStarted, treeReader.ReadTreeAsync);
                             contentRead = false;
