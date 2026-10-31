@@ -5,6 +5,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>kobian</AssemblyName>
     <RootNamespace>Kobian.Cli</RootNamespace>
+      <TieredPGO>false</TieredPGO> <!-- krótkie procesy: mniej narzutu przy starcie (tools/perf: −10% czasu uruchomienia) -->
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Grpc.Net.Client" />

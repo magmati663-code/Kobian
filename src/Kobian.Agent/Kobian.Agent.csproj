@@ -8,6 +8,8 @@
     <!-- Usługa w tle, nie interaktywna aplikacja: GC bez wątku współbieżnego (pomiar tools/perf, 1,2 GB: kopia −15% czasu, −25 MB szczytu, −60 MB po kopii)
          i oddawanie pamięci systemowi (ConserveMemory 7: szczyt 460 → 323 MB przy tym samym czasie). Docs: docs/plan-optymalizacji.md, runda 3–4. -->
     <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <!-- Profilowanie warstwowe (PGO) kosztuje przy starcie i w krótkich procesach: pomiar tools/perf — pełna kopia −5%, przyrost −10%, start CLI −10%. -->
+    <TieredPGO>false</TieredPGO>
   </PropertyGroup>
   <ItemGroup>
     <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="7" />

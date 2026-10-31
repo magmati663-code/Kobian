@@ -5,6 +5,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>kobian-restore</AssemblyName>
     <RootNamespace>Kobian.Restore.Standalone</RootNamespace>
+      <TieredPGO>false</TieredPGO> <!-- krótkie procesy: mniej narzutu przy starcie (tools/perf: −10% czasu uruchomienia) -->
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Kobian.Domain\Kobian.Domain.csproj" />
