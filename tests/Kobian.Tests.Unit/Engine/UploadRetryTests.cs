@@ -60,6 +60,17 @@ public sealed class UploadRetryTests
     }
 
     [Fact]
+    public async Task Full_destination_is_not_retried_at_pack_level()
+    {
+        var store = new MemoryStorage();
+        var delays = new List<int>();
+        await using var up = Uploader(store.Open(faultAt: 1, fault: FaultKind.NoSpaceOnCreate), store, delays);
+        await Assert.ThrowsAsync<RepoWriteException>(() => up.UploadAsync("data/aa/packf", RandomNumberGenerator.GetBytes(10_000), _ct));
+        Assert.Equal(0, up.Retries);
+        Assert.Empty(delays);
+    }
+
+    [Fact]
     public async Task Silent_corruption_and_process_kill_are_never_retried()
     {
         var store = new MemoryStorage();

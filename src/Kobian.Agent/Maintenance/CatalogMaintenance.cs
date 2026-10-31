@@ -128,9 +128,25 @@ public sealed class CatalogMaintenance(string catalogPath, CatalogWriter writer,
         return Convert.ToInt64(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
     }
 
+    /// <summary>Kopia katalogu (<see cref="CatalogBootstrap.TryBackup"/>) nie rzadziej niż raz na dobę, liczona z czasu pliku kopii (przetrwa restarty usługi).</summary>
+    internal void CatalogBackupIfDue()
+    {
+        try
+        {
+            var bak = CatalogBootstrap.AutoBackupPath(catalogPath);
+            if (File.Exists(bak) && time.GetUtcNow() - new DateTimeOffset(File.GetLastWriteTimeUtc(bak), TimeSpan.Zero) < TimeSpan.FromDays(1)) return;
+            CatalogBootstrap.TryBackup(catalogPath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // brak miejsca / uprawnień: kopia katalogu to zabezpieczenie dodatkowe — następna próba za godzinę
+        }
+    }
+
     /// <summary>Krok pętli: przebieg, gdy od ostatniego minęła doba (pierwszy — przy starcie).</summary>
     public async Task<MaintenanceResult?> TickAsync(CancellationToken ct)
     {
+        CatalogBackupIfDue();
         if (_lastRun is { } last && time.GetUtcNow() - last < TimeSpan.FromDays(1) && time.GetUtcNow() >= last) return null;
         return await RunOnceAsync(ct).ConfigureAwait(false);
     }

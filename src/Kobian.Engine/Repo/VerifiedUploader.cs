@@ -63,7 +63,8 @@ public sealed class VerifiedUploader(IStorageSession session, bool readBack = tr
     {
         for (var e = ex; e is not null; e = e.InnerException)
         {
-            if (e is StorageException se) return se.IsTransient;
+            // Pełny dysk celu jest „przejściowy” dla wykonawcy przebiegów (miejsce można zwolnić), ale ponawianie tego packa po kilku sekundach nic nie da.
+            if (e is StorageException se) return se.IsTransient && se.Code != KbCode.DestinationFull;
             if (e is IOException or TimeoutException or System.Net.Sockets.SocketException) return true;
         }
         return false;

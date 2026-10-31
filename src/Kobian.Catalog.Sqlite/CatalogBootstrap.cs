@@ -66,15 +66,104 @@ public static partial class CatalogBootstrap
         return Version.Parse(Scalar<string>(c, "SELECT sqlite_version();"));
     }
 
+    /// <summary>Plik automatycznej kopii katalogu obok bazy (<c>catalog.db.auto.bak</c>) — wystarczy do odtworzenia po uszkodzeniu pliku bazy.</summary>
+    public static string AutoBackupPath(string catalogPath) => catalogPath + ".auto.bak";
+
+    /// <summary>
+    /// Kopia spójna (<c>VACUUM INTO</c>) do pliku tymczasowego, kontrola <c>quick_check</c>, potem atomowa podmiana <see cref="AutoBackupPath"/>.
+    /// Nie blokuje zapisów (czyta w trybie tylko do odczytu). Zwraca false, gdy baza źródłowa jest uszkodzona (kopia NIE zastępuje dobrej kopii uszkodzoną).
+    /// </summary>
+    public static bool TryBackup(string path)
+    {
+        var tmp = AutoBackupPath(path) + ".tmp";
+        try
+        {
+            if (File.Exists(tmp)) File.Delete(tmp);
+            using (var c = Open(path, readOnly: true))
+            {
+                using var cmd = c.CreateCommand();
+                cmd.CommandText = "VACUUM INTO $p;";
+                cmd.Parameters.AddWithValue("$p", tmp);
+                cmd.ExecuteNonQuery();
+            }
+            if (!IsHealthy(tmp)) return false;
+            File.Move(tmp, AutoBackupPath(path), overwrite: true);
+            return true;
+        }
+        catch (SqliteException)
+        {
+            return false;
+        }
+        finally
+        {
+            try { if (File.Exists(tmp)) File.Delete(tmp); } catch (IOException) { /* następny przebieg posprząta */ }
+        }
+    }
+
+    /// <summary>Czy plik jest czytelną bazą SQLite z poprawnym <c>quick_check</c> (każdy błąd otwarcia/odczytu = nie).</summary>
+    public static bool IsHealthy(string path)
+    {
+        try
+        {
+            if (!File.Exists(path) || new FileInfo(path).Length == 0) return false;
+            using var c = Open(path, readOnly: true);
+            return string.Equals(Scalar<string>(c, "PRAGMA quick_check;"), "ok", StringComparison.Ordinal);
+        }
+        catch (SqliteException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Uszkodzony katalog + zdrowa kopia automatyczna → uszkodzony plik zostaje obok (<c>.corrupt-&lt;czas&gt;</c>, do analizy), a kopia staje się katalogiem.
+    /// Utracone są tylko wpisy od czasu kopii (zwykle &lt; doba); migawki i dane są w repozytorium, a następna kopia planuje się od ostatniej znanej migawki.
+    /// </summary>
+    private static bool TryRestoreFromBackup(string path, TimeProvider time)
+    {
+        var backup = AutoBackupPath(path);
+        if (!IsHealthy(backup)) return false;
+        SqliteConnection.ClearAllPools();
+        var stamp = time.GetUtcNow().UtcDateTime.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
+        if (File.Exists(path)) File.Move(path, path + ".corrupt-" + stamp, overwrite: true);
+        foreach (var side in new[] { "-wal", "-shm" })
+            if (File.Exists(path + side)) File.Move(path + side, path + ".corrupt-" + stamp + side, overwrite: true);
+        File.Copy(backup, path, overwrite: false);
+        return true;
+    }
+
     /// <summary>Start katalogu: zwraca tryb pracy. Wersja SQLite poniżej minimum → wyjątek (usługa nie startuje — D2.14 pkt 2).</summary>
     public static CatalogMode Bootstrap(string path, TimeProvider time)
     {
         ArgumentNullException.ThrowIfNull(time);
+        var mode = BootstrapCore(path, time);
+        if (mode != CatalogMode.Emergency || !TryRestoreFromBackup(path, time)) return mode;
+        return BootstrapCore(path, time); // jedna próba na kopii; jeśli i ona zawiedzie — tryb awaryjny jak dotąd
+    }
+
+    private static CatalogMode BootstrapCore(string path, TimeProvider time)
+    {
         var existed = File.Exists(path) && new FileInfo(path).Length > 0;
-        using var c = Open(path);
+        SqliteConnection c;
+        try
+        {
+            c = Open(path);
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode is 11 or 26) // SQLITE_CORRUPT / SQLITE_NOTADB — plik nie jest czytelną bazą
+        {
+            return CatalogMode.Emergency;
+        }
+        using var _ = c;
         if (SqliteVersion(c) < MinSqliteVersion)
             throw new InvalidOperationException($"SQLite library {SqliteVersion(c)} is below required {MinSqliteVersion}.");
-        if (!string.Equals(Scalar<string>(c, "PRAGMA quick_check;"), "ok", StringComparison.Ordinal)) return CatalogMode.Emergency;
+        try
+        {
+            if (!string.Equals(Scalar<string>(c, "PRAGMA quick_check;"), "ok", StringComparison.Ordinal)) return CatalogMode.Emergency;
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode is 11 or 26)
+        {
+            return CatalogMode.Emergency;
+        }
 
         Exec(c, "CREATE TABLE IF NOT EXISTS schema_versions (module TEXT PRIMARY KEY, version INTEGER NOT NULL, applied_at TEXT NOT NULL) STRICT;");
         var current = new Dictionary<string, int>(StringComparer.Ordinal);
