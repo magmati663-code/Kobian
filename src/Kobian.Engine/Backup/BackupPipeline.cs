@@ -40,6 +40,13 @@ public sealed record BackupRequest(
 /// znaczniku czasu, w którym go czytano, jest niewidoczna po mtime, więc takie pliki czytamy zawsze. Skrót jest wyłączany przez wywołującego co kilka dni
 /// (pełna weryfikacja treści) — wykrywa zmianę treści, która zachowała rozmiar i mtime (np. narzędzia przywracające czas).
 /// </summary>
+/// <summary>Czas poszczególnych faz potoku kopii (sumy; fazy sekwencyjne w jednym wątku — suma ≈ czas przebiegu poza listowaniem katalogów).</summary>
+public sealed record PhaseTimes(TimeSpan Read, TimeSpan Hash, TimeSpan Compress, TimeSpan PackEncrypt, TimeSpan UploadWait)
+{
+    public override string ToString() => string.Create(System.Globalization.CultureInfo.InvariantCulture,
+        $"read={Read.TotalSeconds:F2}s hash={Hash.TotalSeconds:F2}s compress={Compress.TotalSeconds:F2}s encrypt={PackEncrypt.TotalSeconds:F2}s uploadWait={UploadWait.TotalSeconds:F2}s");
+}
+
 public sealed record ParentTree(byte[] RootTreeId, DateTimeOffset RunStarted, Func<byte[], CancellationToken, Task<IReadOnlyList<TreeEntry>>> ReadTree)
 {
     public static readonly TimeSpan RacyWindow = TimeSpan.FromSeconds(2);
@@ -95,6 +102,18 @@ public sealed class BackupPipeline
     /// <summary>Diagnostyka (testy, Bench, metryki): ile plików ostatniego <see cref="RunAsync"/> ominęło odczyt treści dzięki <see cref="ParentTree"/>.</summary>
     public long LastReusedFiles { get; private set; }
 
+    /// <summary>
+    /// Runda 9 planu: ile bloków dużego pliku jest przygotowywanych (HMAC chunkId + kompresja) równolegle, podczas gdy główny wątek czyta, liczy SHA-256 pliku, szyfruje
+    /// do packa i wysyła. 1 = jak dotąd (sekwencyjnie). Domyślnie rdzenie − 1, najwyżej 3 (każdy blok w locie to bufor 4 MiB).
+    /// Kolejność bloków w packach i wynik logiczny są takie same jak sekwencyjnie.
+    /// </summary>
+    public int BlockParallelism { get; init; } = int.TryParse(Environment.GetEnvironmentVariable("KOBIAN_BLOCK_PARALLELISM"), out var envDepth) && envDepth is >= 1 and <= 8
+        ? envDepth
+        : Math.Clamp(Environment.ProcessorCount - 1, 1, 3);
+
+    /// <summary>Diagnostyka (metryki, Bench): łączny czas faz ostatniego <see cref="RunAsync"/> — odczyt, hasze, kompresja, szyfrowanie do packa, oczekiwanie na wysyłkę.</summary>
+    public PhaseTimes LastTimes { get; private set; } = new(TimeSpan.Zero, TimeSpan.Zero, TimeSpan.Zero, TimeSpan.Zero, TimeSpan.Zero);
+
     /// <summary>Diagnostyka: ile buforów packów utworzono w ostatnim <see cref="RunAsync"/> (reszta packów — bufory z puli).</summary>
     public int PackBuffersCreated { get; private set; }
 
@@ -121,6 +140,7 @@ public sealed class BackupPipeline
                 await run.AbandonUploadsAsync().ConfigureAwait(false); // błąd w trakcie: wysyłki w toku dokończone/porzucone przed zwolnieniem buforów
                 PeakPackBuffers = run.PeakBuffers;
                 LastReusedFiles = run.Reused;
+                LastTimes = run.Times();
                 PackBuffersCreated = run.BuffersCreated;
             }
         }
@@ -162,7 +182,13 @@ public sealed class BackupPipeline
         private byte[]? _packId;
         private AesGcmCipher? _packCipher;
         private long _files, _dirs, _raw, _new;
+        private long _tRead, _tHash, _tCompress, _tPack, _tUpload; // Stopwatch ticks
+
+        public PhaseTimes Times() => new(Span(_tRead), Span(_tHash), Span(_tCompress), Span(_tPack), Span(_tUpload));
+
+        private static TimeSpan Span(long ticks) => TimeSpan.FromSeconds((double)ticks / System.Diagnostics.Stopwatch.Frequency);
         private byte[]? _fileBuf;
+        private readonly Kobian.Format.Pack.PackScratch _scratch = new();
 
         public RunState(BackupPipeline p, BackupRequest req)
         {
@@ -187,6 +213,124 @@ public sealed class BackupPipeline
         }
 
         public List<string> Skipped { get; } = [];
+
+        // ---- przygotowanie bloków dużych plików na wielu wątkach (runda 9) ----
+        private readonly System.Collections.Concurrent.ConcurrentStack<BlockCompressor> _compressors = new();
+        private readonly List<BlockCompressor> _allCompressors = [];
+        private readonly Stack<byte[]> _blockBufs = new();
+        private int _blockBufCount;
+
+        private sealed record Prepared(byte[] Id, CompressionAlgorithm Algorithm, byte[]? Payload, int Length, byte[] Buffer);
+
+        private BlockCompressor RentCompressor()
+        {
+            if (_compressors.TryPop(out var c)) return c;
+            c = new BlockCompressor();
+            lock (_allCompressors) _allCompressors.Add(c);
+            return c;
+        }
+
+        /// <summary>Wątek roboczy: HMAC chunkId i (dla bloków spoza bazy) kompresja. Tylko odczyty wspólnych struktur (tablica bazowa jest zamrożona przed startem).</summary>
+        private Prepared Prepare(byte[] buffer, int length)
+        {
+            var span = buffer.AsSpan(0, length);
+            var t0 = System.Diagnostics.Stopwatch.GetTimestamp();
+            var id = _p._keys.ChunkId(span);
+            Interlocked.Add(ref _tHash, System.Diagnostics.Stopwatch.GetTimestamp() - t0);
+            if (_dedup.IsBase(id)) return new Prepared(id, CompressionAlgorithm.None, null, length, buffer); // blok znany: nie będzie zapisu, kompresja zbędna
+            var t1 = System.Diagnostics.Stopwatch.GetTimestamp();
+            var c = RentCompressor();
+            try
+            {
+                var (alg, payload) = c.Compress(span);
+                return new Prepared(id, alg, payload, length, buffer);
+            }
+            finally
+            {
+                _compressors.Push(c);
+                Interlocked.Add(ref _tCompress, System.Diagnostics.Stopwatch.GetTimestamp() - t1);
+            }
+        }
+
+        private byte[]? TryTakeBlockBuffer(int limit)
+        {
+            if (_blockBufs.TryPop(out var b)) return b;
+            if (_blockBufCount >= limit) return null;
+            _blockBufCount++;
+            return new byte[ChunkSize];
+        }
+
+        /// <summary>Wątek potoku (w kolejności plików i bloków): rejestracja w tablicy dedup, zapis do packa, ewentualna wysyłka.</summary>
+        private async Task AddPreparedAsync(Prepared p, CancellationToken ct)
+        {
+            if (!_dedup.Reference(p.Id)) return;
+            if (_pack is null) StartPack();
+            var (alg, payload) = p.Payload is null ? _zstd.Compress(p.Buffer.AsSpan(0, p.Length)) : (p.Algorithm, p.Payload);
+            var t0 = System.Diagnostics.Stopwatch.GetTimestamp();
+            _pack!.AddBlob(p.Id, BlobType.Data, alg, p.Length, payload);
+            _tPack += System.Diagnostics.Stopwatch.GetTimestamp() - t0;
+            _new += p.Length;
+            await FlushIfFullAsync(ct).ConfigureAwait(false);
+        }
+
+        private async Task<(long Size, List<byte[]> Chunks, byte[] Sha)?> FileParallelAsync(string rel, int depth, CancellationToken ct)
+        {
+            _dedup.IsBase(new byte[32]); // zamrożenie tablicy bazowej PRZED wątkami roboczymi (dalej tylko odczyty)
+            var chunks = new List<byte[]>();
+            long size = 0;
+            var failed = false;
+            using var h = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            Stream s;
+            try { s = _req.Source.OpenRead(rel); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
+            var pending = new Queue<Task<Prepared>>();
+            async Task ConsumeOldestAsync()
+            {
+                var p = await pending.Dequeue().ConfigureAwait(false);
+                await AddPreparedAsync(p, ct).ConfigureAwait(false);
+                chunks.Add(p.Id);
+                _blockBufs.Push(p.Buffer);
+            }
+            try
+            {
+                await using (s.ConfigureAwait(false))
+                {
+                    while (true)
+                    {
+                        byte[]? buf;
+                        while ((buf = TryTakeBlockBuffer(depth + 1)) is null) await ConsumeOldestAsync().ConfigureAwait(false);
+                        int n;
+                        var t0 = System.Diagnostics.Stopwatch.GetTimestamp();
+                        try { n = await FillAsync(s, buf, ct).ConfigureAwait(false); }
+                        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { _blockBufs.Push(buf); failed = true; break; }
+                        _tRead += System.Diagnostics.Stopwatch.GetTimestamp() - t0;
+                        if (n == 0) { _blockBufs.Push(buf); break; }
+                        var t1 = System.Diagnostics.Stopwatch.GetTimestamp();
+                        h.AppendData(buf.AsSpan(0, n));
+                        _tHash += System.Diagnostics.Stopwatch.GetTimestamp() - t1;
+                        size += n;
+                        var b = buf;
+                        var len = n;
+                        pending.Enqueue(Task.Run(() => Prepare(b, len), CancellationToken.None));
+                        while (pending.Count > 0 && pending.Peek().IsCompleted) await ConsumeOldestAsync().ConfigureAwait(false);
+                        if (n < ChunkSize) break;
+                    }
+                    while (pending.Count > 0) await ConsumeOldestAsync().ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                // błąd w trakcie: zadania w toku dokończone przed zwolnieniem buforów i kompresorów (nie zostają w tle po powrocie)
+                while (pending.Count > 0)
+                {
+                    try { _blockBufs.Push((await pending.Dequeue().ConfigureAwait(false)).Buffer); }
+                    catch (Exception) { /* błąd pierwotny jest już w drodze; tu tylko czekamy na koniec zadań */ }
+                }
+            }
+            if (failed) return null;
+            _raw += size;
+            return (size, chunks, h.GetHashAndReset());
+        }
 
         public int PeakBuffers { get; private set; }
 
@@ -286,7 +430,9 @@ public sealed class BackupPipeline
                             entries.Add(new TreeEntry(c.Name, EntryKind.File, same.Size, c.MtimeNs, Chunks: same.Chunks, FileSha256: same.FileSha256, UnixMode: c.UnixMode));
                             break;
                         }
-                        var f = await FileAsync(path, ct).ConfigureAwait(false);
+                        var f = _p.BlockParallelism > 1 && c.Size > ChunkSize
+                            ? await FileParallelAsync(path, _p.BlockParallelism, ct).ConfigureAwait(false)
+                            : await FileAsync(path, ct).ConfigureAwait(false);
                         if (f is null) { Skipped.Add(path); break; }
                         _files++;
                         entries.Add(new TreeEntry(c.Name, EntryKind.File, f.Value.Size, c.MtimeNs, Chunks: f.Value.Chunks, FileSha256: f.Value.Sha, UnixMode: c.UnixMode));
@@ -315,13 +461,17 @@ public sealed class BackupPipeline
                 while (true)
                 {
                     int n;
+                    var t0 = System.Diagnostics.Stopwatch.GetTimestamp();
                     try { n = await FillAsync(s, buf, ct).ConfigureAwait(false); }
                     catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
+                    _tRead += System.Diagnostics.Stopwatch.GetTimestamp() - t0;
                     if (n == 0) break;
                     var block = buf.AsSpan(0, n);
+                    var t1 = System.Diagnostics.Stopwatch.GetTimestamp();
                     h.AppendData(block);
                     var id = _p._keys.ChunkId(block);
-                    await AddBlobAsync(id, BlobType.Data, block.ToArray(), ct).ConfigureAwait(false);
+                    _tHash += System.Diagnostics.Stopwatch.GetTimestamp() - t1;
+                    await AddBlobAsync(id, BlobType.Data, buf.AsMemory(0, n), ct).ConfigureAwait(false);
                     chunks.Add(id);
                     size += n;
                     if (n < buf.Length) break;
@@ -343,16 +493,29 @@ public sealed class BackupPipeline
             return total;
         }
 
-        private async Task AddBlobAsync(byte[] id, BlobType type, byte[] raw, CancellationToken ct)
+        // raw: pamięć wywołującego (bufor odczytu pliku) — używana synchronicznie, przed pierwszym await; bez kopii bloku (ToArray) także dla bloków już znanych.
+        private async Task AddBlobAsync(byte[] id, BlobType type, ReadOnlyMemory<byte> raw, CancellationToken ct)
         {
             if (!_dedup.Reference(id)) return;
             if (_pack is null) StartPack();
-            var (alg, payload) = _zstd.Compress(raw);
+            var t0 = System.Diagnostics.Stopwatch.GetTimestamp();
+            var (alg, payload) = _zstd.Compress(raw.Span);
+            var t1 = System.Diagnostics.Stopwatch.GetTimestamp();
             _pack!.AddBlob(id, type, alg, raw.Length, payload);
+            _tCompress += t1 - t0;
+            _tPack += System.Diagnostics.Stopwatch.GetTimestamp() - t1;
             _new += raw.Length;
             // Pack zamykany też po liczbie ramek: format dopuszcza MaxFrames (65 536) bloków w packu, a ten sam zapis rzuciłby KB-1308 (Failed, deterministycznie przy każdym biegu)
             // dla źródeł z dziesiątkami tysięcy bardzo małych bloków (puste katalogi, drobne pliki) przy dużym packTargetSize.
-            if (_pack.Length >= _target || _pack.BlobCount >= Kobian.Format.Pack.PackLayout.MaxFrames) await FlushPackAsync(ct).ConfigureAwait(false);
+            await FlushIfFullAsync(ct).ConfigureAwait(false);
+        }
+
+        private async Task FlushIfFullAsync(CancellationToken ct)
+        {
+            if (_pack is null || (_pack.Length < _target && _pack.BlobCount < Kobian.Format.Pack.PackLayout.MaxFrames)) return;
+            var t2 = System.Diagnostics.Stopwatch.GetTimestamp();
+            await FlushPackAsync(ct).ConfigureAwait(false);
+            _tUpload += System.Diagnostics.Stopwatch.GetTimestamp() - t2;
         }
 
         private void StartPack()
@@ -362,7 +525,7 @@ public sealed class BackupPipeline
             try { _packCipher = new AesGcmCipher(key); }
             finally { CryptographicOperations.ZeroMemory(key); }
             _packBuf = RentBuffer();
-            _pack = new PackWriter(_packBuf, _packCipher, _p._keys.RepoId, _packId, _p._keys.CommitTag(_packId));
+            _pack = new PackWriter(_packBuf, _packCipher, _p._keys.RepoId, _packId, _p._keys.CommitTag(_packId), _scratch);
         }
 
         public async Task FlushPackAsync(CancellationToken ct)
@@ -520,6 +683,7 @@ public sealed class BackupPipeline
 
         public void Dispose()
         {
+            lock (_allCompressors) foreach (var c in _allCompressors) c.Dispose();
             _zstd.Dispose();
             _packCipher?.Dispose();
             while (_bufferPool.TryPop(out var ms)) ms.Dispose();

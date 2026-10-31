@@ -19,8 +19,12 @@ public sealed class PackWriter
     private readonly List<PackEntry> _entries = [];
     private bool _finished;
 
-    public PackWriter(Stream output, IAuthenticatedCipher packCipher, ReadOnlySpan<byte> repoId, ReadOnlySpan<byte> packId, ReadOnlySpan<byte> commitTag)
+    private readonly PackScratch? _scratch;
+
+    /// <param name="scratch">Opcjonalne bufory robocze współdzielone przez kolejne packi tego samego przebiegu (bez dwóch nowych tablic rozmiaru bloku na każdy blok).</param>
+    public PackWriter(Stream output, IAuthenticatedCipher packCipher, ReadOnlySpan<byte> repoId, ReadOnlySpan<byte> packId, ReadOnlySpan<byte> commitTag, PackScratch? scratch = null)
     {
+        _scratch = scratch;
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(packCipher);
         if (!output.CanSeek || !output.CanWrite) throw new ArgumentException("Pack output must be seekable and writable.", nameof(output));
@@ -68,16 +72,19 @@ public sealed class PackWriter
             throw new KobianException(KbCode.FrameTooLarge, ErrorClass.Permanent, "Frame exceeds limit.");
 
         var index = (ulong)_entries.Count;
-        var plain = new byte[plainLen];
-        var sealedBuf = new byte[frameLength];
+        // Bufory robocze przebiegu (jeśli podano) zamiast dwóch nowych tablic ~rozmiaru bloku (LOH) na KAŻDY blok; jawny tekst czyszczony po każdym bloku.
+        var plainArr = _scratch?.Plain(plainLen) ?? new byte[plainLen];
+        var sealedArr = _scratch?.Sealed(frameLength) ?? new byte[frameLength];
+        var plain = plainArr.AsSpan(0, plainLen);
+        var sealedBuf = sealedArr.AsSpan(0, frameLength);
         try
         {
             plain[0] = PackLayout.BlobVersion;
             plain[1] = (byte)blobType;
             plain[2] = (byte)algorithm;
             plain[3] = 0;
-            BinaryPrimitives.WriteUInt32LittleEndian(plain.AsSpan(4), (uint)rawLength);
-            payload.CopyTo(plain.AsSpan(PackLayout.BlobHeaderSize));
+            BinaryPrimitives.WriteUInt32LittleEndian(plain[4..], (uint)rawLength);
+            payload.CopyTo(plain[PackLayout.BlobHeaderSize..]);
 
             Span<byte> nonce = stackalloc byte[12];
             NonceForBlob(index, nonce);

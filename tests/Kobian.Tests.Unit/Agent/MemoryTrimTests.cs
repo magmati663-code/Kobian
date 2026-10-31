@@ -19,7 +19,7 @@ public sealed class MemoryTrimTests
         junk[0] = 1;
         junk = null;
         var before = GC.GetTotalMemory(false);
-        var t0 = TimeSpan.FromHours(1).Ticks; // dowolny punkt czasu większy niż okno
+        var t0 = (Environment.TickCount64 * TimeSpan.TicksPerMillisecond) + TimeSpan.FromHours(10).Ticks; // za każdym znacznikiem ustawionym przez inne testy tego procesu (AfterRun)
         Assert.True(MemoryTrim.TrimNow(t0));
         Assert.False(MemoryTrim.TrimNow(t0 + TimeSpan.FromMilliseconds(100).Ticks)); // za wcześnie
         Assert.True(MemoryTrim.TrimNow(t0 + TimeSpan.FromSeconds(2).Ticks));

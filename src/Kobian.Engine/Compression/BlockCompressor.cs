@@ -12,7 +12,15 @@ public sealed class BlockCompressor : IDisposable
 {
     public const int DefaultLevel = 3;
     private readonly Compressor _zstd;
+    private readonly Compressor _probe = new(1);
     private readonly Decompressor _unzstd;
+    private byte[] _out = []; // bufor wyjściowy kompresora: rośnie do największego bloku i znika razem z kompresorem (ArrayPool.Shared trzymał bufory 8 MiB poza kontrolą po przebiegu)
+
+    /// <summary>Bloki poniżej tego rozmiaru kompresujemy bez próby (próba kosztuje tyle co kompresja).</summary>
+    public const int ProbeMinBlock = 64 * 1024;
+
+    private const int ProbeSlice = 4096;
+    private const int ProbeSlices = 4;
 
     public BlockCompressor(int level = DefaultLevel)
     {
@@ -20,15 +28,32 @@ public sealed class BlockCompressor : IDisposable
         _unzstd = new Decompressor();
     }
 
+    /// <summary>
+    /// Szybka próba (runda 8 planu): cztery wycinki po 4 KiB (początek, 1/3, 2/3, koniec) skompresowane zstd poziom 1 — jeśli zysk &lt; ~3%, cały blok to dane
+    /// nieściśliwe (zip, jpg, mp4, zaszyfrowane, losowe) i pomijamy kompresję poziomu 3 na 4 MiB. Pomyłka kosztuje co najwyżej miejsce (blok zapisany bez kompresji), nigdy poprawność.
+    /// </summary>
+    public bool LooksIncompressible(ReadOnlySpan<byte> raw)
+    {
+        if (raw.Length < ProbeMinBlock) return false;
+        const int total = ProbeSlice * ProbeSlices;
+        Span<byte> sample = stackalloc byte[total];
+        var last = raw.Length - ProbeSlice;
+        for (var i = 0; i < ProbeSlices; i++) raw.Slice((int)((long)last * i / (ProbeSlices - 1)), ProbeSlice).CopyTo(sample.Slice(i * ProbeSlice, ProbeSlice));
+        Span<byte> outBuf = stackalloc byte[Compressor.GetCompressBound(total)];
+        var n = _probe.Wrap(sample, outBuf);
+        return n >= total - (total >> 5);
+    }
+
     /// <summary>Kompresuje; zwraca algorytm i ładunek. Gdy zysk &lt; 1/64 rozmiaru — zapis bez kompresji (oszczędność CPU przy odczycie).</summary>
     public (CompressionAlgorithm Algorithm, byte[] Payload) Compress(ReadOnlySpan<byte> raw)
     {
         if (raw.Length == 0) return (CompressionAlgorithm.None, []);
+        if (LooksIncompressible(raw)) return (CompressionAlgorithm.None, raw.ToArray());
         var bound = Compressor.GetCompressBound(raw.Length);
-        var buf = new byte[bound];
-        var n = _zstd.Wrap(raw, buf);
+        if (_out.Length < bound) _out = new byte[bound]; // jedna tablica na kompresor, nie nowa ~4 MiB (LOH) na każdy blok
+        var n = _zstd.Wrap(raw, _out);
         return n < raw.Length - (raw.Length >> 6)
-            ? (CompressionAlgorithm.Zstd, buf.AsSpan(0, n).ToArray())
+            ? (CompressionAlgorithm.Zstd, _out.AsSpan(0, n).ToArray())
             : (CompressionAlgorithm.None, raw.ToArray());
     }
 
@@ -64,6 +89,7 @@ public sealed class BlockCompressor : IDisposable
     public void Dispose()
     {
         _zstd.Dispose();
+        _probe.Dispose();
         _unzstd.Dispose();
     }
 }

@@ -428,6 +428,7 @@ public sealed class CatalogJobService
                     }
                     result = await pipeline.RunAsync(new BackupRequest(tree, job.Id, _hostId, mode, null, parent, def.PackTargetSize, Time: _time, RunId: runId, BaselineStream: baseline, ParentTree: parentTree), ct).ConfigureAwait(false);
                     LastReusedFiles = pipeline.LastReusedFiles;
+                    if (Environment.GetEnvironmentVariable("KOBIAN_PROFILE") == "1") Console.Error.WriteLine($"profile reused={pipeline.LastReusedFiles} {pipeline.LastTimes}");
                 }
                 finally
                 {
