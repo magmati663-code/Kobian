@@ -44,18 +44,26 @@ public static partial class CatalogBootstrap
             ForeignKeys = true,
         }.ToString();
         var c = new SqliteConnection(cs);
-        c.Open();
-        // SQLITE_DBCONFIG_DEFENSIVE (1010) — blokuje m.in. writable_schema i bezpośrednie uszkadzanie pliku przez SQL.
-        var rc = SQLitePCL.raw.sqlite3_db_config(c.Handle, 1010, 1, out int _);
-        if (rc != SQLitePCL.raw.SQLITE_OK) throw new InvalidOperationException("Cannot enable SQLITE_DBCONFIG_DEFENSIVE.");
-        Exec(c, "PRAGMA trusted_schema = OFF;");
-        Exec(c, "PRAGMA cell_size_check = ON;");
-        if (!readOnly)
+        try
         {
-            Exec(c, "PRAGMA journal_mode = WAL;");
-            Exec(c, "PRAGMA synchronous = FULL;");
-            // RD-74 (it. 117): usunięte wiersze (nazwy plików z dziennika odtwarzania, treść powiadomień — RD-69) nadpisywane zerami, a nie zostawiane w wolnych stronach.
-            Exec(c, "PRAGMA secure_delete = ON;");
+            c.Open();
+            // SQLITE_DBCONFIG_DEFENSIVE (1010) — blokuje m.in. writable_schema i bezpośrednie uszkadzanie pliku przez SQL.
+            var rc = SQLitePCL.raw.sqlite3_db_config(c.Handle, 1010, 1, out int _);
+            if (rc != SQLitePCL.raw.SQLITE_OK) throw new InvalidOperationException("Cannot enable SQLITE_DBCONFIG_DEFENSIVE.");
+            Exec(c, "PRAGMA trusted_schema = OFF;");
+            Exec(c, "PRAGMA cell_size_check = ON;");
+            if (!readOnly)
+            {
+                Exec(c, "PRAGMA journal_mode = WAL;");
+                Exec(c, "PRAGMA synchronous = FULL;");
+                // RD-74 (it. 117): usunięte wiersze (nazwy plików z dziennika odtwarzania, treść powiadomień — RD-69) nadpisywane zerami, a nie zostawiane w wolnych stronach.
+                Exec(c, "PRAGMA secure_delete = ON;");
+            }
+        }
+        catch
+        {
+            c.Dispose(); // plik nie-bazy / uszkodzony: bez zwolnienia uchwytu Windows nie pozwoli go przenieść (odtworzenie z kopii)
+            throw;
         }
         return c;
     }

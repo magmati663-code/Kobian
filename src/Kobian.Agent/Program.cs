@@ -23,6 +23,8 @@ if (paths is null)
     return AgentExitCodes.Configuration;
 }
 var catalog = paths.Catalog;
+// Runda 16: usługa (nie sesja deweloperska w konsoli) pracuje z niższym priorytetem — kopia nie dławi pracy użytkownika (KOBIAN_PRIORITY=normal wyłącza).
+if (runningAsService) ProcessPriority.Apply(Environment.GetEnvironmentVariable("KOBIAN_PRIORITY"));
 
 // D2.15 pkt 3 / AC-37.3: pojedyncza instancja PRZED dotknięciem katalogu (druga instancja → KB-7007, catalog.db bez zmian).
 using var instance = SingleInstanceGuard.TryAcquire(catalog, useGlobalMutex: OperatingSystem.IsWindows());

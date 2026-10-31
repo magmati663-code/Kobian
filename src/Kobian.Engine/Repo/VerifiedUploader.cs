@@ -34,6 +34,9 @@ public sealed class VerifiedUploader(IStorageSession session, bool readBack = tr
 
     public int MaxAttempts { get; init; } = 4;
 
+    /// <summary>Limit przepustowości wysyłki (wspólny dla wszystkich uploaderów Agenta); null = bez limitu.</summary>
+    public RateLimiter? Throttle { get; init; }
+
     /// <summary>Opóźnienie przed ponowieniem nr n (1-based); domyślnie 2 s · 3^(n−1) ±25% (2 s, 6 s, 18 s).</summary>
     public Func<int, CancellationToken, Task> Delay { get; init; } = DefaultDelayAsync;
 
@@ -139,7 +142,19 @@ public sealed class VerifiedUploader(IStorageSession session, bool readBack = tr
             {
                 try
                 {
-                    await w.WriteAsync(data, ct).ConfigureAwait(false);
+                    if (Throttle is { } limiter)
+                    {
+                        for (var offset = 0; offset < data.Length; offset += limiter.SliceSize)
+                        {
+                            var slice = data.Slice(offset, Math.Min(limiter.SliceSize, data.Length - offset));
+                            await limiter.WaitAsync(slice.Length, ct).ConfigureAwait(false);
+                            await w.WriteAsync(slice, ct).ConfigureAwait(false);
+                        }
+                    }
+                    else
+                    {
+                        await w.WriteAsync(data, ct).ConfigureAwait(false);
+                    }
                     await w.CommitAsync(ct).ConfigureAwait(false);
                 }
                 catch

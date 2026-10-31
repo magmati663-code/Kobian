@@ -370,7 +370,7 @@ public sealed class CatalogJobService
         await using var session = await factory.OpenAsync(def.ToDestination(destId), CredentialRole.Backup, ct).ConfigureAwait(false);
         var (mode, parent, baseline, parentSnapshot) = await PlanBaselineAsync(job.Id, repoHex, session, keys, ct).ConfigureAwait(false);
         // Zerwane połączenie w trakcie wysyłki packa → ponowienie na świeżej sesji (do 4 prób, narastające opóźnienie) zamiast porażki całego przebiegu.
-        await using var mainUploader = new VerifiedUploader(session) { Reopen = ct2 => factory.OpenAsync(def.ToDestination(destId), CredentialRole.Backup, ct2) };
+        await using var mainUploader = new VerifiedUploader(session) { Throttle = UploadLimiter, Reopen = ct2 => factory.OpenAsync(def.ToDestination(destId), CredentialRole.Backup, ct2) };
         await using var uploads = await OpenUploadSessionsAsync(factory, def.ToDestination(destId), session, mainUploader, ct).ConfigureAwait(false);
         var pipeline = new BackupPipeline(keys, mainUploader) { PackUploaders = uploads.Uploaders, Parallelism = uploads.Aimd };
         // Runda 14: brak postępu (żaden blok, katalog, wysyłka) przez StallTimeout = zawieszone uruchomienie (np. dysk sieciowy bez odpowiedzi) → KB-4106, ponowienie przez wykonawcę.
@@ -494,7 +494,7 @@ public sealed class CatalogJobService
                     break;
                 }
                 extra.Add(s);
-                uploaders.Add(new VerifiedUploader(s) { Reopen = ct2 => factory.OpenAsync(dest, CredentialRole.Backup, ct2) });
+                uploaders.Add(new VerifiedUploader(s) { Throttle = UploadLimiter, Reopen = ct2 => factory.OpenAsync(dest, CredentialRole.Backup, ct2) });
             }
         }
         catch
@@ -583,6 +583,13 @@ public sealed class CatalogJobService
 
     /// <summary>Co ile dni kopia czyta CAŁĄ treść (pełna weryfikacja skrótu „plik bez zmian”); 0 = zawsze (skrót wyłączony). Zmienna KOBIAN_CONTENT_CHECK_DAYS.</summary>
     public int ContentCheckDays { get; init; } = int.TryParse(Environment.GetEnvironmentVariable("KOBIAN_CONTENT_CHECK_DAYS"), out var d) && d >= 0 ? d : 7;
+
+    /// <summary>
+    /// Limit wysyłki w kB/s dla wszystkich zadań łącznie (zmienna KOBIAN_MAX_UPLOAD_KBPS; brak/0 = bez limitu). Wspólny limiter dla równoległych sesji i zadań.
+    /// </summary>
+    public RateLimiter? UploadLimiter { get; init; } = long.TryParse(Environment.GetEnvironmentVariable("KOBIAN_MAX_UPLOAD_KBPS"), out var kbps) && kbps > 0 && kbps <= long.MaxValue / 1024
+        ? new RateLimiter(kbps * 1024)
+        : null;
 
     /// <summary>Po tylu minutach bez żadnego postępu uruchomienie jest przerywane (KB-4106); 0 = bez nadzoru. Zmienna KOBIAN_STALL_MINUTES, domyślnie 30.</summary>
     public TimeSpan StallTimeout { get; init; } = TimeSpan.FromMinutes(int.TryParse(Environment.GetEnvironmentVariable("KOBIAN_STALL_MINUTES"), out var sm) && sm >= 0 ? sm : 30);
