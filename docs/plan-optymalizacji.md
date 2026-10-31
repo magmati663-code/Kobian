@@ -1,5 +1,7 @@
 # Plan: wydajność, oszczędność zasobów i niezawodność (20 rund)
 
+> **Stan:** rundy 1–4, 6–11, 13–19 zrealizowane (wyniki: `docs/wyniki-optymalizacji.md`, ustawienia: `docs/admin/dostrajanie.md`). Runda 5 (bardzo duże repozytoria) i 12 (pełny dysk, zmiana tożsamości serwera — poza ponawianiem) — do dalszych prac; runda 7 w praktyce objęta rundą 6 (zostaje ~0,6 s po stronie usługi i ~0,2 s startu CLI); runda 20 = ten dokument.
+
 Zasada: **najpierw pomiar, potem zmiana, potem test, który pilnuje wyniku.** Żadna runda nie osłabia gwarancji bezpieczeństwa
 ani formatu repozytorium (dane zapisane wcześniej odtwarzają się bit w bit). Zmiana bez liczby „przed/po” nie wchodzi.
 

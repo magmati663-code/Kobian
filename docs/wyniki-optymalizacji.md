@@ -19,3 +19,19 @@ Uwaga (pułapka): `ArrayPool.Shared` w kompresorze trzymał bufory 8 MiB poza za
 | 14 | Nadzór zawieszeń: brak postępu przez 30 min (`KOBIAN_STALL_MINUTES`, 0 = wyłączony) → KB-4106 (przejściowy), nawet gdy praca tkwi w nieprzerywalnym wywołaniu | uruchomienie mogło wisieć bez końca, trzymając blokady | przerwane, ponawiane przez wykonawcę; postępująca kopia nigdy nie jest przerywana |
 | 16 | Usługa pracuje z priorytetem „poniżej normalnego” (Windows: klasa priorytetu; Linux/macOS: nice 10; `KOBIAN_PRIORITY=normal\|belownormal\|idle`) | kopia konkuruje z pracą użytkownika na równych prawach | bez rywalizacji czas bez zmian (pomiar: 8,3 s vs 9,0 s — szum); przy rywalizacji pierwszeństwo mają programy interaktywne |
 | 17 | Limit przepustowości wysyłki (`KOBIAN_MAX_UPLOAD_KBPS`, wspólny dla wszystkich sesji i zadań, kawałki 16–256 KiB) | brak | 732 MB przy limicie 50 MB/s: 17,6 s (≈ 41 MB/s łącznie z odczytem i kompresją) |
+| 15 | Test: CLI i aplikacja (ten sam obiekt klienta) wracają do pracy po restarcie usługi, a przy wyłączonej usłudze dostają czytelny błąd (KB-9001), nie zawieszenie | — (zachowanie było poprawne, teraz zablokowane testem) | bez zmian w produkcie |
+| 18 | `TieredPGO=false` w Agencie, CLI i narzędziu odtwarzania; pomiar startu: `kobian status` zimny 0,20 s (cel ≤ 0,25 s osiągnięty bez ReadyToRun, który zwiększyłby paczkę o ~60%) | start CLI 222 ms, pełna kopia 7,4–8,3 s, przyrost 1,1–1,4 s | start CLI 201 ms, pełna kopia 7,2 s, przyrost 0,95–1,04 s |
+| 19 | `tools/perf/soak.sh` + nocny `soak.yml`: kopie z losowymi zmianami danych, `kill -9` Agenta w trakcie kopii, odtworzenie z porównaniem bajt w bajt, `check`, nadzór pamięci | brak testu długotrwałego | 2 serie × 50 kopii, 16 zabić procesu: wszystkie odtworzenia zgodne, `check` czysty, pamięć 116 → 115 MB (bez wzrostu) |
+
+## Pomiary końcowe (1,2 GB, Linux x64, 4 rdzenie)
+
+| Wielkość | Przed (plan, sekcja 0) | Po |
+|---|---|---|
+| Pierwsza pełna kopia | 11,4–12,4 s | **7,2–8,3 s** |
+| Przyrost bez zmian | 3,4–4,3 s | **0,95–1,4 s** (0 otwartych plików) |
+| Szczyt pamięci Agenta | 474–583 MB (limit 500 MB przekraczany) | **~330 MB** |
+| Pamięć prywatna po kopii | 271 MB RSS | **~27 MB** prywatnej (116 MB RSS z mapowanymi bibliotekami) |
+| Rozmiar repozytorium | 732 MB | 732 MB (bez zmian) |
+| Wznawianie po zerwaniu połączenia | porażka przebiegu | ponowienie wysyłki packa (4 próby) |
+| Uszkodzony katalog | usługa nie startuje | start z kopii dobowej |
+| Zawieszone uruchomienie | wisi bez końca | przerwane po 30 min bez postępu (KB-4106) |
