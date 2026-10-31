@@ -25,6 +25,12 @@ public interface ISourceTree
     IEnumerable<SourceNode> List(string relativeDir);
 
     Stream OpenRead(string relativePath);
+
+    /// <summary>
+    /// Czy rozmiar i czas modyfikacji wpisu wiarygodnie mówią „plik bez zmian” (system plików z dokładnym mtime). Domyślnie nie: serwery zdalne (listing FTP z dokładnością
+    /// do minuty), pliki tymczasowe (.bak) — dla nich kopia przyrostowa zawsze czyta treść. Tylko wtedy działa skrót „plik bez zmian” (<see cref="ParentTree"/>).
+    /// </summary>
+    bool MetadataReliable => false;
 }
 
 /// <summary>Źródło z systemu plików (System.IO). Dowiązania zapisywane jako Symlink, nigdy nie są śledzone.</summary>
@@ -40,6 +46,8 @@ public sealed class FileSystemSource : ISourceTree
     }
 
     public string DisplayRoot => _root;
+
+    public bool MetadataReliable => true;
 
     public IEnumerable<SourceNode> List(string relativeDir)
     {

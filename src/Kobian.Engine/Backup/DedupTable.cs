@@ -160,6 +160,13 @@ public sealed class DedupTable
         f |= F.Known | F.Confirmed;
     }
 
+    /// <summary>Czy blok jest w bazie (potwierdzony w repozytorium i objęty indeksami poprzedniej migawki) — bez skutków ubocznych; podstawa skrótu „plik bez zmian”.</summary>
+    public bool IsBase(ReadOnlySpan<byte> id)
+    {
+        Freeze();
+        return InBase(new ChunkKey(id));
+    }
+
     /// <summary>Odnotowuje użycie bloku; true = blok nowy (trzeba go zapisać w packu — od teraz Known, ale niepotwierdzony do <see cref="ConfirmPending"/>).</summary>
     public bool Reference(ReadOnlySpan<byte> id)
     {

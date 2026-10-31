@@ -30,6 +30,9 @@ public sealed class RepoReader(IStorageSession session, RepoKeys keys) : IDispos
     /// <summary>Budżet pamięci podręcznej packów (bajty packów w pamięci); ostatnio użyty pack jest trzymany nawet ponad budżet.</summary>
     public const long PackCacheBudgetBytes = 256L * 1024 * 1024;
 
+    /// <summary>Budżet tego czytnika (domyślnie <see cref="PackCacheBudgetBytes"/>); czytnik drzew poprzedniej migawki w trakcie kopii używa małego.</summary>
+    public long PackCacheBudget { get; init; } = PackCacheBudgetBytes;
+
     private sealed record CachedPack(string Path, long Size, PackReader Reader, AesGcmCipher Cipher)
     {
         /// <summary>Indeks chunkId → pozycja we stopce packa, budowany przy pierwszym wyszukiwaniu (wcześniej liniowy skan na KAŻDY blok: O(n²) dla packów z tysiącami małych bloków).</summary>
@@ -50,6 +53,22 @@ public sealed class RepoReader(IStorageSession session, RepoKeys keys) : IDispos
         {
             err?.Throw();
             AddIndex(r!.Index);
+        }
+    }
+
+    /// <summary>
+    /// Jak <see cref="LoadIndexesAsync"/>, ale do mapy trafiają WYŁĄCZNIE bloki drzew (katalogów) — wystarcza do przejścia po poprzedniej migawce w kopii przyrostowej
+    /// i kosztuje ułamek pamięci pełnej mapy bloków (drzew jest ~1 na katalog, bloków danych miliony).
+    /// </summary>
+    public async Task LoadTreeIndexAsync(SnapshotObject snapshot, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        await foreach (var (_, r, err) in Resolver.ResolveAllAsync(snapshot.Indexes, ct).ConfigureAwait(false))
+        {
+            err?.Throw();
+            foreach (var pk in r!.Index.Packs)
+                foreach (var e in pk.Entries)
+                    if (e.BlobType == BlobType.Tree) _map.TryAdd(Convert.ToHexString(e.ChunkId), new BlockLocation(pk.PackId, pk.Size, pk.Sha256, e));
         }
     }
 
@@ -198,7 +217,7 @@ public sealed class RepoReader(IStorageSession session, RepoKeys keys) : IDispos
             throw;
         }
         // Wypychamy najstarsze, aż nowy pack zmieści się w budżecie (poprzednio używany pack zostaje, jeśli się mieści).
-        while (_packs.Last is { } oldest && _packBytes + bytes.Length > PackCacheBudgetBytes)
+        while (_packs.Last is { } oldest && _packBytes + bytes.Length > PackCacheBudget)
         {
             _packs.RemoveLast();
             _packBytes -= oldest.Value.Size;

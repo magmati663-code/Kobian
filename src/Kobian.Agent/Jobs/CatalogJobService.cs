@@ -344,7 +344,7 @@ public sealed class CatalogJobService
 #pragma warning restore CA1031
             var state = outcome.Result switch { JobResult.Succeeded => RunState.Succeeded, JobResult.Warning => RunState.Warning, _ => RunState.Failed };
             await svc.FinishRunAsync(runId, state, outcome.Code, outcome.SnapshotId, stats, CancellationToken.None).ConfigureAwait(false);
-            MemoryTrim.AfterRun(stats.BytesRaw); // runda 4 planu optymalizacji: duży bieg nie zostawia ~190 MB w usłudze
+            MemoryTrim.AfterRun(); // runda 4 planu optymalizacji: po przebiegu z dużą stertą jedno kompaktujące sprzątanie
             Last = outcome;
             return outcome;
         }
@@ -368,11 +368,12 @@ public sealed class CatalogJobService
         await using var lease = await RepoLocks.AcquireSharedAsync(lockSession, keys, RepoLockOwner.For(_hostId), _time, null, ct).ConfigureAwait(false);
         lease.StartAutoRenew();
         await using var session = await factory.OpenAsync(def.ToDestination(destId), CredentialRole.Backup, ct).ConfigureAwait(false);
-        var (mode, parent, baseline) = await PlanBaselineAsync(job.Id, repoHex, session, keys, ct).ConfigureAwait(false);
+        var (mode, parent, baseline, parentSnapshot) = await PlanBaselineAsync(job.Id, repoHex, session, keys, ct).ConfigureAwait(false);
         var mainUploader = new VerifiedUploader(session);
         await using var uploads = await OpenUploadSessionsAsync(factory, def.ToDestination(destId), session, mainUploader, ct).ConfigureAwait(false);
         var pipeline = new BackupPipeline(keys, mainUploader) { PackUploaders = uploads.Uploaders, Parallelism = uploads.Aimd };
         BackupResult result;
+        var contentRead = true; // false = przyrost ze skrótem (treść niezmienionych plików nie była czytana)
         IReadOnlyList<MsSqlWarning> sqlWarnings = [];
         if (def.MsSql is { } db)
         {
@@ -402,7 +403,37 @@ public sealed class CatalogJobService
             try
             {
                 var tree = await SourceTreeAsync(def, remoteSessions, ct).ConfigureAwait(false);
-                result = await pipeline.RunAsync(new BackupRequest(tree, job.Id, _hostId, mode, null, parent, def.PackTargetSize, Time: _time, RunId: runId, BaselineStream: baseline), ct).ConfigureAwait(false);
+                // Runda 6 planu optymalizacji: kopia przyrostowa nie czyta plików o niezmienionym rozmiarze i mtime (bloki z poprzedniej migawki), dopóki
+                // pełna weryfikacja treści nie jest należna (domyślnie co 7 dni). Drzewa poprzedniej migawki czyta OSOBNA sesja (sesje są jednowątkowe, D4.10).
+                contentRead = true;
+                IStorageSession? treeSession = null;
+                RepoReader? treeReader = null;
+                ParentTree? parentTree = null;
+                try
+                {
+                    if (mode == SnapshotMode.Incremental && parentSnapshot is not null && tree.MetadataReliable && ShortcutAllowed(job.Id) && ParentRunStarted(parentSnapshot.SnapId) is { } parentStarted)
+                    {
+                        try
+                        {
+                            treeSession = await factory.OpenAsync(def.ToDestination(destId), CredentialRole.Backup, ct).ConfigureAwait(false);
+                            treeReader = new RepoReader(treeSession, keys) { PackCacheBudget = TreeCacheBudget };
+                            await treeReader.LoadTreeIndexAsync(parentSnapshot, ct).ConfigureAwait(false);
+                            parentTree = new ParentTree(parentSnapshot.RootTreeId, parentStarted, treeReader.ReadTreeAsync);
+                            contentRead = false;
+                        }
+                        catch (Exception ex) when (ex is StorageException or KobianException or FormatException)
+                        {
+                            parentTree = null; // bez skrótu kopia jest zawsze poprawna (czyta wszystko)
+                        }
+                    }
+                    result = await pipeline.RunAsync(new BackupRequest(tree, job.Id, _hostId, mode, null, parent, def.PackTargetSize, Time: _time, RunId: runId, BaselineStream: baseline, ParentTree: parentTree), ct).ConfigureAwait(false);
+                    LastReusedFiles = pipeline.LastReusedFiles;
+                }
+                finally
+                {
+                    treeReader?.Dispose();
+                    if (treeSession is not null) await treeSession.DisposeAsync().ConfigureAwait(false);
+                }
             }
             finally
             {
@@ -418,6 +449,7 @@ public sealed class CatalogJobService
         var v2 = await new RepoChecker(session, keys).CheckSnapshotAsync(result.SnapId, ct).ConfigureAwait(false);
         var snapHex = Convert.ToHexStringLower(result.SnapId);
         await MarkVerifiedAsync(snapHex, v2.Status == CheckStatus.Succeeded, ct).ConfigureAwait(false);
+        if (v2.Status == CheckStatus.Succeeded && contentRead) await RecordContentReadAsync(job.Id, ct).ConfigureAwait(false);
         if (v2.Status == CheckStatus.Succeeded && baseline is null) await ClearForceFullAsync(job.Id, ct).ConfigureAwait(false); // kopia bez bazy dedup (pełna/baza od zera) spełnia wymuszenie z V3
         if (v2.Status != CheckStatus.Succeeded)
             return (new JobOutcome(JobResult.Failed, CatalogCheckService.WorstCode(v2) ?? KbCode.ReferenceIntegrityFailed, false, snapHex), result.Stats);
@@ -513,7 +545,7 @@ public sealed class CatalogJobService
             return 0;
         }, ct);
 
-    private async Task<(SnapshotMode Mode, byte[]? Parent, BaselineSet? Baseline)> PlanBaselineAsync(string jobId, string repoHex, IStorageSession session, RepoKeys keys, CancellationToken ct)
+    private async Task<(SnapshotMode Mode, byte[]? Parent, BaselineSet? Baseline, SnapshotObject? ParentSnapshot)> PlanBaselineAsync(string jobId, string repoHex, IStorageSession session, RepoKeys keys, CancellationToken ct)
     {
         string? last;
         using (var c = CatalogBootstrap.Open(_catalogPath, readOnly: true))
@@ -527,7 +559,7 @@ public sealed class CatalogJobService
             last = rd.Read() && rd.GetInt64(1) == 0 ? rd.GetString(0) : null;
         }
         if (last is not null && ForceFullRequested(jobId)) last = null; // 3.7: po błędzie V3 kolejna kopia jest pełna (bez dedup na uszkodzonej bazie)
-        if (last is null) return (SnapshotMode.Full, null, null);
+        if (last is null) return (SnapshotMode.Full, null, null, null);
         try
         {
             var parentId = Convert.FromHexString(last);
@@ -535,12 +567,55 @@ public sealed class CatalogJobService
             // BL-83 (RD-64): indeksy bazowe strumieniowo — po jednym, bloki od razu do tablicy dedup (32 B/blok), obiekt indeksu porzucany.
             // D3.16: odwołania do indeksów zastąpionych przez konsolidację rozwiązywane przez indeks skonsolidowany (każdy obiekt wczytany raz).
             var baseline = await BaselineSet.LoadResolvedAsync(prev.Indexes, new IndexResolver(session, keys, cacheObjects: false), ct).ConfigureAwait(false);
-            return (SnapshotMode.Incremental, parentId, baseline);
+            return (SnapshotMode.Incremental, parentId, baseline, prev);
         }
         catch (Exception ex) when (ex is StorageException or KobianException or FormatException)
         {
-            return (SnapshotMode.Full, null, null); // poprzedni snapshot nieczytelny: pełny backup jest zawsze poprawny (nie przyrost na niepewnej bazie)
+            return (SnapshotMode.Full, null, null, null); // poprzedni snapshot nieczytelny: pełny backup jest zawsze poprawny (nie przyrost na niepewnej bazie)
         }
+    }
+
+    /// <summary>Co ile dni kopia czyta CAŁĄ treść (pełna weryfikacja skrótu „plik bez zmian”); 0 = zawsze (skrót wyłączony). Zmienna KOBIAN_CONTENT_CHECK_DAYS.</summary>
+    public int ContentCheckDays { get; init; } = int.TryParse(Environment.GetEnvironmentVariable("KOBIAN_CONTENT_CHECK_DAYS"), out var d) && d >= 0 ? d : 7;
+
+    /// <summary>Budżet pamięci podręcznej packów czytnika drzew poprzedniej migawki.</summary>
+    public const long TreeCacheBudget = 16L << 20;
+
+    /// <summary>Diagnostyka (testy, metryki): ile plików ostatniej kopii plików ominęło odczyt treści.</summary>
+    public long LastReusedFiles { get; private set; }
+
+    private const string ContentReadEvent = "pl.kobian.job.content_read.v1";
+
+    /// <summary>Skrót wolno stosować, gdy w ciągu <see cref="ContentCheckDays"/> dni była kopia czytająca całą treść (pełna albo po terminie weryfikacji).</summary>
+    private bool ShortcutAllowed(string jobId)
+    {
+        if (ContentCheckDays <= 0) return false;
+        using var c = CatalogBootstrap.Open(_catalogPath, readOnly: true);
+        using var cmd = c.CreateCommand();
+        cmd.CommandText = "SELECT MAX(at) FROM core_events WHERE type=$t AND aggregate=$a;";
+        cmd.Parameters.AddWithValue("$t", ContentReadEvent);
+        cmd.Parameters.AddWithValue("$a", "job:" + jobId);
+        return cmd.ExecuteScalar() is string at
+            && DateTimeOffset.TryParse(at, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var t)
+            && _time.GetUtcNow() - t < TimeSpan.FromDays(ContentCheckDays);
+    }
+
+    private Task<int> RecordContentReadAsync(string jobId, CancellationToken ct) =>
+        _writer.ExecuteControlAsync((c, tx) =>
+        {
+            Exec(c, tx, "INSERT INTO core_events(at,type,aggregate,payload) VALUES ($a,$t,$g,$p);",
+                ("$a", Iso(_time.GetUtcNow())), ("$t", ContentReadEvent), ("$g", "job:" + jobId), ("$p", Array.Empty<byte>()));
+            return 0;
+        }, ct);
+
+    /// <summary>Start przebiegu, który utworzył daną migawkę (granica „racy” skrótu); null = nieznany → bez skrótu.</summary>
+    private DateTimeOffset? ParentRunStarted(byte[] snapId)
+    {
+        using var c = CatalogBootstrap.Open(_catalogPath, readOnly: true);
+        using var cmd = c.CreateCommand();
+        cmd.CommandText = "SELECT r.started_at FROM snap_snapshots s JOIN run_runs r ON r.run_id = s.run_id WHERE s.snap_id=$s;";
+        cmd.Parameters.AddWithValue("$s", Convert.ToHexStringLower(snapId));
+        return cmd.ExecuteScalar() is string at && DateTimeOffset.TryParse(at, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var t) ? t : null;
     }
 
     /// <summary>Weryfikacja V3 z harmonogramu wykryła uszkodzenie (sched_verify_jobs.force_full) — <see cref="CatalogCheckService"/>.</summary>

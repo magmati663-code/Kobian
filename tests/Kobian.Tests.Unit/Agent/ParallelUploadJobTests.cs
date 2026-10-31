@@ -119,7 +119,38 @@ public sealed class ParallelUploadJobTests : IAsyncLifetime
         var again = Jobs(g);
         Assert.Equal(JobResult.Succeeded, (await again.RunAsync("Biuro", _ct)).Result);
         Assert.Equal(1, again.LastUploadSessions);
-        Assert.Equal(2, g.Opens);
+        Assert.Equal(3, g.Opens); // blokada + główna + sesja drzew poprzedniej migawki (skrót „plik bez zmian”, przyrost) — bez sesji wysyłki dodatkowej
+    }
+
+    [Fact, Trait("Plan", "runda-6")]
+    public async Task Incremental_reuses_unchanged_files_until_the_content_check_is_due()
+    {
+        foreach (var f0 in Directory.GetFiles(P("src"))) File.SetLastWriteTimeUtc(f0, DateTime.UtcNow.AddDays(-30)); // poza oknem racy
+        var jobs = Jobs(new CountingFactory());
+        Assert.Equal(JobResult.Succeeded, (await jobs.RunAsync("Biuro", _ct)).Result); // pełna: czyta wszystko i zapisuje znacznik weryfikacji treści
+        Assert.Equal(1L, Scalar("SELECT COUNT(*) FROM core_events WHERE type='pl.kobian.job.content_read.v1';"));
+
+        Assert.Equal(JobResult.Succeeded, (await jobs.RunAsync("Biuro", _ct)).Result);
+        Assert.Equal(6, jobs.LastReusedFiles); // przyrost bez zmian: żaden plik nie był czytany
+        Assert.Equal(1L, Scalar("SELECT COUNT(*) FROM core_events WHERE type='pl.kobian.job.content_read.v1';")); // skrót nie odnawia terminu weryfikacji
+
+        var changed = Path.Combine(P("src"), "f0.bin");
+        File.WriteAllBytes(changed, RandomNumberGenerator.GetBytes(1_234_567));
+        File.SetLastWriteTimeUtc(changed, DateTime.UtcNow.AddDays(-30));
+        Assert.Equal(JobResult.Succeeded, (await jobs.RunAsync("Biuro", _ct)).Result);
+        Assert.Equal(5, jobs.LastReusedFiles); // zmieniony rozmiar → czytany; reszta z poprzedniej migawki
+
+        // termin pełnej weryfikacji treści minął → ten przebieg czyta wszystko i odnawia znacznik
+        Exec("UPDATE core_events SET at='2020-01-01T00:00:00.000Z' WHERE type='pl.kobian.job.content_read.v1';");
+        Assert.Equal(JobResult.Succeeded, (await jobs.RunAsync("Biuro", _ct)).Result);
+        Assert.Equal(0, jobs.LastReusedFiles);
+        Assert.Equal(JobResult.Succeeded, (await jobs.RunAsync("Biuro", _ct)).Result);
+        Assert.Equal(6, jobs.LastReusedFiles);
+
+        // wyłączone (0 dni) → zawsze pełny odczyt
+        var always = new CatalogJobService(Catalog, _writer, new Dictionary<string, IStorageProviderFactory> { ["local"] = new CountingFactory() }, new byte[16], TimeProvider.System, (_, _) => Task.CompletedTask) { ContentCheckDays = 0 };
+        Assert.Equal(JobResult.Succeeded, (await always.RunAsync("Biuro", _ct)).Result);
+        Assert.Equal(0, always.LastReusedFiles);
     }
 
     /// <summary>Fabryka Local licząca otwarcia/zamknięcia; sesje mierzą wysyłki packów w toku; opcjonalnie n-te otwarcie odmawia jak serwer z limitem sesji.</summary>

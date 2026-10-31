@@ -31,7 +31,19 @@ public sealed record BackupRequest(
     IReadOnlyDictionary<string, string>? DbMeta = null,
     TimeProvider? Time = null,
     byte[]? RunId = null,
-    BaselineSet? BaselineStream = null);
+    BaselineSet? BaselineStream = null,
+    ParentTree? ParentTree = null);
+
+/// <summary>
+/// Drzewo poprzedniej migawki do skrótu „plik bez zmian” w kopii przyrostowej: plik o tym samym rozmiarze i czasie modyfikacji, którego czas jest starszy niż
+/// <see cref="RacyWindow"/> przed STARTEM przebiegu poprzedniej migawki, dostaje bloki z tej migawki bez czytania treści. Granica „racy”: zmiana pliku w tym samym
+/// znaczniku czasu, w którym go czytano, jest niewidoczna po mtime, więc takie pliki czytamy zawsze. Skrót jest wyłączany przez wywołującego co kilka dni
+/// (pełna weryfikacja treści) — wykrywa zmianę treści, która zachowała rozmiar i mtime (np. narzędzia przywracające czas).
+/// </summary>
+public sealed record ParentTree(byte[] RootTreeId, DateTimeOffset RunStarted, Func<byte[], CancellationToken, Task<IReadOnlyList<TreeEntry>>> ReadTree)
+{
+    public static readonly TimeSpan RacyWindow = TimeSpan.FromSeconds(2);
+}
 
 /// <summary>Wynik uruchomienia. <see cref="Code"/> = kod KB dominującego problemu; ścieżek pominiętych plików nie zwracamy poza procesem (NFR-11).</summary>
 public sealed record BackupResult(BackupStatus Status, string? Code, byte[]? SnapId, SnapshotStats Stats, long Skipped, IReadOnlyList<string> SkippedPaths);
@@ -80,6 +92,9 @@ public sealed class BackupPipeline
     /// <summary>Diagnostyka (testy, Bench): największa liczba buforów packów przydzielonych naraz w ostatnim <see cref="RunAsync"/> (wypożyczone + w puli).</summary>
     public int PeakPackBuffers { get; private set; }
 
+    /// <summary>Diagnostyka (testy, Bench, metryki): ile plików ostatniego <see cref="RunAsync"/> ominęło odczyt treści dzięki <see cref="ParentTree"/>.</summary>
+    public long LastReusedFiles { get; private set; }
+
     /// <summary>Diagnostyka: ile buforów packów utworzono w ostatnim <see cref="RunAsync"/> (reszta packów — bufory z puli).</summary>
     public int PackBuffersCreated { get; private set; }
 
@@ -105,6 +120,7 @@ public sealed class BackupPipeline
             {
                 await run.AbandonUploadsAsync().ConfigureAwait(false); // błąd w trakcie: wysyłki w toku dokończone/porzucone przed zwolnieniem buforów
                 PeakPackBuffers = run.PeakBuffers;
+                LastReusedFiles = run.Reused;
                 PackBuffersCreated = run.BuffersCreated;
             }
         }
@@ -120,7 +136,7 @@ public sealed class BackupPipeline
 
     private static async Task<BackupResult> RunCoreAsync(RunState run, CancellationToken ct)
     {
-        var root = await run.DirectoryAsync("", ct).ConfigureAwait(false);
+        var root = await run.DirectoryAsync("", ct, run.ParentRoot).ConfigureAwait(false);
         await run.FlushPackAsync(ct).ConfigureAwait(false);
         var snapId = await run.CommitAsync(root, ct).ConfigureAwait(false);
         var status = run.Skipped.Count > 0 ? BackupStatus.Warning : BackupStatus.Succeeded;
@@ -191,9 +207,38 @@ public sealed class BackupPipeline
             }
         }
 
-        public async Task<byte[]> DirectoryAsync(string rel, CancellationToken ct)
+        /// <summary>Ile plików ominęło odczyt treści (skrót z poprzedniej migawki) — diagnostyka i testy.</summary>
+        public long Reused { get; private set; }
+
+        /// <summary>Korzeń drzewa poprzedniej migawki dla skrótu (null = brak skrótu).</summary>
+        public byte[]? ParentRoot => _req.Source.MetadataReliable && _req.Mode == SnapshotMode.Incremental ? _req.ParentTree?.RootTreeId : null;
+
+        /// <summary>Wpis z poprzedniej migawki, jeśli plik można uznać za niezmieniony (i jego bloki są w bazie); inaczej null.</summary>
+        private TreeEntry? Unchanged(SourceNode c, TreeEntry? parent)
+        {
+            if (parent is not { Kind: EntryKind.File, FileSha256: not null, MtimeNs: { } pm } || _req.ParentTree is not { } pt) return null;
+            if (pm != c.MtimeNs || parent.Size != c.Size || c.MtimeNs <= 0) return null;
+            var racyFrom = (pt.RunStarted - ParentTree.RacyWindow - DateTimeOffset.UnixEpoch).Ticks * 100;
+            if (c.MtimeNs >= racyFrom) return null;
+            foreach (var id in parent.Chunks ?? []) if (!_dedup.IsBase(id)) return null;
+            return parent;
+        }
+
+        public async Task<byte[]> DirectoryAsync(string rel, CancellationToken ct, byte[]? parentTreeId = null)
         {
             ct.ThrowIfCancellationRequested();
+            Dictionary<string, TreeEntry>? parentByName = null;
+            if (parentTreeId is not null && _req.ParentTree is { } ptree && _req.Source.MetadataReliable)
+            {
+                try
+                {
+                    parentByName = (await ptree.ReadTree(parentTreeId, ct).ConfigureAwait(false)).ToDictionary(e => e.Name, StringComparer.Ordinal);
+                }
+                catch (Exception ex) when (ex is KobianException or StorageException or FormatException)
+                {
+                    parentByName = null; // drzewo poprzedniej migawki nieczytelne: ten katalog czytamy w całości (zawsze poprawne)
+                }
+            }
             List<SourceNode> children;
             try
             {
@@ -220,7 +265,8 @@ public sealed class BackupPipeline
                 switch (c.Kind)
                 {
                     case SourceKind.Directory:
-                        var sub = await DirectoryAsync(path, ct).ConfigureAwait(false);
+                        byte[]? parentSub = parentByName is not null && parentByName.TryGetValue(c.Name, out var pd) && pd.Kind == EntryKind.Directory ? pd.SubtreeId : null;
+                        var sub = await DirectoryAsync(path, ct, parentSub).ConfigureAwait(false);
                         _dirs++;
                         entries.Add(new TreeEntry(c.Name, EntryKind.Directory, MtimeNs: c.MtimeNs, SubtreeId: sub, UnixMode: c.UnixMode));
                         break;
@@ -231,6 +277,15 @@ public sealed class BackupPipeline
                         Skipped.Add(path); // FIFO/gniazdo/urządzenie: pominięte z ostrzeżeniem, kopia idzie dalej
                         break;
                     default:
+                        if (parentByName is not null && Unchanged(c, parentByName.GetValueOrDefault(c.Name)) is { } same)
+                        {
+                            foreach (var id in same.Chunks ?? []) _dedup.Reference(id); // blok bazowy: bez zapisu, tylko ślad użycia
+                            _files++;
+                            _raw += same.Size;
+                            Reused++;
+                            entries.Add(new TreeEntry(c.Name, EntryKind.File, same.Size, c.MtimeNs, Chunks: same.Chunks, FileSha256: same.FileSha256, UnixMode: c.UnixMode));
+                            break;
+                        }
                         var f = await FileAsync(path, ct).ConfigureAwait(false);
                         if (f is null) { Skipped.Add(path); break; }
                         _files++;

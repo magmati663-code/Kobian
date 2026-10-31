@@ -35,6 +35,8 @@ public sealed class CompositeSourceTree : ISourceTree, IMultiRootSource
 
     public string DisplayRoot => string.Join("; ", DisplayRoots);
 
+    public bool MetadataReliable => _parts.TrueForAll(p => p.Tree.MetadataReliable);
+
     public IReadOnlyList<string> DisplayRoots { get; }
 
     /// <summary>Nazwy katalogów najwyższego poziomu w kolejności źródeł (testy, podgląd).</summary>

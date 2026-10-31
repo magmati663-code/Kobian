@@ -7,10 +7,10 @@ public sealed class MemoryTrimTests
 {
     [Theory]
     [InlineData(0, false)]
-    [InlineData(MemoryTrim.LargeRunBytes - 1, false)]
-    [InlineData(MemoryTrim.LargeRunBytes, true)]
-    [InlineData(10L << 30, true)]
-    public void Only_large_runs_trigger_trimming(long bytes, bool expected) => Assert.Equal(expected, MemoryTrim.ShouldTrim(bytes));
+    [InlineData(MemoryTrim.HeapThresholdBytes - 1, false)]
+    [InlineData(MemoryTrim.HeapThresholdBytes, true)]
+    [InlineData(1L << 30, true)]
+    public void Only_a_large_managed_heap_triggers_trimming(long heap, bool expected) => Assert.Equal(expected, MemoryTrim.ShouldTrim(heap));
 
     [Fact]
     public void Trimming_is_rate_limited_and_shrinks_the_heap()
@@ -21,8 +21,8 @@ public sealed class MemoryTrimTests
         var before = GC.GetTotalMemory(false);
         var t0 = TimeSpan.FromHours(1).Ticks; // dowolny punkt czasu większy niż okno
         Assert.True(MemoryTrim.TrimNow(t0));
-        Assert.False(MemoryTrim.TrimNow(t0 + TimeSpan.FromSeconds(1).Ticks)); // za wcześnie
-        Assert.True(MemoryTrim.TrimNow(t0 + TimeSpan.FromSeconds(6).Ticks));
+        Assert.False(MemoryTrim.TrimNow(t0 + TimeSpan.FromMilliseconds(100).Ticks)); // za wcześnie
+        Assert.True(MemoryTrim.TrimNow(t0 + TimeSpan.FromSeconds(2).Ticks));
         Assert.True(GC.GetTotalMemory(false) < before);
     }
 }

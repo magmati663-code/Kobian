@@ -3,32 +3,39 @@ using System.Runtime;
 namespace Kobian.Agent.Jobs;
 
 /// <summary>
-/// Po dużym uruchomieniu (kopia, odtwarzanie, weryfikacja) usługa trzyma bufory packów, tablicę dedup i cache indeksów w stercie — bez sprzątania proces zostaje
-/// przy ~190 MB przez godziny (pomiar tools/perf: 1,2 GB danych → 193 MB po kopii, 77 MB w spoczynku). Jedno kompaktujące sprzątanie (z LOH) kończy to w ułamku sekundy.
-/// Małe uruchomienia (przyrost bez zmian, SQL) nie wywołują sprzątania.
+/// Po uruchomieniu (kopia, odtwarzanie, weryfikacja) usługa trzyma bufory packów, tablicę dedup i cache indeksów w stercie — bez sprzątania proces zostaje
+/// przy ~120–190 MB prywatnej pamięci przez godziny (pomiar tools/perf: 78 MB w spoczynku). Jedno kompaktujące sprzątanie (z LOH) kończy to w ułamku sekundy.
+/// Sygnałem jest rozmiar sterty zarządzanej po przebiegu, nie ilość przeczytanych danych: przyrost bez zmian czyta „1,2 GB” logicznie, a prawie nic nie alokuje.
 /// </summary>
 public static class MemoryTrim
 {
-    /// <summary>Od tylu bajtów przeczytanych danych uruchomienie uznajemy za „duże”.</summary>
-    public const long LargeRunBytes = 64L << 20;
+    /// <summary>Od takiej sterty zarządzanej (bajty) po przebiegu robimy sprzątanie; w spoczynku Agent ma ~20–30 MB sterty.</summary>
+    public const long HeapThresholdBytes = 64L << 20;
 
     private static long _lastTicks;
 
-    public static bool ShouldTrim(long bytesProcessed) => bytesProcessed >= LargeRunBytes;
+    public static bool ShouldTrim(long managedHeapBytes) => managedHeapBytes >= HeapThresholdBytes;
 
-    /// <summary>Sprzątanie z kompaktowaniem LOH; najwyżej raz na 5 s (równoległe zakończenia uruchomień nie kolejkują sprzątań).</summary>
+    /// <summary>Sprzątanie z kompaktowaniem LOH; najwyżej cztery razy na sekundę (równoległe zakończenia przebiegów nie kolejkują sprzątań).</summary>
     public static bool TrimNow(long nowTicks)
     {
         var prev = Interlocked.Read(ref _lastTicks);
-        if (nowTicks - prev < TimeSpan.FromSeconds(5).Ticks || Interlocked.CompareExchange(ref _lastTicks, nowTicks, prev) != prev) return false;
+        if (nowTicks - prev < TimeSpan.FromMilliseconds(250).Ticks || Interlocked.CompareExchange(ref _lastTicks, nowTicks, prev) != prev) return false;
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+        // Aggressive = pełne, blokujące, kompaktujące sprzątanie + oddanie systemowi zatwierdzonej, ale pustej pamięci (zwykłe Forced zostawiało 50–100 MB committed przy 1 MB sterty).
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
         return true;
     }
 
-    /// <summary>Po uruchomieniu: sprzątanie tylko gdy było duże.</summary>
-    public static void AfterRun(long bytesProcessed)
+    /// <summary>Po przebiegu: sprzątanie, gdy sterta jest duża.</summary>
+    public static void AfterRun()
     {
-        if (ShouldTrim(bytesProcessed)) TrimNow(Environment.TickCount64 * TimeSpan.TicksPerMillisecond);
+        var before = GC.GetTotalMemory(false);
+        var did = ShouldTrim(before) && TrimNow(Environment.TickCount64 * TimeSpan.TicksPerMillisecond);
+        if (Environment.GetEnvironmentVariable("KOBIAN_MEM_LOG") == "1")
+        {
+            var i = GC.GetGCMemoryInfo();
+            Console.Error.WriteLine($"memtrim before={before >> 20}MB trimmed={did} after={GC.GetTotalMemory(false) >> 20}MB heapSize={i.HeapSizeBytes >> 20}MB committed={i.TotalCommittedBytes >> 20}MB frag={i.FragmentedBytes >> 20}MB");
+        }
     }
 }
