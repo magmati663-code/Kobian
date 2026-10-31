@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Host usługi Windows: DI, Kestrel named pipe, interceptory autoryzacji (D2.9).
+       PROWIZORYCZNIE ADR-0004: wielocelowość net10.0 (testy i dev w Linuksie) + net10.0-windows (produkcja, usługa). -->
+  <PropertyGroup>
+    <TargetFrameworks>net10.0;net10.0-windows10.0.17763.0</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Kobian.Agent</RootNamespace>
+    <!-- Usługa w tle, nie interaktywna aplikacja: GC bez wątku współbieżnego (pomiar tools/perf, 1,2 GB: kopia −15% czasu, −25 MB szczytu, −60 MB po kopii)
+         i oddawanie pamięci systemowi (ConserveMemory 7: szczyt 460 → 323 MB przy tym samym czasie). Docs: docs/plan-optymalizacji.md, runda 3–4. -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <!-- Profilowanie warstwowe (PGO) kosztuje przy starcie i w krótkich procesach: pomiar tools/perf — pełna kopia −5%, przyrost −10%, start CLI −10%. -->
+    <TieredPGO>false</TieredPGO>
+  </PropertyGroup>
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="7" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kobian.Tests.Unit" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Grpc.AspNetCore" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Kobian.Domain\Kobian.Domain.csproj" />
+    <ProjectReference Include="..\Kobian.Format\Kobian.Format.csproj" />
+    <ProjectReference Include="..\Kobian.Crypto\Kobian.Crypto.csproj" />
+    <ProjectReference Include="..\Kobian.Application\Kobian.Application.csproj" />
+    <ProjectReference Include="..\Kobian.Engine\Kobian.Engine.csproj" />
+    <ProjectReference Include="..\Kobian.Catalog.Sqlite\Kobian.Catalog.Sqlite.csproj" />
+    <ProjectReference Include="..\Kobian.Scheduler\Kobian.Scheduler.csproj" />
+    <ProjectReference Include="..\Kobian.Providers.Storage\Kobian.Providers.Storage.csproj" />
+    <ProjectReference Include="..\Kobian.Providers.Sources\Kobian.Providers.Sources.csproj" />
+    <ProjectReference Include="..\Kobian.Notifications\Kobian.Notifications.csproj" />
+    <ProjectReference Include="..\Kobian.Api.Contracts\Kobian.Api.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'net10.0'">
+    <ProjectReference Include="..\Kobian.Platform.Windows\Kobian.Platform.Windows.csproj" />
+    <!-- BL-72 (it. 91): cykl życia usługi Windows (SCM) — pakiet przyjęty w audycie planu, wiersz w budowa/zaleznosci.md. -->
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' != 'net10.0'">
+    <DefineConstants>$(DefineConstants);KOBIAN_WINDOWS</DefineConstants>
+  </PropertyGroup>
+</Project>

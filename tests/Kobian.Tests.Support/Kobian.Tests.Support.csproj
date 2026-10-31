@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Wsparcie testów: generator korpusu D10.9 (BL-9), pomocnicze dane syntetyczne. Bez zależności zewnętrznych. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+</Project>

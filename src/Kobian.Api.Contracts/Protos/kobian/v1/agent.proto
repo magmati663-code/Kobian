@@ -1,0 +1,919 @@
+// Kontrakt gRPC kobian.v1 (D2.10, BL-14): CLI/UI -> Agent po named pipe.
+// Zasady: pola tylko dodawane (kompatybilność wstecz), kody KB w trailerze "kb-code", rewizja klienta w nagłówku "kobian-client-revision" (D2.16).
+syntax = "proto3";
+
+package kobian.v1;
+
+option csharp_namespace = "Kobian.Api.V1";
+
+service Agent {
+  // Odczyt: rola Reader.
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+  rpc ListSnapshots(ListSnapshotsRequest) returns (ListSnapshotsResponse);
+  // Modyfikujące: rola Operator + wymagana minimalna rewizja klienta (AC-37.2).
+  rpc RunJob(RunJobRequest) returns (RunOutcome);
+  rpc Restore(RestoreRequest) returns (RunOutcome);
+  // Inicjalizacja repozytorium i zadania „files” (BL-24, D3.11). Hasło wyłącznie przez plik (nigdy w wiadomości).
+  rpc InitJob(InitJobArgs) returns (InitJobReply);
+  // Harmonogram zadań (RD-27, US-03): odczyt — Reader; zmiana — Operator.
+  rpc ListSchedules(ListSchedulesRequest) returns (ListSchedulesResponse);
+  rpc SetSchedule(SetScheduleArgs) returns (SetScheduleReply);
+  // Weryfikacja repozytorium zadania (BL-26, 3.7 V2/V3): rola Operator (koszt transferu, wiersz run_runs); repozytorium tylko czytane.
+  rpc Check(CheckArgs) returns (CheckReply);
+  // Historia uruchomień (BL-60, SCR-10): także nieudane i pominięte; rola Reader. Bez danych klienta (NFR-11).
+  rpc ListRuns(ListRunsRequest) returns (ListRunsResponse);
+  // it. 134 (SCR-07): postęp jednego uruchomienia — strumień zmian stanu/liczników z katalogu do stanu końcowego (Reader, niemodyfikujące).
+  rpc WatchRun(WatchRunArgs) returns (stream RunProgress);
+  // Sprawdzenie celu dla kreatora SCR-03 (BL-60, D4.11): tożsamość serwera, wolne miejsce, istniejące repozytorium. Rola Operator (Agent łączy się
+  // z celem na swoim koncie), niemodyfikujące — nic nie zapisuje na celu ani w katalogu.
+  rpc ProbeDestination(ProbeDestinationArgs) returns (ProbeDestinationReply);
+  // Walidacja/zapis zadania (BL-60, D6.7). validate_only=true: tylko walidacja pól (kody KB per pole), bez zapisu.
+  rpc UpsertJob(UpsertJobArgs) returns (UpsertJobReply);
+  // Repozytorium + zadanie z kreatora (BL-60/BL-61, Qb20/Qb24): hasło w wiadomości po uwierzytelnionym pipe (nie w pliku po stronie klienta).
+  // Zadanie powstaje wyłączone; UpsertJob (validate_only=false) je włącza. Rola Operator.
+  rpc InitRepository(InitRepositoryArgs) returns (InitRepositoryReply);
+  // Login i hasło do serwera (SFTP/FTPS/FTP/WebDAV/SMB) wpisane w kreatorze → magazyn sekretów Agenta (plik tylko dla konta usługi), wynik = secret_ref „file:<nazwa>”.
+  // Hasło nie wraca w odpowiedzi ani do audytu. Rola Operator (jak hasło repozytorium w InitRepository).
+  rpc SaveCredential(SaveCredentialArgs) returns (SaveCredentialReply);
+  // Foldery na serwerze (SFTP/FTPS/WebDAV) do wyboru w kreatorze zamiast wpisywania ścieżki: lista podfolderów wskazanego folderu.
+  // SFTP wymaga zatwierdzonego klucza (host_key) — jak ProbeDestination, Agent łączy się na swoim koncie. Rola Operator, niemodyfikujące.
+  rpc BrowseServer(BrowseServerArgs) returns (BrowseServerReply);
+  // Retencja GFS zadania (BL-25, D3.12): dry_run = podgląd; inaczej logiczne zapomnienie snapshotów (bez usuwania danych na celu — prune osobno). Rola Operator.
+  rpc ApplyRetention(ApplyRetentionArgs) returns (ApplyRetentionReply);
+  // Podgląd polityki retencji dla kreatora (D3.12 „dry-run w UI przed zapisem polityki”): symulacja na wystąpieniach harmonogramu z przeszłości.
+  // Czysta funkcja bez dostępu do katalogu i celu — rola Reader.
+  rpc PreviewRetention(PreviewRetentionArgs) returns (PreviewRetentionReply);
+  // Plan prune dwufazowego (BL-25 cz. 3, D3.7): wyłącznie podgląd — niczego nie oznacza ani nie usuwa (sesja Backup, tylko odczyt).
+  // Rola Operator (Agent czyta cały spis repozytorium na celu — koszt transferu). Identyfikatory obiektów bez nazw plików (NFR-11).
+  rpc PlanPrune(PlanPruneArgs) returns (PlanPruneReply);
+  // Prune dwufazowy (BL-25 cz. 4, D3.7, D3.13): sesja Maintenance (osobne poświadczenie, D4.1), blokada WYŁĄCZNA repozytorium, faza 1 = oznaczenie nieżywych
+  // obiektów w katalogu, faza 2 = usunięcie oznaczonych ≥ 24 h temu i nadal nieżywych (ponowny spis; stop przy pierwszej niezgodności — KB-1603). Rola Operator.
+  rpc Prune(PruneArgs) returns (PruneReply);
+  // Zwolnienie wstrzymania retencji po skoku zegara (BL-25 cz. 5, SEC-17.4, A17): potwierdzenie wyłącznie przez Administratora (D9.3).
+  // Idempotentne: released=false, gdy nic nie było wstrzymane. Stan wstrzymania widać w GetStatusResponse.retention_hold.
+  rpc ReleaseRetentionHold(ReleaseRetentionHoldArgs) returns (ReleaseRetentionHoldReply);
+  // Discovery MSSQL dla kreatora S1-db (BL-40 cz. 3, R2.5.2): D-01/D-02/D-03 na koncie Agenta, tylko odczyt (niczego nie zmienia na serwerze ani w katalogu).
+  // Rola Operator (połączenie z serwerem SQL na koncie usługi, ślad w logach serwera); bez kontroli rewizji. Login SQL wyłącznie jako secret_ref.
+  rpc DiscoverDatabases(DiscoverDatabasesArgs) returns (DiscoverDatabasesReply);
+  // Certyfikat TLS serwera SQL do zatwierdzenia (BL-40 cz. 5, Qb32): PRELOGIN + handshake TLS bez logowania; Operator, niczego nie zapisuje.
+  rpc FetchSqlCertificate(FetchSqlCertificateArgs) returns (FetchSqlCertificateReply);
+  // Zatwierdzenie: Agent pobiera certyfikat ponownie, porównuje odcisk SHA-256 (KB-3007) i zapisuje .cer w <stan>/certs (KB-3008 — nazwa zajęta).
+  rpc ApproveSqlCertificate(ApproveSqlCertificateArgs) returns (ApproveSqlCertificateReply);
+  // Przeglądarka kopii (BL-63, SCR-06): jeden folder snapshotu (tylko drzewa, bez danych plików). Reader (R2.6.1), niemodyfikujące.
+  rpc BrowseTree(BrowseTreeArgs) returns (BrowseTreeReply);
+  // Łańcuch audytu (RD-42, D9.9, SEC-19.1): przeliczenie hash całego audit_log; zwraca tylko liczby i hash (bez treści wpisów). Reader, niemodyfikujące.
+  rpc VerifyAudit(VerifyAuditArgs) returns (VerifyAuditReply);
+  // SCR-09 Cele (it. 82): cele z definicji zadań (schemat + korzeń, bez sekretów) i zadania, które ich używają. Operator (PROWIZORYCZNIE Qb38), niemodyfikujące.
+  rpc ListDestinations(ListDestinationsArgs) returns (ListDestinationsReply);
+  // SCR-08 (BL-68): odtworzenie bazy MSSQL z kopii do NOWEJ bazy (domyślnie <źródło>_restore_RRRRMMDD); istniejąca → KB-3501. Operator, modyfikujące.
+  rpc RestoreDatabase(RestoreDatabaseArgs) returns (RestoreDatabaseReply);
+  // SCR-07 podgląd (R2.8.1 PlanRestore, dry-run; it. 98): liczby, konflikty, miejsce, prawo zapisu — bez zapisu danych i bez wiersza run_runs. Operator.
+  rpc PlanRestore(RestoreRequest) returns (RestorePlanReply);
+  // SCR-09 / D4.11 (BL-35): tożsamości serwerów celów SFTP/FTPS (klucz hosta SSH, SPKI TLS) — oczekujące na zatwierdzenie, przypięte, odrzucone, wycofane.
+  // Tylko publiczne odciski (bez sekretów). Operator (jak ListDestinations — PROWIZORYCZNIE Qb38), niemodyfikujące.
+  rpc ListServerIdentities(ListServerIdentitiesArgs) returns (ListServerIdentitiesReply);
+  // Zatwierdzenie / odrzucenie OCZEKUJĄCEGO odcisku (dokładnie tego, który przedstawił serwer — KB-2141; ≤ 24 h — KB-2142). Administrator (SEC-4.1; step-up — później),
+  // modyfikujące (audyt: cel, odcisk, decyzja). Klient nigdy nie dodaje dowolnego pinu — Agent ufa tylko odciskom, które sam odebrał od serwera.
+  rpc ApproveServerIdentity(ApproveServerIdentityArgs) returns (ApproveServerIdentityReply);
+  // SEC-14.5: cel „wysokiego ryzyka” — pin SPKI wymagany także przy ważnym łańcuchu CA. Administrator, modyfikujące.
+  rpc SetServerIdentityPolicy(SetServerIdentityPolicyArgs) returns (SetServerIdentityPolicyReply);
+  // US-29 (BL-47, SEC-6.7): eksport zadań do pliku kobian-export v1 — bez sekretów (secretRef = nazwa, pliki klucza/hasła = ścieżki). Administrator (D2.10), niemodyfikujące, audytowane.
+  rpc ExportJobs(ExportJobsArgs) returns (ExportJobsReply);
+  // US-29 (AC-29.1–29.2, SEC-6.7): import zadań; validate_only = plan zmian (nowe/bez zmian/konflikty). Cały plik albo nic; zadania zapisywane jako WYŁĄCZONE. Administrator, modyfikujące.
+  rpc ImportJobs(ImportJobsArgs) returns (ImportJobsReply);
+  // BL-45 (D9.7, R2.9.6): potwierdzenie alertu (Notified → Acknowledged; ponowne powiadomienie po 72 h, jeśli warunek trwa). Operator, modyfikujące, audytowane. Alert wskazuje alert_id z GetStatus.
+  rpc AckAlert(AckAlertArgs) returns (AlertActionReply);
+  // BL-45 (D9.7): wyciszenie alertu na czas (Notified → Silenced; maks. 7 dni, alerty bezpieczeństwa maks. 24 h — dłuższy czas jest skracany). Administrator, modyfikujące, audytowane.
+  rpc SilenceAlert(SilenceAlertArgs) returns (AlertActionReply);
+}
+
+enum OverallState {
+  OVERALL_STATE_OK = 0;
+  OVERALL_STATE_WARNING = 1;
+  OVERALL_STATE_FAILED = 2;
+}
+
+message GetStatusRequest {}
+
+// Rola wywołującego (D2.9) — UI pokazuje tylko akcje dostępne dla roli (6.7); autoryzację i tak egzekwuje Agent. 0 = stary Agent (brak informacji).
+enum CallerRole {
+  CALLER_ROLE_UNSPECIFIED = 0;
+  CALLER_ROLE_READER = 1;
+  CALLER_ROLE_OPERATOR = 2;
+  CALLER_ROLE_ADMINISTRATOR = 3;
+}
+
+message JobStatus {
+  string name = 1;
+  OverallState last_result = 2;
+  optional int64 last_run_unix_seconds = 3;
+  optional string last_code = 4;
+  // BL-60 (Qb18): pola dla pulpitu SCR-01 i listy SCR-02. Wartość domyślna = zachowanie starego Agenta.
+  bool disabled = 5;
+  // Najbliższe wystąpienie włączonego harmonogramu cron (brak = zadanie ręczne lub harmonogram wyłączony).
+  optional int64 next_run_unix_seconds = 6;
+  // Oczekiwany cykl = odstęp dwóch najbliższych wystąpień (kontrola zaległości 6.3); brak = bez kontroli.
+  optional int64 interval_seconds = 7;
+  optional int64 last_success_unix_seconds = 8;
+  // Poziom weryfikacji ostatniej nieuszkodzonej kopii (1 = zapis, 2 = V2, 3 = V3); 0 = brak kopii / stary Agent.
+  int32 last_success_verify_level = 9;
+  // Schemat celu z definicji zadania („local”, „sftp”); bez ścieżek i hostów (NFR-11).
+  string destination_scheme = 10;
+  // Najnowsza kopia oznaczona jako podejrzana (check/V2) — repozytorium wymaga naprawy.
+  bool repository_suspect = 11;
+  // BL-76 (it. 97): uruchomienie w toku — „Running” albo „Queued” (np. ręczne czekające na zasób D7.4/D7.10); pusty = brak (także stary Agent).
+  string active_state = 12;
+  // BL-26 (3.7): ostatni UKOŃCZONY cykl weryfikacji próbkowej V3 z harmonogramu; brak = jeszcze nie było (także stary Agent).
+  optional int64 last_verify_unix_seconds = 13;
+  // Kod KB tego cyklu: KB-15xx = repozytorium uszkodzone (A04), KB-1504 = obiekty bez odwołań; brak = poprawny.
+  optional string last_verify_code = 14;
+  // Termin następnego cyklu V3 wg polityki zadania (zaległy = w przeszłości); brak = weryfikacja wyłączona albo brak kopii.
+  optional int64 next_verify_unix_seconds = 15;
+}
+
+message GetStatusResponse {
+  OverallState state = 1;
+  string agent_version = 2;
+  repeated JobStatus jobs = 3;
+  CallerRole caller_role = 4;
+  // Obecne = retencja hosta wstrzymana po skoku zegara (SEC-17.4) do potwierdzenia przez Administratora; stan ogólny co najmniej WARNING.
+  optional RetentionHoldInfo retention_hold = 5;
+  // BL-62 (it. 80): KB-7013 — Agent na niezałatanym .NET (stan co najmniej WARNING); runtime_version tylko wtedy.
+  optional string runtime_code = 6;
+  optional string runtime_version = 7;
+  // BL-82 (D9.7): aktywne (nierozwiązane) alerty z alert_alerts dla pulpitu SCR-01 — najpierw bezpieczeństwo/krytyczne, maks. 200. Pusta = brak (także stary Agent).
+  repeated AlertInfo alerts = 8;
+}
+
+// Alert z katalogu (D9.7) — bez ścieżek, hostów i nazw plików (NFR-11, SEC-9.6).
+message AlertInfo {
+  // Kod reguły A01–A17 (D9.8); tytuł i zalecenie UI bierze z zasobów po kodzie.
+  string code = 1;
+  // "warning" | "critical" | "security".
+  string severity = 2;
+  // "open" | "notified" | "acknowledged" | "silenced".
+  string state = 3;
+  // "job" | "destination" | "repository" | "host".
+  string scope_kind = 4;
+  // Dla "job" — nazwa zadania; dla celu/repozytorium — identyfikator; dla "host" — pusty.
+  string subject = 5;
+  int64 opened_unix_seconds = 6;
+  optional string kb = 7;
+  int32 reminders = 8;
+  bool escalated = 9;
+  // Losowy identyfikator alertu (hex, 32 znaki) — wskazuje alert w AckAlert/SilenceAlert; nie zawiera danych klienta.
+  string alert_id = 10;
+}
+
+message RetentionHoldInfo {
+  int64 held_at_unix_seconds = 1;
+  // KB-6117 (A17).
+  string code = 2;
+  // Obserwowany minus oczekiwany upływ czasu; dodatni = skok w przód.
+  int64 clock_delta_seconds = 3;
+}
+
+message ReleaseRetentionHoldArgs {
+}
+
+message ReleaseRetentionHoldReply {
+  OverallState result = 1;
+  optional string code = 2;
+  bool released = 3;
+}
+
+message ListSnapshotsRequest {
+  optional string job = 1;
+}
+
+message SnapshotInfo {
+  string id = 1;
+  string job = 2;
+  int64 time_unix_seconds = 3;
+  string mode = 4;
+  int64 files = 5;
+  int64 bytes_raw = 6;
+  // it. 115 (RD-70): wynik `check --repair` z katalogu — "" (nieoceniona/pełna) | "partial" | "unrecoverable"; liczba plików nieodtwarzalnych.
+  string damage = 7;
+  int64 damaged_files = 8;
+}
+
+message ListSnapshotsResponse {
+  repeated SnapshotInfo snapshots = 1;
+}
+
+message RunJobRequest {
+  string job = 1;
+  bool wait = 2;
+}
+
+message RestoreRequest {
+  string snapshot = 1;
+  optional string path_filter = 2;
+  string target = 3;
+  // it. 80 (Qb34): dokładne ścieżki (plik albo folder z zawartością, separator „/”), bez wzorców; wyklucza path_filter. Maks. 1000.
+  repeated string exact_paths = 4;
+  // RD-81 (it. 137): true = Agent zwraca od razu RunOutcome z run_id (Ok = przyjęto), odtwarzanie idzie w tle, wynik w run_runs / WatchRun. Domyślnie false (czeka na wynik).
+  bool detach = 5;
+}
+
+message RunOutcome {
+  OverallState result = 1;
+  optional string code = 2;
+  optional string snapshot_id = 3;
+  // RD-81: id wiersza run_runs (hex) — ustawiane przy Restore z detach=true.
+  optional string run_id = 4;
+}
+
+message InitJobArgs {
+  string job_name = 1;
+  string source = 2;
+  string destination_scheme = 3;
+  string destination_root = 4;
+  // Ścieżka bezwzględna pliku z hasłem opakowującym klucz główny; Agent czyta plik, treść nie opuszcza Agenta.
+  string password_file = 5;
+  optional int64 pack_target_size = 6;
+  // Cel zdalny (BL-73 cz. 2): odwołanie do poświadczenia w magazynie Agenta („file:<nazwa>”, wymagane dla smb/sftp) i parametry SFTP. Bez sekretów.
+  optional string secret_ref = 7;
+  optional string host = 8;
+  optional int32 port = 9;
+  optional string host_key = 10;
+  // Kolejne foldery źródłowe (pierwszy w „source”) i serwery jako źródła (SFTP/FTPS/WebDAV). „source” może być pusty, gdy są tylko serwery.
+  repeated string extra_sources = 11;
+  repeated DestinationSpec source_servers = 12;
+}
+
+message InitJobReply {
+  OverallState result = 1;
+  optional string code = 2;
+  optional string job_id = 3;
+  optional string repo_id = 4;
+  optional string key_id = 5;
+}
+
+message ListSchedulesRequest {
+  optional string job = 1;
+}
+
+message ScheduleInfo {
+  string job = 1;
+  string trigger_id = 2;
+  string cron = 3;
+  string time_zone = 4;
+  bool enabled = 5;
+}
+
+message ListSchedulesResponse {
+  repeated ScheduleInfo schedules = 1;
+}
+
+// Brak pola cron = wyłączenie harmonogramu zadania; z polem cron = ustawienie/zastąpienie (strefa i misfire pochodzą z zadania).
+message SetScheduleArgs {
+  string job = 1;
+  optional string cron = 2;
+}
+
+message SetScheduleReply {
+  OverallState result = 1;
+  optional string code = 2;
+  optional string trigger_id = 3;
+}
+
+// Bez sample_percent = tylko V2; 1–100 = także V3 na próbce rotacyjnej (rotation domyślnie = tydzień ISO po stronie Agenta).
+message CheckArgs {
+  string job = 1;
+  optional int32 sample_percent = 2;
+  optional int64 rotation = 3;
+  // it. 109 (D8.10): ocena zakresu strat uszkodzonych snapshotów i zapis w katalogu (bez zmian w repozytorium). Wymaga roli Administrator.
+  bool repair = 4;
+}
+
+// Szkody snapshotu po check --repair (liczby — bez nazw plików, NFR-11). state: intact | partial | unrecoverable.
+message SnapshotDamageInfo {
+  string snapshot_id = 1;
+  string state = 2;
+  int64 damaged_files = 3;
+  int64 damaged_directories = 4;
+  int64 intact_files = 5;
+  bool index_recovered = 6;  // indeks snapshotu niedostępny — ocena na indeksach odtworzonych z packów (KB-1505)
+}
+
+// Znalezisko: kod KB i obiekt „rodzaj:id-hex” — bez nazw plików i treści (NFR-11).
+message CheckFinding {
+  string code = 1;
+  string target = 2;
+}
+
+message CheckReply {
+  OverallState result = 1;
+  optional string code = 2;
+  int32 level = 3;
+  int32 snapshots = 4;
+  int32 packs = 5;
+  int32 packs_read = 6;
+  int64 blocks_verified = 7;
+  repeated string damaged_snapshots = 8;
+  // Liczba znalezisk w raporcie (findings ograniczone do 100 pierwszych).
+  int32 issues = 9;
+  repeated CheckFinding findings = 10;
+  repeated SnapshotDamageInfo damage = 11;
+  // it. 110 (D8.10/D3.10, tylko z repair): packi-sieroty odzyskane z trailerów do nowego indeksu „recovered” i packi nieczytelne.
+  int32 recovered_packs = 12;
+  int32 unreadable_packs = 13;
+}
+
+// Bez job = wszystkie zadania; limit 1–1000 (domyślnie 200), najnowsze pierwsze.
+message ListRunsRequest {
+  optional string job = 1;
+  optional int32 limit = 2;
+}
+
+message RunInfo {
+  string run_id = 1;
+  string job = 2;
+  // schedule | misfire | event | dependency | manual | retry | resume
+  string cause = 3;
+  // Stan maszyny uruchomień (Queued, Running, Succeeded, Warning, Failed, Skipped, Missed, Interrupted, Cancelled).
+  string state = 4;
+  OverallState result = 5;
+  // Rodzaj operacji z historii przejść: „backup”, „restore”, „check”, „forget” (retencja).
+  string kind = 6;
+  optional int64 queued_unix_seconds = 7;
+  optional int64 started_unix_seconds = 8;
+  optional int64 finished_unix_seconds = 9;
+  optional string code = 10;
+  optional string snapshot_id = 11;
+  optional int64 files = 12;
+  optional int64 bytes_uploaded = 13;
+}
+
+message ListRunsResponse {
+  repeated RunInfo runs = 1;
+}
+
+message WatchRunArgs {
+  string run_id = 1;
+}
+
+// Jedna zmiana widoczna w katalogu. `final` = stan końcowy (strumień kończy się po tej wiadomości);
+// nieznany run_id → jedna wiadomość final z run.code = KB-0107.
+message RunProgress {
+  RunInfo run = 1;
+  // Bajty odczytane ze źródła/kopii (restore: postęp, backup: po zakończeniu); 0 gdy brak.
+  int64 bytes_read = 2;
+  bool final = 3;
+}
+
+// Cel bez sekretów (AC-01.3): poświadczenie wyłącznie jako odwołanie secret_ref; host_key = przypięty odcisk „SHA256:…” (D4.11).
+message DestinationSpec {
+  string scheme = 1;
+  string root = 2;
+  optional string host = 3;
+  optional int32 port = 4;
+  optional string secret_ref = 5;
+  optional string host_key = 6;
+}
+
+message ProbeDestinationArgs {
+  DestinationSpec destination = 1;
+}
+
+enum ProbeStatus {
+  PROBE_STATUS_OK = 0;
+  // Serwer przedstawił klucz, który nie jest przypięty — odcisk do zatwierdzenia przez użytkownika (bez TOFU w tle).
+  PROBE_STATUS_UNKNOWN_IDENTITY = 1;
+  PROBE_STATUS_FAILED = 2;
+}
+
+message ProbeDestinationReply {
+  ProbeStatus status = 1;
+  optional string code = 2;
+  optional string identity_kind = 3;
+  optional string identity_fingerprint = 4;
+  optional int64 free_bytes = 5;
+  optional int64 total_bytes = 6;
+  // W katalogu docelowym jest już repozytorium (kobian.repo) — init odmówi (KB-1003).
+  bool repository_exists = 7;
+}
+
+message UpsertJobArgs {
+  string job_name = 1;
+  repeated string sources = 2;
+  DestinationSpec destination = 3;
+  // Brak = zadanie ręczne.
+  optional string cron = 4;
+  bool validate_only = 5;
+  // validate_only: walidacja pola „retention” (KB-0401); zapis: polityka zapisywana w definicji istniejącego zadania (S5 kreatora).
+  optional RetentionSpec retention = 6;
+  // Zadanie „database” (S1-db): zamiast „sources”. Walidacja pola „database” (KB-0103, KB-7012 gdy Agent bez obsługi baz).
+  optional DatabaseSourceSpec database = 7;
+  // Serwery jako źródła (SFTP/FTPS/WebDAV — te same pola co cel; bez sekretów). Razem z „sources”: 1–32 źródeł, każde jako folder w kopii.
+  repeated DestinationSpec source_servers = 8;
+}
+
+// Źródło bazodanowe z kreatora (BL-40 cz. 4, R2.5.2): bez sekretów (AC-01.3) — login SQL tylko jako secret_ref, pin certyfikatu jako NAZWA pliku .cer
+// w katalogu certs Agenta (Qb30). Staging ustala Agent (PROWIZORYCZNIE Qb31).
+message DatabaseSourceSpec {
+  // host, host\instancja albo host,port.
+  string server = 1;
+  // "integrated" (domyślnie) albo "sql" (wymaga secret_ref).
+  optional string auth = 2;
+  optional string secret_ref = 3;
+  optional string certificate = 4;
+  // Nazwa bazy (sysname).
+  string name = 5;
+  bool allow_localhost_untrusted = 6;
+}
+
+// Problem walidacji: pole („name”, „sources”, „destination”, „schedule”, „database”, „retention”) + kod KB. Bez wartości pól w odpowiedzi (NFR-11).
+message FieldIssue {
+  string field = 1;
+  string code = 2;
+}
+
+message UpsertJobReply {
+  OverallState result = 1;
+  optional string code = 2;
+  repeated FieldIssue issues = 3;
+}
+
+// Polityka retencji (D3.12): 0 = reguła wyłączona; lock_days — kopie młodsze są nienaruszalne (D3.7).
+message RetentionSpec {
+  int32 keep_last = 1;
+  int32 keep_daily = 2;
+  int32 keep_weekly = 3;
+  int32 keep_monthly = 4;
+  int32 keep_yearly = 5;
+  int32 keep_within_days = 6;
+  int32 lock_days = 7;
+}
+
+message PreviewRetentionArgs {
+  RetentionSpec retention = 1;
+  // Brak = codziennie (symulacja jednej kopii na dobę).
+  optional string cron = 2;
+}
+
+message PreviewRetentionReply {
+  OverallState result = 1;
+  optional string code = 2;
+  // Ile kopii zostaje po ustaleniu się stanu (symulacja ~ 3 lat historii) i jak daleko wstecz sięga najstarsza.
+  int32 kept = 3;
+  int32 oldest_days = 4;
+}
+
+message ApplyRetentionArgs {
+  string job = 1;
+  bool dry_run = 2;
+}
+
+message RetentionItem {
+  string snapshot_id = 1;
+  bool keep = 2;
+  // Maska powodów zachowania (KeepReason: 1 last, 2 daily, 4 weekly, 8 monthly, 16 yearly, 32 within, 64 lock, 128 newest, 256 base, 512 suspect, 1024 paused).
+  uint32 reasons = 3;
+}
+
+message ApplyRetentionReply {
+  OverallState result = 1;
+  optional string code = 2;
+  bool has_policy = 3;
+  int32 kept = 4;
+  int32 forgotten = 5;
+  bool dry_run = 6;
+  repeated RetentionItem items = 7;
+  // Retencja wstrzymana po skoku zegara (SEC-17.4): nic nie zapomniano (code = KB-6117, result = WARNING); podgląd zachowuje wszystko (powód 1024 paused).
+  bool held = 8;
+}
+
+message InitRepositoryArgs {
+  string job_name = 1;
+  repeated string sources = 2;
+  DestinationSpec destination = 3;
+  optional string cron = 4;
+  // Hasło opakowujące klucz główny (≥ 12 znaków, SEC-6.5). Agent nie loguje go i nie zwraca.
+  string password = 5;
+  bool create_recovery_key = 6;
+  // Brak = bez retencji (wszystkie kopie zostają).
+  optional RetentionSpec retention = 7;
+  // Zadanie „database” zamiast „sources” (job_jobs.type = 'database').
+  optional DatabaseSourceSpec database = 8;
+  // Serwery jako źródła (SFTP/FTPS/WebDAV), obok „sources”.
+  repeated DestinationSpec source_servers = 9;
+}
+
+message InitRepositoryReply {
+  OverallState result = 1;
+  optional string code = 2;
+  repeated FieldIssue issues = 3;
+  optional string job_id = 4;
+  optional string repo_id = 5;
+  // SEKRET do jednorazowego pokazania (AC-28.1): 14 grup Base32 z CRC (K14.1). Agent go nie przechowuje.
+  optional string recovery_key = 6;
+}
+
+message PlanPruneArgs {
+  string job = 1;
+}
+
+message PruneArgs {
+  string job = 1;
+}
+
+message PruneReply {
+  // OK = wykonano; WARNING = zatrzymano w fazie 2 (KB-1603), znaleziono fałszywe blokady (KB-1201) albo repozytorium zajęte (KB-1202 — nic nie zrobiono); FAILED = błąd/wstrzymanie.
+  OverallState result = 1;
+  optional string code = 2;
+  // „rodzaj:hex” obiektu, na którym zatrzymano prune (KB-1603) albo który go wstrzymał (KB-1601).
+  optional string stop_object = 3;
+  int32 marked = 4;
+  int32 unmarked = 5;
+  int32 deleted_snapshots = 6;
+  int32 deleted_indexes = 7;
+  int32 deleted_packs = 8;
+  int64 deleted_bytes = 9;
+  // Obiekty nieżywe, które czekają na koniec karencji (oznaczone, jeszcze nieusunięte).
+  int32 pending = 10;
+  int64 grace_seconds = 11;
+  int32 locks_cleaned = 12;
+  optional string run_id = 13;
+  // D3.16: konsolidacja indeksów w tym przebiegu — liczba zastąpionych indeksów, nowych indeksów i aktywnych indeksów po konsolidacji (0 = nie uruchomiono).
+  // Zastąpione pliki usuwa kolejny prune po karencji. KB-1604 w code = konsolidacja niedokończona (repozytorium kompletne).
+  int32 indexes_consolidated = 14;
+  int32 indexes_written = 15;
+  int32 active_indexes = 16;
+}
+
+message PlanPruneReply {
+  OverallState result = 1;
+  // KB-1601 (nieczytelny obiekt żywego snapshotu) / KB-1602 (nie zostałaby żadna kopia) = prune wstrzymany; inne = plan się nie powiódł.
+  optional string code = 2;
+  // „rodzaj:hex” obiektu, który wstrzymał prune (KB-1601).
+  optional string blocked_object = 3;
+  int32 live_snapshots = 4;
+  int32 live_packs = 5;
+  int64 live_bytes = 6;
+  int32 dead_snapshots = 7;
+  int32 dead_indexes = 8;
+  int32 dead_packs = 9;
+  int64 dead_bytes = 10;
+  // Karencja przed fizycznym usunięciem (D3.7) — obecnie 24 h.
+  int64 grace_seconds = 11;
+}
+
+message DiscoverDatabasesArgs {
+  // host, host\instancja albo host,port (bez prefiksów protokołu).
+  string server = 1;
+  // "integrated" (domyślnie, konto usługi) albo "sql" (wymaga secret_ref).
+  optional string auth = 2;
+  optional string secret_ref = 3;
+  // Nazwa zatwierdzonego pliku .cer w katalogu certs Agenta (pin) — nie ścieżka. PROWIZORYCZNIE Qb30.
+  optional string certificate = 4;
+  bool strict = 5;
+  bool allow_localhost_untrusted = 6;
+}
+
+message SqlDatabaseInfo {
+  string name = 1;
+  string recovery_model = 2;
+  int64 data_bytes = 3;
+  bool read_only = 4;
+  bool encrypted = 5;
+  int32 compatibility_level = 6;
+  bool can_backup = 7;
+  bool can_verify_only = 8;
+  // Kody KB-3xxx (ostrzeżenia: KB-3301 TDE, KB-3105 log rośnie, KB-3003 brak uprawnień).
+  repeated string warnings = 9;
+}
+
+message DiscoverDatabasesReply {
+  OverallState result = 1;
+  optional string code = 2;
+  int32 server_major = 3;
+  string server_version = 4;
+  string server_edition = 5;
+  bool express = 6;
+  // "supported" | "conditional" (D5.8, ostrzeżenie KB-3401).
+  string support = 7;
+  repeated SqlDatabaseInfo databases = 8;
+  // Baz było więcej niż limit Agenta (500) — lista niepełna.
+  bool truncated = 9;
+  repeated string warnings = 10;
+  // Skrypt T-SQL dla administratora (D5.7, AC-02.3) — gdy są bazy bez uprawnień i uwierzytelnienie Windows.
+  optional string permission_script = 11;
+}
+
+message FetchSqlCertificateArgs {
+  // host, host\instancja (port z SQL Browser, UDP 1434) albo host,port.
+  string server = 1;
+  // TDS 8 (Encrypt=Strict, SQL 2022+): TLS od pierwszego bajtu.
+  bool strict = 2;
+}
+
+message FetchSqlCertificateReply {
+  OverallState result = 1;
+  optional string code = 2;
+  // SHA-256 certyfikatu (DER), 64 znaki hex — do porównania z administratorem serwera SQL.
+  string sha256 = 3;
+  string subject = 4;
+  string issuer = 5;
+  int64 not_before_unix_seconds = 6;
+  int64 not_after_unix_seconds = 7;
+  bool self_issued = 8;
+  // Łańcuch zaufany w systemie Agenta i nazwa hosta pasuje — pin nie jest wymagany (ale dozwolony).
+  bool system_trusted = 9;
+  // Proponowana nazwa pliku .cer (do pola certificate w DatabaseSourceSpec).
+  string suggested_name = 10;
+}
+
+message ApproveSqlCertificateArgs {
+  string server = 1;
+  bool strict = 2;
+  // Odcisk, który zobaczył i zatwierdził Operator (z FetchSqlCertificateReply.sha256).
+  string sha256 = 3;
+  // Nazwa pliku w <stan>/certs: [A-Za-z0-9][A-Za-z0-9_.-]{0,63}.cer
+  string file_name = 4;
+}
+
+message ApproveSqlCertificateReply {
+  OverallState result = 1;
+  optional string code = 2;
+  string file_name = 3;
+}
+
+message BrowseTreeArgs {
+  // „latest”, pełny id albo prefiks ≥ 8 znaków hex (jak Restore).
+  string snapshot = 1;
+  // Ścieżka względna w kopii, separator „/”; pusta = korzeń.
+  string path = 2;
+}
+
+enum BrowseEntryKind {
+  BROWSE_ENTRY_KIND_FILE = 0;
+  BROWSE_ENTRY_KIND_DIRECTORY = 1;
+  BROWSE_ENTRY_KIND_LINK = 2;
+}
+
+message BrowseEntryInfo {
+  string name = 1;
+  BrowseEntryKind kind = 2;
+  int64 size = 3;
+  optional int64 modified_unix_ms = 4;
+}
+
+message BrowseTreeReply {
+  OverallState result = 1;
+  optional string code = 2;
+  string snapshot_id = 3;
+  string path = 4;
+  repeated BrowseEntryInfo entries = 5;
+  bool truncated = 6;
+}
+
+message VerifyAuditArgs {
+  // it. 99 (D9.9): kotwica zewnętrzna „seq:sha256hex” (z raportu/e-maila) — porównanie niezależne od katalogu.
+  optional string anchor = 1;
+}
+
+message VerifyAuditReply {
+  OverallState result = 1;
+  optional string code = 2;          // KB-6501 łańcuch, KB-6502 schemat zmieniony (RD-51), KB-6503 kotwica niezgodna
+  int64 entries = 3;
+  optional int64 broken_seq = 4;
+  string last_hash = 5;
+  int32 anchors_checked = 6;         // kotwice z katalogu + zewnętrzna
+  optional string last_anchor = 7;   // ostatnia kotwica z katalogu „seq:sha256hex” — do zapisania poza serwerem
+  optional string last_anchor_at_utc = 8;
+}
+
+message ListDestinationsArgs {}
+
+message DestinationInfo {
+  // Stały identyfikator celu (skrót schematu i korzenia) — jak w katalogu repozytoriów.
+  string id = 1;
+  string scheme = 2;
+  string root = 3;
+  repeated string jobs = 4;
+  // Zadania, których definicji nie udało się odczytać (KB-0103), nie są pomijane po cichu.
+  int32 unreadable_jobs = 5;
+}
+
+message ListDestinationsReply {
+  repeated DestinationInfo destinations = 1;
+  int32 unreadable_jobs = 2;
+}
+
+message RestoreDatabaseArgs {
+  string snapshot = 1;
+  optional string target_database = 2;
+}
+
+message RestoreDatabaseReply {
+  OverallState result = 1;
+  optional string code = 2;
+  string target_database = 3;
+  string snapshot_id = 4;
+}
+
+// Wynik PlanRestore (it. 98). code: błąd planu (snapshot/cel/repo); blocking_code: odtworzenie nie ruszy (KB-5001/5003/5106/5202).
+// conflict_sample: do 20 ścieżek względnych w kopii, które istnieją w folderze docelowym (zostaną pominięte, KB-5105).
+message RestorePlanReply {
+  optional string code = 1;
+  string snapshot_id = 2;
+  int64 files = 3;
+  int64 bytes = 4;
+  int64 new_directories = 5;
+  int64 conflicts = 6;
+  int64 conflict_bytes = 7;
+  repeated string conflict_sample = 8;
+  int64 invalid_names = 9;
+  int64 links = 10;
+  int64 missing_blocks = 11;
+  int32 packs = 12;
+  int64 read_bytes = 13;
+  optional int64 free_bytes = 14;
+  optional string blocking_code = 15;
+  // it. 108 (D8.8, RD-68): pliki odtworzone w przerwanej próbie tego samego planu — wznowienie je pominie bez konfliktu.
+  int64 resumable = 16;
+}
+
+enum ServerIdentityState {
+  SERVER_IDENTITY_STATE_UNSPECIFIED = 0;
+  // Czeka na decyzję Administratora; połączenia z tym kluczem są odmawiane (KB-2104 / KB-2109).
+  SERVER_IDENTITY_STATE_PENDING = 1;
+  SERVER_IDENTITY_STATE_PINNED = 2;
+  SERVER_IDENTITY_STATE_REJECTED = 3;
+  // Zastąpiony nowszym kluczem.
+  SERVER_IDENTITY_STATE_RETIRED = 4;
+  // Oczekiwanie starsze niż 24 h — nie da się zatwierdzić; nowe połączenie odnawia oczekiwanie.
+  SERVER_IDENTITY_STATE_EXPIRED = 5;
+}
+
+message ServerIdentityInfo {
+  // Identyfikator celu (jak DestinationInfo.id).
+  string destination_id = 1;
+  // ssh-hostkey | tls-spki
+  string kind = 2;
+  // SHA256:<base64> (OpenSSH; dla TLS — skrót SubjectPublicKeyInfo).
+  string fingerprint = 3;
+  ServerIdentityState state = 4;
+  // schemat://host:port — bez poświadczeń.
+  string endpoint = 5;
+  // Opis przedstawiony przez serwer (algorytm klucza, podmiot certyfikatu) — niezaufany, przycięty.
+  optional string display = 6;
+  int64 first_seen_unix_seconds = 7;
+  int64 last_seen_unix_seconds = 8;
+  // SID Administratora albo system:job-definition / system:ca-chain.
+  optional string decided_by = 9;
+  optional int64 decided_at_unix_seconds = 10;
+  // SPKI zapisany informacyjnie przy ważnym łańcuchu CA (nie jest pinem połączenia).
+  bool trusted_by_ca = 11;
+}
+
+message ListServerIdentitiesArgs {
+  optional string destination_id = 1;
+}
+
+message ListServerIdentitiesReply {
+  OverallState result = 1;
+  optional string code = 2;
+  repeated ServerIdentityInfo identities = 3;
+  // Cele „wysokiego ryzyka” (SEC-14.5).
+  repeated string require_pin_destinations = 4;
+}
+
+enum ServerIdentityDecision {
+  SERVER_IDENTITY_DECISION_UNSPECIFIED = 0;
+  // Dodaj do zbioru pinów (rotacja, klaster za load balancerem — AC-12.2).
+  SERVER_IDENTITY_DECISION_ADD = 1;
+  // Zastąp: pozostałe piny celu wycofane.
+  SERVER_IDENTITY_DECISION_REPLACE = 2;
+  SERVER_IDENTITY_DECISION_REJECT = 3;
+}
+
+message ApproveServerIdentityArgs {
+  string destination_id = 1;
+  // Musi być DOKŁADNIE odciskiem oczekującym dla tego celu.
+  string fingerprint = 2;
+  ServerIdentityDecision decision = 3;
+}
+
+message ApproveServerIdentityReply {
+  OverallState result = 1;
+  optional string code = 2;
+  ServerIdentityState state = 3;
+}
+
+message SetServerIdentityPolicyArgs {
+  string destination_id = 1;
+  bool require_pin = 2;
+}
+
+message SetServerIdentityPolicyReply {
+  OverallState result = 1;
+  optional string code = 2;
+}
+
+// ---- BL-45: potwierdzanie i wyciszanie alertów (D9.7) ----
+
+message AckAlertArgs {
+  string alert_id = 1;
+}
+
+message SilenceAlertArgs {
+  string alert_id = 1;
+  // 1…10080 (7 dni); poza zakresem = KB-0103 (JobDefinitionInvalid). Alerty bezpieczeństwa: stan maszyny skraca do 24 h.
+  int32 duration_minutes = 2;
+}
+
+message AlertActionReply {
+  OverallState result = 1;
+  // KB-6120 (alert nie istnieje, jest rozwiązany albo nie oczekuje na reakcję), KB-7012 (brak ewaluacji alertów), KB-0103 (zły argument).
+  optional string code = 2;
+  // Nowy stan: "acknowledged" | "silenced" (tylko przy powodzeniu).
+  optional string state = 3;
+}
+
+// ---- US-29: eksport/import zadań (kobian-export v1, docs/job-export-format.md) ----
+
+message ExportJobsArgs {
+  // Nazwy zadań do eksportu; puste = wszystkie zadania „files” i „database”. Nieistniejąca nazwa → KB-0104.
+  repeated string jobs = 1;
+}
+
+message ExportJobsReply {
+  OverallState result = 1;
+  optional string code = 2;
+  // Dokument kanoniczny UTF-8 (≤ 60 KiB — limit importu; większy → KB-0121).
+  bytes document = 3;
+  int32 jobs = 4;
+  repeated ImportIssue issues = 5;
+}
+
+enum ImportConflictMode {
+  // Konflikt nazwy (zadanie istnieje z inną definicją) blokuje cały import: KB-0124.
+  IMPORT_CONFLICT_MODE_FAIL = 0;
+  IMPORT_CONFLICT_MODE_SKIP = 1;
+  IMPORT_CONFLICT_MODE_OVERWRITE = 2;
+  IMPORT_CONFLICT_MODE_RENAME = 3;
+}
+
+message ImportJobsArgs {
+  bytes document = 1;
+  bool validate_only = 2;
+  ImportConflictMode on_conflict = 3;
+}
+
+// Problem pliku: ścieżka JSON, kod KB, stały powód (bez wartości pól — NFR-11).
+message ImportIssue {
+  string path = 1;
+  string code = 2;
+  string reason = 3;
+}
+
+// kind: new | unchanged | conflict; action: create | none | skip | overwrite | rename | blocked.
+message ImportChange {
+  string job = 1;
+  string kind = 2;
+  string action = 3;
+  optional string new_name = 4;
+  // secretRef bez wpisu w magazynie sekretów tego Agenta — kreator poprosi o poświadczenia (AC-29.1).
+  bool needs_credentials = 5;
+  // Plik klucza / nagłówka repozytorium / hasła z definicji nie istnieje na tym komputerze.
+  bool missing_key_material = 6;
+}
+
+message ImportJobsReply {
+  OverallState result = 1;
+  optional string code = 2;
+  repeated ImportIssue issues = 3;
+  repeated ImportChange changes = 4;
+  bool applied = 5;
+}
+
+message SaveCredentialArgs {
+  // Nazwa wpisu [A-Za-z0-9][A-Za-z0-9._-]{0,63}; istniejący wpis jest zastępowany (zmiana hasła).
+  string name = 1;
+  string user = 2;
+  string password = 3;
+}
+
+message BrowseServerArgs {
+  // root = folder, którego podfoldery zwrócić („/” = korzeń serwera albo udostępnienia).
+  DestinationSpec server = 1;
+}
+
+message BrowseServerReply {
+  OverallState result = 1;
+  optional string code = 2;
+  // Nazwy podfolderów (bez ścieżki), posortowane; najwyżej 2000.
+  repeated string folders = 3;
+  bool truncated = 4;
+}
+
+message SaveCredentialReply {
+  OverallState result = 1;
+  optional string code = 2;
+  // „file:<nazwa>” — do pól secret_ref celu/źródła.
+  string secret_ref = 3;
+}

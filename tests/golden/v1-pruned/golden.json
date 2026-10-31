@@ -1,0 +1,122 @@
+{
+  "Format": "kobian-repo-v1",
+  "MasterKeyHex": "303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f",
+  "SaltHex": "909192939495969798999a9b9c9d9e9f",
+  "ForgottenHex": [
+    "76c071ad02ffc065db0b802708c41c49",
+    "c85a5182a8c92726412855d59c13a149"
+  ],
+  "Live": [
+    {
+      "SnapIdHex": "b25fe6154dc5fd2e8f2ce26fefa441d4",
+      "Files": [
+        {
+          "Path": "nowy1.bin",
+          "Size": 31720,
+          "Sha256": "da0c377dbe600c6cdf981f1337f2643726b87d07c14592700ee46a048782ca1a",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        },
+        {
+          "Path": "nowy2.bin",
+          "Size": 32720,
+          "Sha256": "0696cddecb3bbc8f9a8f29cd4e1ce52b58b36e801f925ae4da01a2b1cb30fbc1",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        },
+        {
+          "Path": "stale.bin",
+          "Size": 92160,
+          "Sha256": "25c9832958a8ad7e0fb5b415a731eeb603eea2def9ec356a650877f2141dd0ed",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        },
+        {
+          "Path": "zmienny.txt",
+          "Size": 12609,
+          "Sha256": "ca008e60c0d1661e378bf2beb53183609cb9c68da3254f7a8f75a0d7abc8f44f",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        },
+        {
+          "Path": "\u017C/za\u017C\u00F3\u0142\u0107.txt",
+          "Size": 27,
+          "Sha256": "86e304451a236279d1c4fa03190dd1273c81c278068975a1deb0d1bd1aa0a591",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        }
+      ]
+    },
+    {
+      "SnapIdHex": "0f3967505b37b23c59c55d04e365bc63",
+      "Files": [
+        {
+          "Path": "nowy1.bin",
+          "Size": 31720,
+          "Sha256": "da0c377dbe600c6cdf981f1337f2643726b87d07c14592700ee46a048782ca1a",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        },
+        {
+          "Path": "nowy2.bin",
+          "Size": 32720,
+          "Sha256": "0696cddecb3bbc8f9a8f29cd4e1ce52b58b36e801f925ae4da01a2b1cb30fbc1",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        },
+        {
+          "Path": "nowy3.bin",
+          "Size": 33720,
+          "Sha256": "593b58e333812bede3fe8d93a05d75d80c2af4a55fcc98ee81d7a9749abe45a9",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        },
+        {
+          "Path": "stale.bin",
+          "Size": 92160,
+          "Sha256": "25c9832958a8ad7e0fb5b415a731eeb603eea2def9ec356a650877f2141dd0ed",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        },
+        {
+          "Path": "zmienny.txt",
+          "Size": 13309,
+          "Sha256": "fe977f07299dd50b7c19c62039babd804f9b5503672ee3ded8be5862e01580bb",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        }
+      ]
+    },
+    {
+      "SnapIdHex": "3dc089d06cd2621c00e14cd005951065",
+      "Files": [
+        {
+          "Path": "nowy1.bin",
+          "Size": 31720,
+          "Sha256": "da0c377dbe600c6cdf981f1337f2643726b87d07c14592700ee46a048782ca1a",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        },
+        {
+          "Path": "nowy2.bin",
+          "Size": 32720,
+          "Sha256": "0696cddecb3bbc8f9a8f29cd4e1ce52b58b36e801f925ae4da01a2b1cb30fbc1",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        },
+        {
+          "Path": "nowy3.bin",
+          "Size": 33720,
+          "Sha256": "593b58e333812bede3fe8d93a05d75d80c2af4a55fcc98ee81d7a9749abe45a9",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        },
+        {
+          "Path": "nowy4.bin",
+          "Size": 34720,
+          "Sha256": "1fd011c01a5e08c61cc86879d6a8317f90ec840d60632d312217bee87d63d5de",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        },
+        {
+          "Path": "stale.bin",
+          "Size": 92160,
+          "Sha256": "25c9832958a8ad7e0fb5b415a731eeb603eea2def9ec356a650877f2141dd0ed",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        },
+        {
+          "Path": "zmienny.txt",
+          "Size": 14009,
+          "Sha256": "6dba6e51d8517a72fbf48354d5f1f6f83291f1bdb7eb1b38d0eb8e6072bf554c",
+          "MtimeUtc": "2025-09-10T11:12:13Z"
+        }
+      ]
+    }
+  ]
+}

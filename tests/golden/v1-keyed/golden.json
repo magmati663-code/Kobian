@@ -1,0 +1,31 @@
+{
+  "Format": "kobian-repo-v1",
+  "KeyFile": "keys/606162636465666768696a6b6c6d6e6f.key",
+  "SnapIdHex": "bdc7ec3462a256790c5bcda3b6324105",
+  "Files": [
+    {
+      "Path": "data/blob.bin",
+      "Size": 204800,
+      "Sha256": "f5fba8e1f75a11b62ab8e690c1f69e05f540c8bd6c690ff49c259b0a4656dd0d",
+      "MtimeUtc": "2025-08-09T10:11:12Z"
+    },
+    {
+      "Path": "docs/umowa.txt",
+      "Size": 22800,
+      "Sha256": "39aadc581d52965e93ad6afb8ce81c139e612691967e1a47e614ac7939f22c6c",
+      "MtimeUtc": "2025-08-09T10:11:12Z"
+    },
+    {
+      "Path": "pusty",
+      "Size": 0,
+      "Sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "MtimeUtc": "2025-08-09T10:11:12Z"
+    },
+    {
+      "Path": "\u017C/za\u017C\u00F3\u0142\u0107.txt",
+      "Size": 27,
+      "Sha256": "86e304451a236279d1c4fa03190dd1273c81c278068975a1deb0d1bd1aa0a591",
+      "MtimeUtc": "2025-08-09T10:11:12Z"
+    }
+  ]
+}

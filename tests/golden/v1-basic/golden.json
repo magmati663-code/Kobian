@@ -1,0 +1,77 @@
+{
+  "Format": "kobian-repo-v1",
+  "MasterKeyHex": "a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+  "SaltHex": "101112131415161718191a1b1c1d1e1f",
+  "Snapshots": [
+    {
+      "SnapIdHex": "6603ddb1e45ebca49f1966295a0e9f26",
+      "Files": [
+        {
+          "Path": "a.txt",
+          "Size": 21700,
+          "Sha256": "81422e5ff6eec733b1bd0309081e0f449b47850740ce0152d555d0d7de7bcfc0",
+          "MtimeUtc": "2025-03-04T05:06:07Z"
+        },
+        {
+          "Path": "b/dup.bin",
+          "Size": 307200,
+          "Sha256": "2293353eab908920d4c6b2869d54a78f6cb3434f67330e4e9f9376c8a3cb2cb6",
+          "MtimeUtc": "2025-03-04T05:06:07Z"
+        },
+        {
+          "Path": "b/rand.bin",
+          "Size": 307200,
+          "Sha256": "2293353eab908920d4c6b2869d54a78f6cb3434f67330e4e9f9376c8a3cb2cb6",
+          "MtimeUtc": "2025-03-04T05:06:07Z"
+        },
+        {
+          "Path": "pusty",
+          "Size": 0,
+          "Sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "MtimeUtc": "2025-03-04T05:06:07Z"
+        },
+        {
+          "Path": "\u017C/za\u017C\u00F3\u0142\u0107 g\u0119\u015Bl\u0105.txt",
+          "Size": 27,
+          "Sha256": "86e304451a236279d1c4fa03190dd1273c81c278068975a1deb0d1bd1aa0a591",
+          "MtimeUtc": "2025-03-04T05:06:07Z"
+        }
+      ]
+    },
+    {
+      "SnapIdHex": "a18332bbc49827d869225e539d39259f",
+      "Files": [
+        {
+          "Path": "a.txt",
+          "Size": 26650,
+          "Sha256": "f363e58ae11c2e671d0a02a6443e3c9e4d95b32e2b834e8a9a20b9e98e26492d",
+          "MtimeUtc": "2025-06-07T08:09:10Z"
+        },
+        {
+          "Path": "b/dup.bin",
+          "Size": 307200,
+          "Sha256": "2293353eab908920d4c6b2869d54a78f6cb3434f67330e4e9f9376c8a3cb2cb6",
+          "MtimeUtc": "2025-03-04T05:06:07Z"
+        },
+        {
+          "Path": "b/rand.bin",
+          "Size": 307200,
+          "Sha256": "2293353eab908920d4c6b2869d54a78f6cb3434f67330e4e9f9376c8a3cb2cb6",
+          "MtimeUtc": "2025-03-04T05:06:07Z"
+        },
+        {
+          "Path": "c.txt",
+          "Size": 9,
+          "Sha256": "1917ef5defe0bb3ffc1ccf3956e9315a9bb8617776e92bd7fe0e411da6425309",
+          "MtimeUtc": "2025-06-07T08:09:10Z"
+        },
+        {
+          "Path": "\u017C/za\u017C\u00F3\u0142\u0107 g\u0119\u015Bl\u0105.txt",
+          "Size": 27,
+          "Sha256": "86e304451a236279d1c4fa03190dd1273c81c278068975a1deb0d1bd1aa0a591",
+          "MtimeUtc": "2025-03-04T05:06:07Z"
+        }
+      ]
+    }
+  ]
+}

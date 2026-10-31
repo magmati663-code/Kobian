@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Kobian Backup
+Comment=Kopie zapasowe i odtwarzanie
+Exec=/opt/kobian/Kobian.UI
+Terminal=false
+Categories=Utility;Archiving;

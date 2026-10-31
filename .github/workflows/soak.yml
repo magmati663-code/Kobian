@@ -1,0 +1,54 @@
+# Test długotrwały (runda 19 planu optymalizacji): Agent jako usługa, kopie z losowymi zmianami danych, losowe zabicie procesu w trakcie kopii,
+# okresowe odtwarzanie z porównaniem bajt w bajt, kontrola repozytorium i nadzór nad pamięcią. Co noc oraz na żądanie.
+name: Soak
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: 'Liczba iteracji (kopii)'
+        default: '150'
+      seed:
+        description: 'Ziarno losowości (ta sama wartość = te same zmiany danych i zabicia)'
+        default: '1'
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+
+jobs:
+  soak:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: |
+          dotnet build src/Kobian.Agent -c Release -f net10.0 -p:ContinuousIntegrationBuild=true
+          dotnet build src/Kobian.Cli -c Release -p:ContinuousIntegrationBuild=true
+      - name: Soak
+        run: |
+          seed="${{ github.event.inputs.seed || github.run_number }}"
+          echo "ziarno: $seed"
+          sudo -E env "PATH=$PATH" tools/perf/soak.sh "$PWD" "${{ github.event.inputs.iterations || '150' }}" "$seed" 2>&1 | tee "$RUNNER_TEMP/soak.txt"
+          exit "${PIPESTATUS[0]}"
+      - name: Wynik jako adnotacja
+        if: failure()
+        run: tools/ci-annotate.sh plik "soak (ziarno ${{ github.event.inputs.seed || github.run_number }})" "$RUNNER_TEMP/soak.txt" 60
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: soak
+          path: |
+            /tmp/ksoak/agent.log
+            /tmp/ksoak/diff.out
+            /tmp/ksoak/*.out
+          retention-days: 14
+          if-no-files-found: ignore

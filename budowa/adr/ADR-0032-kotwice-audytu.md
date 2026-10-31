@@ -1,0 +1,9 @@
+# ADR-0032 — Kotwice dzienne łańcucha audytu i kontrola schematu (D9.9, RD-51) — PROWIZORYCZNIE Qb49
+
+- Data: 2026-10-17, iteracja 99 (prowadzi rola 9; 11, 2). Status: przyjęte prowizorycznie (Qb49).
+- Kontekst: D9.9 — kotwica `{seq, hash}` codziennie 06:55 w trzech miejscach poza katalogiem (raport e-mail, `journal/` w repo, webhook); `kobian audit verify` porównuje z kotwicami. Raportu e-mail i webhooków jeszcze nie ma, `journal/` to warstwa formatu v1.1 (R2.3, układ repo). RD-51: weryfikacja nie wykrywała odbudowanej tabeli/zdjętych wyzwalaczy jako osobnego stanu.
+- Decyzja: (1) `audit_anchors` wypełniane przez `AuditAnchorLoop` (termin 06:55 czasu lokalnego hosta, `AuditAnchorSchedule`; zaległość po przerwie = jedna kotwica; idempotentne per seq); (2) zewnętrzna kotwica podawana ręcznie: `kobian audit verify --anchor seq:sha256` / `VerifyAuditArgs.anchor` — wyświetlana ostatnia kotwica jest do zapisania poza serwerem; (3) kontrola schematu: obiekty `sqlite_schema` dla `audit_log`/`audit_anchors` muszą być identyczne z migracją core/0003 wykonaną w pamięci; (4) kody KB-6502 (schemat) i KB-6503 (kotwica), kolejność: schemat → łańcuch → kotwice.
+- PROWIZORYCZNIE: kotwice w katalogu chronią tylko przed częściowym przepisaniem (kto przepisze też `audit_anchors`, zostanie wykryty dopiero kotwicą zewnętrzną); e-mail/webhook (BL-45) i `journal/` (v1.1, wymaga typu metadanych `anchor` — zmiana formatu) później.
+- Konsekwencje: przyszła migracja zmieniająca tabele audytu MUSI zaktualizować oczekiwany schemat (dziś stała core/0003) — inaczej każda weryfikacja da KB-6502 (test `Changed_audit_schema…` i zielony `Verify` po bootstrapie to wychwycą).
+- Alternatywy: podpis wpisów kluczem hosta (odrzucone w D9.9); kotwica po każdej operacji (więcej wierszy, bez zysku bez kopii zewnętrznej).
+- Koszt zmiany zdania: mały.

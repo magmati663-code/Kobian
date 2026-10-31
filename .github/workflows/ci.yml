@@ -1,0 +1,263 @@
+# Ciągła integracja Kobian: każda zmiana sprawdzana na Windows, Linux i macOS — nie tylko testy, ale też ZAINSTALOWANA usługa
+# (install.ps1 → usługa Windows, install.sh → systemd/launchd) i kreator przeciw niej, tak jak w aplikacji (tests/Kobian.Tests.UI/ServiceSmokeTests.cs).
+# Przy błędzie usługi dziennik nieoczekiwanych błędów Agenta trafia do wyniku testu i do artefaktu „logi-<system>”.
+name: CI
+
+on:
+  # gałąź główna przy każdym pushu; pozostałe gałęzie przez pull request (bez podwójnych przebiegów)
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+  AVALONIA_TELEMETRY_OPTOUT: '1'
+  KOBIAN_VERSION: 0.0.0-ci
+
+jobs:
+  # Paczki budowane raz (na Linuksie, tak jak w wydaniu) — testy usługi instalują dokładnie to, co dostaje użytkownik.
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: tools/package-unix.sh linux-x64 osx-arm64
+      - run: tools/package-windows.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paczki
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+          retention-days: 7
+
+  # Bramka wydajności (Linux): kopia ~700 MB w usłudze; szczyt pamięci, pamięć po kopii, rozmiar repozytorium i czasy muszą mieścić się w progach (tools/perf/check.sh).
+  perf:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: |
+          dotnet build src/Kobian.Agent -c Release -f net10.0 -p:ContinuousIntegrationBuild=true
+          dotnet build src/Kobian.Cli -c Release -p:ContinuousIntegrationBuild=true
+      - name: Pomiar
+        run: |
+          sudo -E env "PATH=$PATH" tools/perf/perf.sh "$PWD" 200 | tee "$RUNNER_TEMP/perf.txt"
+          mkdir -p perf-out && cp /tmp/kperf/result.txt perf-out/ 2>/dev/null || sudo cp /tmp/kperf/result.txt perf-out/
+      - name: Progi
+        run: tools/perf/check.sh perf-out/result.txt
+      # Wiele małych plików (100 tys.): pamięć ma rosnąć niewiele z liczbą plików (szczyt ≤ 420 MB; pomiar lokalny 300 tys. plików = 434 MB, 100 tys. ≈ 300 MB).
+      - name: Wiele plików
+        run: |
+          sudo -E env "PATH=$PATH" tools/perf/many.sh "$PWD" 100000 | tee "$RUNNER_TEMP/many.txt"
+          cp /tmp/kmany/result.txt perf-out/many.txt 2>/dev/null || sudo cp /tmp/kmany/result.txt perf-out/many.txt
+          KOBIAN_PERF_FULL_MAX_S=120 KOBIAN_PERF_INC_MAX_S=40 tools/perf/check-many.sh perf-out/many.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf
+          path: perf-out
+          retention-days: 30
+          if-no-files-found: ignore
+
+  platform:
+    needs: package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            name: windows
+            exclude: -notrait "Category=Perf" -notrait "Category=ServiceSmoke"
+          - os: ubuntu-24.04
+            name: linux
+            exclude: -notrait "Category=Windows" -notrait "Category=Perf" -notrait "Category=ServiceSmoke"
+          - os: macos-15
+            name: macos
+            exclude: -notrait "Category=Windows" -notrait "Category=Perf" -notrait "Category=ServiceSmoke"
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Budowa
+        run: dotnet build Kobian.sln -c Release -warnaserror -p:ContinuousIntegrationBuild=true
+
+      - name: Testy
+        run: |
+          set +e  # krok GitHub to „bash -e -o pipefail” — błąd testów nie może przerwać zbierania adnotacji
+          rc=0
+          for n in Unit Architecture UI; do
+            dotnet tests/Kobian.Tests.$n/bin/Release/net10.0/Kobian.Tests.$n.dll ${{ matrix.exclude }} 2>&1 | tee -a "$RUNNER_TEMP/testy.log"
+            [ "${PIPESTATUS[0]}" -eq 0 ] || rc=1
+          done
+          if [ $rc -ne 0 ]; then
+            tools/ci-annotate.sh testy "$RUNNER_TEMP/testy.log"
+            grep -q '\[FAIL\]' "$RUNNER_TEMP/testy.log" || tools/ci-annotate.sh plik "${{ matrix.name }}: wynik testów" "$RUNNER_TEMP/testy.log" 40
+          fi
+          exit $rc
+
+      - uses: actions/download-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: paczki
+          path: paczki
+
+      - name: Instalacja usługi (Windows)
+        if: ${{ !cancelled() && matrix.name == 'windows' }}
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem paczki\*.zip | Select-Object -First 1
+          Expand-Archive $zip.FullName -DestinationPath $env:RUNNER_TEMP\kobian
+          $dir = Get-ChildItem $env:RUNNER_TEMP\kobian -Directory | Select-Object -First 1
+          $log = Join-Path $env:RUNNER_TEMP 'install.txt'
+          & powershell -ExecutionPolicy Bypass -File (Join-Path $dir.FullName 'install.ps1') *>&1 | Tee-Object -FilePath $log
+          $rc = $LASTEXITCODE
+          if ($rc -or -not (Get-Service KobianAgent -ErrorAction SilentlyContinue)) {
+            & bash tools/ci-annotate.sh plik "windows: install.ps1 (kod $rc)" ($log -replace '\\','/') 60
+            throw "install.ps1: $rc"
+          }
+          New-Item -ItemType Directory -Force C:\KobianSmoke | Out-Null
+          New-Item -ItemType Directory -Force "$env:USERPROFILE\KobianPrywatne" | Out-Null
+          "KOBIAN_SMOKE_DIR=C:\KobianSmoke" >> $env:GITHUB_ENV
+          "KOBIAN_SMOKE_PRIVATE_DIR=$env:USERPROFILE\KobianPrywatne" >> $env:GITHUB_ENV
+          "KOBIAN_SMOKE_LOG=C:\ProgramData\Kobian\logs\agent-errors.log" >> $env:GITHUB_ENV
+          "KOBIAN_LOGS=C:\ProgramData\Kobian\logs" >> $env:GITHUB_ENV
+          Start-Sleep 5
+          Get-Service KobianAgent | Format-Table -AutoSize
+          & "$env:ProgramFiles\Kobian\kobian.exe" status
+          $global:LASTEXITCODE = 0  # stan „brak zadań” to nie błąd instalacji
+
+      - name: Instalacja usługi (Linux / macOS)
+        if: ${{ !cancelled() && matrix.name != 'windows' }}
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/kobian"
+          tar -xzf paczki/*-${{ matrix.name == 'linux' && 'linux-x64' || 'osx-arm64' }}.tar.gz -C "$RUNNER_TEMP/kobian"
+          sudo "$RUNNER_TEMP"/kobian/kobian-*/install.sh
+          mkdir -p "$RUNNER_TEMP/smoke"
+          echo "KOBIAN_SMOKE_DIR=$RUNNER_TEMP/smoke" >> "$GITHUB_ENV"
+          if [ "${{ matrix.name }}" = linux ]; then logs=/var/lib/kobian/logs; else logs="/Library/Application Support/Kobian/logs"; fi
+          echo "KOBIAN_SMOKE_LOG=$logs/agent-errors.log" >> "$GITHUB_ENV"
+          echo "KOBIAN_LOGS=$logs" >> "$GITHUB_ENV"
+          if [ "${{ matrix.name }}" = linux ]; then sock=/run/kobian/agent.sock; else sock=/var/run/kobian/agent.sock; fi
+          for i in $(seq 60); do sudo test -S "$sock" && break; sleep 1; done
+          sudo ls -la "$(dirname "$sock")" || true
+          set +e
+          out=$(sudo kobian status 2>&1); rc=$?
+          echo "$out"
+          if [ $rc -ne 0 ]; then
+            echo "$out" > "$RUNNER_TEMP/status.txt"
+            if [ "${{ matrix.name }}" = linux ]; then sudo systemctl status kobian-agent --no-pager -l >> "$RUNNER_TEMP/status.txt" 2>&1; sudo journalctl -u kobian-agent --no-pager -n 30 >> "$RUNNER_TEMP/status.txt" 2>&1
+            else sudo launchctl print system/pl.kobian.agent >> "$RUNNER_TEMP/status.txt" 2>&1; sudo tail -30 /Library/Logs/Kobian/agent.log >> "$RUNNER_TEMP/status.txt" 2>&1; fi
+            sudo ls -la "$(dirname "$sock")" >> "$RUNNER_TEMP/status.txt" 2>&1
+            tools/ci-annotate.sh plik "${{ matrix.name }}: kobian status (kod $rc)" "$RUNNER_TEMP/status.txt" 80
+            # Agent żyje, a nie nasłuchuje → stosy wątków (gdzie stoi start)
+            if pid=$(pgrep -f 'Kobian.Agent$' | head -1) && [ -n "$pid" ]; then
+              dotnet tool install --global dotnet-stack > /dev/null 2>&1
+              sudo "$HOME/.dotnet/tools/dotnet-stack" report -p "$pid" > "$RUNNER_TEMP/stack.txt" 2>&1
+              grep -v -E '^\s*(System\.|Microsoft\.|\[Native)' "$RUNNER_TEMP/stack.txt" | head -150 > "$RUNNER_TEMP/stack-kobian.txt"
+              tools/ci-annotate.sh plik "${{ matrix.name }}: stosy wątków Agenta (bez ramek .NET)" "$RUNNER_TEMP/stack-kobian.txt" 150
+              tools/ci-annotate.sh plik "${{ matrix.name }}: stosy wątków Agenta (pełne, początek)" "$RUNNER_TEMP/stack.txt" 120
+            fi
+          fi
+
+      # Serwer jako ŹRÓDŁO kopii: SFTP (OpenSSH) i FTPS (vsftpd, certyfikat samopodpisany) tylko na 127.0.0.1 maszyny testowej.
+      - name: Serwery testowe SFTP i FTPS (Linux)
+        if: ${{ !cancelled() && matrix.name == 'linux' }}
+        run: |
+          sudo apt-get install -y -q openssh-server vsftpd > /dev/null
+          pw="Zrodlo-$(openssl rand -hex 8)"
+          sudo useradd -m -s /bin/bash zrodlo
+          echo "zrodlo:$pw" | sudo chpasswd
+          sudo -u zrodlo mkdir -p /home/zrodlo/dane/biuro/umowy /home/zrodlo/dane/zdjecia
+          echo "Umowa najmu" | sudo -u zrodlo tee /home/zrodlo/dane/biuro/umowy/umowa.txt > /dev/null
+          echo "Zażółć gęślą jaźń" | sudo -u zrodlo tee "/home/zrodlo/dane/biuro/ąę plik.txt" > /dev/null
+          sudo -u zrodlo head -c 3000000 /dev/urandom | sudo -u zrodlo tee /home/zrodlo/dane/zdjecia/foto.bin > /dev/null
+          sudo mkdir -p /run/sshd && sudo ssh-keygen -A
+          sudo /usr/sbin/sshd -p 2222 -o ListenAddress=127.0.0.1 -o PasswordAuthentication=yes -o KbdInteractiveAuthentication=no
+          sudo openssl req -x509 -newkey rsa:2048 -nodes -keyout /etc/ssl/private/kobian-ftps.key -out /etc/ssl/certs/kobian-ftps.pem -days 7 -subj "/CN=ftp.test" 2>/dev/null
+          printf '%s\n' listen=YES listen_address=127.0.0.1 listen_port=2121 anonymous_enable=NO local_enable=YES write_enable=NO \
+            ssl_enable=YES force_local_logins_ssl=YES force_local_data_ssl=YES require_ssl_reuse=NO \
+            rsa_cert_file=/etc/ssl/certs/kobian-ftps.pem rsa_private_key_file=/etc/ssl/private/kobian-ftps.key \
+            pasv_enable=YES pasv_min_port=40000 pasv_max_port=40100 pasv_address=127.0.0.1 \
+            secure_chroot_dir=/var/run/vsftpd/empty pam_service_name=vsftpd utf8_filesystem=YES | sudo tee /etc/vsftpd-kobian.conf > /dev/null
+          sudo mkdir -p /var/run/vsftpd/empty
+          sudo sh -c '/usr/sbin/vsftpd /etc/vsftpd-kobian.conf > /tmp/vsftpd.log 2>&1 &'
+          sleep 2
+          ss -ltn | grep -E ':(2222|2121) '
+          echo "KOBIAN_SMOKE_SFTP=127.0.0.1:2222:zrodlo:$pw:/home/zrodlo/dane" >> "$GITHUB_ENV"
+          echo "KOBIAN_SMOKE_FTPS=127.0.0.1:2121:zrodlo:$pw:/home/zrodlo/dane" >> "$GITHUB_ENV"
+
+      - name: Kreator przeciw zainstalowanej usłudze
+        if: ${{ !cancelled() }}
+        run: |
+          set +e
+          dll=tests/Kobian.Tests.UI/bin/Release/net10.0/Kobian.Tests.UI.dll
+          if [ "${{ matrix.name }}" = windows ]; then
+            dotnet "$dll" -trait "Category=ServiceSmoke" 2>&1 | tee "$RUNNER_TEMP/smoke.log"
+          else
+            # rola Administrator (root) — jak użytkownik z grupy kobian-admins
+            sudo -E env "PATH=$PATH" dotnet "$dll" -trait "Category=ServiceSmoke" 2>&1 | tee "$RUNNER_TEMP/smoke.log"
+          fi
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ]; then
+            tools/ci-annotate.sh testy "$RUNNER_TEMP/smoke.log"
+            tools/ci-annotate.sh plik "${{ matrix.name }}: wynik testu usługi" "$RUNNER_TEMP/smoke.log" 40
+          fi
+          exit "$rc"
+
+      - name: Logi usługi
+        if: always()
+        run: |
+          mkdir -p logi
+          if [ "${{ matrix.name }}" = windows ]; then
+            cp -r "$KOBIAN_LOGS" logi/ 2>/dev/null || true
+            powershell -Command "Get-EventLog -LogName Application -Source KobianAgent -Newest 50 -ErrorAction SilentlyContinue | Format-List | Out-String -Width 300" > logi/eventlog.txt || true
+            # przyczyna „Cannot start service”: SCM (dziennik System) i awarie procesu (.NET Runtime / Application Error)
+            powershell -Command "Get-WinEvent -FilterHashtable @{LogName='System'; ProviderName='Service Control Manager'} -MaxEvents 15 -ErrorAction SilentlyContinue | Where-Object { \$_.Message -match 'Kobian' } | Format-List TimeCreated,Id,Message | Out-String -Width 300" > logi/scm.txt || true
+            powershell -Command "Get-WinEvent -FilterHashtable @{LogName='Application'; ProviderName='.NET Runtime','Application Error','KobianAgent'} -MaxEvents 6 -ErrorAction SilentlyContinue | Format-List TimeCreated,ProviderName,Id,Message | Out-String -Width 300" > logi/app-errors.txt || true
+            sc.exe qc KobianAgent > logi/sc-config.txt 2>&1 || true
+            sc.exe query KobianAgent > logi/sc.txt || true
+          elif [ "${{ matrix.name }}" = linux ]; then
+            sudo cp -r "$KOBIAN_LOGS" logi/ 2>/dev/null || true
+            sudo journalctl -u kobian-agent --no-pager > logi/journal.txt || true
+          else
+            sudo cp -r "$KOBIAN_LOGS" logi/ 2>/dev/null || true
+            sudo cp /Library/Logs/Kobian/agent.log logi/ 2>/dev/null || true
+          fi
+          sudo chmod -R a+rX logi 2>/dev/null || true
+          # błąd w przebiegu → ostatnie wiersze dzienników jako adnotacje
+          if [ "${{ job.status }}" != success ]; then
+            for f in logi/*.txt logi/*.log logi/logs/*.log; do if [ -f "$f" ]; then tools/ci-annotate.sh plik "${{ matrix.name }}: $f" "$f" 40; fi; done
+          fi
+          exit 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: logi-${{ matrix.name }}
+          path: logi
+          retention-days: 7
+          if-no-files-found: ignore

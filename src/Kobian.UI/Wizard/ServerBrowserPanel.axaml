@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:w="using:Kobian.UI.Wizard" xmlns:l="using:Kobian.UI.Localization"
+             x:Class="Kobian.UI.Wizard.ServerBrowserPanel" x:DataType="w:WizardViewModel">
+  <!-- Wybór folderu na serwerze (SFTP/FTPS/WebDAV): ścieżka, „W górę”, lista podfolderów (dwuklik/Enter = wejście), odcisk do zatwierdzenia przy pierwszym połączeniu. -->
+  <Border Classes="card" Padding="16" MaxWidth="640" HorizontalAlignment="Stretch" AutomationProperties.AutomationId="SCR-03.Browse">
+    <StackPanel Spacing="10">
+      <TextBlock Classes="label" Text="{l:T Wizard.Browse.Title}" />
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <Button Classes="secondary" Content="{l:T Wizard.Browse.Up}" Command="{Binding BrowseUpCommand}" IsEnabled="{Binding CanBrowseUp}" Margin="0,0,8,0"
+                AutomationProperties.AutomationId="SCR-03.Browse.Up" />
+        <TextBox Grid.Column="1" Text="{Binding BrowsePath}" AutomationProperties.AutomationId="SCR-03.Browse.Path" AutomationProperties.Name="{l:T Wizard.Browse.Path}">
+          <TextBox.KeyBindings>
+            <KeyBinding Gesture="Enter" Command="{Binding BrowseGoCommand}" />
+          </TextBox.KeyBindings>
+        </TextBox>
+        <Button Grid.Column="2" Classes="secondary" Content="{l:T Wizard.Browse.Go}" Command="{Binding BrowseGoCommand}" Margin="8,0,0,0"
+                AutomationProperties.AutomationId="SCR-03.Browse.Go" />
+      </Grid>
+      <TextBlock Classes="body" Text="{Binding BrowseMessage}" IsVisible="{Binding HasBrowseMessage}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Assertive"
+                 AutomationProperties.AutomationId="SCR-03.Browse.Message" />
+      <SelectableTextBlock Text="{Binding BrowsePendingFingerprint}" IsVisible="{Binding HasBrowsePendingFingerprint}" FontFamily="Consolas, Cascadia Mono, monospace"
+                           TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-03.Browse.Fingerprint" />
+      <Button Classes="primary" Content="{l:T Wizard.Src.Approve}" Command="{Binding BrowseApproveCommand}" IsVisible="{Binding HasBrowsePendingFingerprint}"
+              AutomationProperties.AutomationId="SCR-03.Browse.Approve" />
+      <ListBox Name="Folders" ItemsSource="{Binding BrowseFolders}" MaxHeight="280" IsVisible="{Binding !HasBrowsePendingFingerprint}"
+               AutomationProperties.AutomationId="SCR-03.Browse.Folders" AutomationProperties.Name="{l:T Wizard.Browse.Title}">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="x:String">
+            <TextBlock Text="{Binding StringFormat='📁  {0}'}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <TextBlock Classes="muted" Text="{l:T Wizard.Browse.Truncated}" IsVisible="{Binding BrowseTruncated}" TextWrapping="Wrap" />
+      <TextBlock Classes="muted" Text="{l:T Wizard.Browse.Hint}" TextWrapping="Wrap" IsVisible="{Binding !HasBrowsePendingFingerprint}" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Classes="primary" Content="{l:T Wizard.Browse.Choose}" Command="{Binding BrowseChooseCommand}" IsVisible="{Binding !HasBrowsePendingFingerprint}"
+                AutomationProperties.AutomationId="SCR-03.Browse.Choose" />
+        <Button Classes="secondary" Content="{l:T Wizard.Src.Cancel}" Command="{Binding BrowseCancelCommand}" AutomationProperties.AutomationId="SCR-03.Browse.Cancel" />
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</UserControl>

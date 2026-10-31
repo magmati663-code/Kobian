@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Testy jednostkowe modułów platform-neutralnych (net10.0). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Vectors\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\corpus\*.json" LinkBase="corpus" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\golden\**\*" LinkBase="golden" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kobian.Domain\Kobian.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Format\Kobian.Format.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Crypto\Kobian.Crypto.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Application\Kobian.Application.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Engine\Kobian.Engine.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Scheduler\Kobian.Scheduler.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Providers.Storage\Kobian.Providers.Storage.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Providers.Sources\Kobian.Providers.Sources.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Catalog.Sqlite\Kobian.Catalog.Sqlite.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Notifications\Kobian.Notifications.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.UI\Kobian.UI.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Cli\Kobian.Cli.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Agent\Kobian.Agent.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Api.Contracts\Kobian.Api.Contracts.csproj" />
+    <ProjectReference Include="..\Kobian.Tests.Support\Kobian.Tests.Support.csproj" />
+  </ItemGroup>
+</Project>

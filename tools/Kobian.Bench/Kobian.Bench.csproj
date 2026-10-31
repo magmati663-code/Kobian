@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pomiar przepustowości etapów (NFR-24, SP-17 — wstępnie, poza sprzętem referencyjnym). Stopwatch; BenchmarkDotNet poza listą audytu. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <NoWarn>$(NoWarn);CA1303;CA1515;CA5394</NoWarn>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kobian.Engine\Kobian.Engine.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Providers.Storage\Kobian.Providers.Storage.csproj" />
+    <ProjectReference Include="..\..\src\Kobian.Catalog.Sqlite\Kobian.Catalog.Sqlite.csproj" />
+  </ItemGroup>
+</Project>

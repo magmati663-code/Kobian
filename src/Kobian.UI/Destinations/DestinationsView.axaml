@@ -1,0 +1,83 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="using:Kobian.UI.Destinations" xmlns:c="using:Kobian.UI.Controls" xmlns:l="using:Kobian.UI.Localization"
+             x:Class="Kobian.UI.Destinations.DestinationsView" x:DataType="d:DestinationsViewModel">
+  <!-- SCR-09 Cele (R2.6.1, it. 82): cele z zadań + sprawdzenie miejsca na żądanie. Kolory z tokenów; AutomationId „SCR-09.*”. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="40,32" Spacing="20" MaxWidth="1100" HorizontalAlignment="Stretch">
+      <Border IsVisible="{Binding ShowStaleBanner}" Background="{DynamicResource Kb.Brush.AtRisk.Bg}" CornerRadius="{StaticResource Kb.Radius.Control}" Padding="16,10"
+              AutomationProperties.AutomationId="SCR-09.ConnectionBanner" AutomationProperties.LiveSetting="Assertive">
+        <TextBlock Text="{l:T Connection.Lost}" Foreground="{DynamicResource Kb.Brush.AtRisk.Text}" FontWeight="SemiBold" TextWrapping="Wrap" />
+      </Border>
+
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="display" Text="{Binding Title}" AutomationProperties.AutomationId="SCR-09.Title" />
+          <TextBlock Classes="muted" Text="{l:T Dest.Note}" TextWrapping="Wrap" />
+        </StackPanel>
+        <Button Grid.Column="1" Classes="secondary" Command="{Binding RefreshCommand}" VerticalAlignment="Top" AutomationProperties.AutomationId="SCR-09.Refresh"
+                AutomationProperties.Name="{l:T Action.Refresh}" ToolTip.Tip="{l:T Action.Refresh}">
+          <PathIcon Data="{StaticResource Kb.Icon.Refresh}" Width="14" Height="14" />
+        </Button>
+      </Grid>
+
+      <Border Classes="card" IsVisible="{Binding IsOffline}" Padding="28" AutomationProperties.AutomationId="SCR-09.Offline">
+        <StackPanel Spacing="10">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <c:ProtectionBadge Classes="large" State="AtRisk" Text="{l:T Offline.Badge}" />
+            <Border Classes="code" VerticalAlignment="Center"><TextBlock Text="{Binding OfflineCode}" /></Border>
+          </StackPanel>
+          <TextBlock Classes="title" Text="{l:T Offline.Headline}" />
+          <Button Classes="primary" HorizontalAlignment="Left" Content="{l:T Offline.Retry}" Command="{Binding RefreshCommand}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" IsVisible="{Binding IsEmpty}" Padding="28" AutomationProperties.AutomationId="SCR-09.Empty">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="title" Text="{l:T Dest.Empty}" />
+          <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{l:T Dest.EmptyHint}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="notice error" IsVisible="{Binding HasUnreadable}" AutomationProperties.AutomationId="SCR-09.Unreadable">
+        <TextBlock Text="{Binding UnreadableText}" TextWrapping="Wrap" />
+      </Border>
+
+      <ItemsControl ItemsSource="{Binding Cards}" IsVisible="{Binding HasCards}" AutomationProperties.AutomationId="SCR-09.List">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="12" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate DataType="d:DestinationCardViewModel">
+            <Border Classes="card" Padding="20,16" AutomationProperties.AutomationId="{Binding AutomationId}" AutomationProperties.Name="{Binding Root}">
+              <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto">
+                <PathIcon Grid.RowSpan="2" Data="{StaticResource Kb.Icon.Nav.Destinations}" Width="18" Height="18" Margin="0,2,14,0" VerticalAlignment="Top"
+                          Foreground="{DynamicResource Kb.Brush.Accent}" />
+                <StackPanel Grid.Column="1" Spacing="2">
+                  <TextBlock Classes="body" FontWeight="SemiBold" Text="{Binding Root}" TextTrimming="CharacterEllipsis" />
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <!-- it. 120: kłódka dla celów szyfrowanych (SFTP/FTPS) + nazwa dostępna słownie. -->
+                    <PathIcon Data="{StaticResource Kb.Icon.Lock}" Width="12" Height="12" IsVisible="{Binding IsEncrypted}" Foreground="{DynamicResource Kb.Brush.TextMuted}"
+                              VerticalAlignment="Center" AutomationProperties.Name="{l:T Dest.Encrypted}" ToolTip.Tip="{l:T Dest.Encrypted}" />
+                    <TextBlock Classes="muted" Text="{Binding SchemeText}" />
+                  </StackPanel>
+                  <TextBlock Classes="muted" Text="{Binding DetailText}" IsVisible="{Binding HasDetail}" TextWrapping="Wrap" ToolTip.Tip="{Binding FingerprintTip}"
+                             AutomationProperties.AutomationId="SCR-09.Detail" />
+                </StackPanel>
+                <Button Grid.Column="2" Classes="secondary" Content="{l:T Dest.Check}" VerticalAlignment="Top" CommandParameter="{Binding}" IsEnabled="{Binding CanCheckNow}"
+                        Command="{Binding $parent[UserControl].((d:DestinationsViewModel)DataContext).CheckCommand}" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Spacing="4" Margin="0,6,0,0">
+                  <TextBlock Classes="muted" Text="{Binding JobsText}" TextWrapping="Wrap" />
+                  <TextBlock Classes="muted" FontStyle="Italic" Text="{l:T Dest.CheckUnavailable}" TextWrapping="Wrap" IsVisible="{Binding ShowCheckUnavailable}"
+                             AutomationProperties.AutomationId="SCR-09.CheckUnavailable" />
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Spacing="6" Margin="0,12,0,0" IsVisible="{Binding Checked}">
+                  <ProgressBar Classes="space" Classes.low="{Binding LowSpace}" Minimum="0" Maximum="100" Value="{Binding UsedPercent}" IsVisible="{Binding SpaceKnown}" MaxWidth="420" HorizontalAlignment="Left" />
+                  <TextBlock Classes="muted" Text="{Binding SpaceText}" IsVisible="{Binding HasSpace}" />
+                  <Border Classes="notice error" IsVisible="{Binding HasError}"><TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" /></Border>
+                </StackPanel>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,8 @@
+# ADR-0035 — Protokół usługa ↔ Kobian.Worker (rola vss) i zaślepka requestera do SP-01 (D2.8) — PROWIZORYCZNIE Qb53
+
+- Data: 2026-10-17, iteracja 103 (prowadzi rola 13; 2, 11, 3). Status: przyjęte prowizorycznie (Qb53).
+- Kontekst: D2.8 — requester VSS w procesie potomnym `Kobian.Worker --role vss`, stdin/stdout, ramki długość + JSON (≤ 1 MiB); migawka żyje tyle co proces. Wywołania COM VSS wymagają SP-01 (CsWin32 vs AlphaVSS — pakiet do audytu) i Windows.
+- Decyzja: (1) `Kobian.Application.Worker`: `WorkerFrames` (u32le + UTF-8 JSON, 1 B … 1 MiB, odczyt dokładny), `WorkerJson` (nieznane pola odrzucane, MaxDepth 4, lista operacji zamknięta: ping, vss.create, vss.release; woluminy „X:\” bez powtórzeń, ≤ 26), walidacja odpowiedzi po stronie Agenta (to samo Id, kod KB z rejestru — nowy `KbCode.IsKnown`, ścieżki urządzeń `\\?\GLOBALROOT\Device\…` ≤ 260 znaków bez „..”, GUID zestawu); (2) `VssWorkerHost` — jedna migawka na proces, zwolnienie przy vss.release, EOF i naruszeniu protokołu (kod wyjścia 3); (3) `WorkerClient` — jedno żądanie naraz, limit 10 min, po błędzie nieużywalny (Agent zabija proces); (4) `PendingVssSnapshotService` (Platform.Windows) zawsze KB-1406 do SP-01. Nowe kody: KB-1406, KB-7008 (z planu), KB-7014.
+- PROWIZORYCZNIE: limit 10 min na odpowiedź; brak uruchamiania procesu przez Agenta (job object, weryfikacja podpisu, KB-7008 — następny krok, W-44); JSON przez System.Text.Json z refleksją (bez generatora źródeł).
+- Alternatywy: StreamJsonRpc (nowa zależność); gRPC po drugim pipe (cięższe, nazwa pipe do zabezpieczenia).
+- Koszt zmiany zdania: mały (format ramek i DTO w jednym pliku).

@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="KB_0001_Message" xml:space="preserve"><value>Błąd wewnętrzny programu.</value></data>
+  <data name="KB_0001_Action" xml:space="preserve"><value>Zgłoś błąd z identyfikatorem uruchomienia.</value></data>
+  <data name="KB_0101_Message" xml:space="preserve"><value>Wybrane źródło nie istnieje lub nie jest czytelne dla usługi.</value></data>
+  <data name="KB_0101_Action" xml:space="preserve"><value>Wybierz inny folder lub nadaj uprawnienia.</value></data>
+  <data name="KB_0102_Message" xml:space="preserve"><value>Źródła w zadaniu nakładają się (folder i jego podfolder).</value></data>
+  <data name="KB_0102_Action" xml:space="preserve"><value>Usuń podfolder z listy.</value></data>
+  <data name="KB_0103_Message" xml:space="preserve"><value>Definicja zadania jest niepoprawna lub nieobsługiwana w tej wersji.</value></data>
+  <data name="KB_0103_Action" xml:space="preserve"><value>Popraw definicję zadania (źródło, cel, klucz).</value></data>
+  <data name="KB_0104_Message" xml:space="preserve"><value>Zadanie o podanej nazwie nie istnieje.</value></data>
+  <data name="KB_0104_Action" xml:space="preserve"><value>Sprawdź nazwę zadania (kobian status).</value></data>
+  <data name="KB_0105_Message" xml:space="preserve"><value>Zadanie jest wyłączone — uruchomienie pominięte.</value></data>
+  <data name="KB_0105_Action" xml:space="preserve"><value>Włącz zadanie, aby je uruchomić.</value></data>
+  <data name="KB_0106_Message" xml:space="preserve"><value>Zadanie o tej nazwie już istnieje.</value></data>
+  <data name="KB_0106_Action" xml:space="preserve"><value>Wybierz inną nazwę zadania.</value></data>
+  <data name="KB_0107_Message" xml:space="preserve"><value>Nie znaleziono uruchomienia o podanym identyfikatorze.</value></data>
+  <data name="KB_0107_Action" xml:space="preserve"><value>Sprawdź identyfikator w historii uruchomień.</value></data>
+  <data name="KB_0120_Message" xml:space="preserve"><value>Plik importu zadań nie jest zgodny ze schematem kobian-export v1 — nic nie zaimportowano.</value></data>
+  <data name="KB_0120_Action" xml:space="preserve"><value>Popraw plik wg listy błędów (ścieżka JSON + powód) albo wyeksportuj go ponownie.</value></data>
+  <data name="KB_0121_Message" xml:space="preserve"><value>Plik importu zadań przekracza limit rozmiaru, głębokości lub liczby zadań.</value></data>
+  <data name="KB_0121_Action" xml:space="preserve"><value>Podziel eksport (kobian export --job ...) i importuj częściami.</value></data>
+  <data name="KB_0122_Message" xml:space="preserve"><value>Plik zadań zawiera wartość wyglądającą na sekret — odrzucono.</value></data>
+  <data name="KB_0122_Action" xml:space="preserve"><value>Usuń hasła i klucze z pliku; poświadczenia podaje się tylko jako secretRef (file:nazwa) w magazynie sekretów Agenta.</value></data>
+  <data name="KB_0123_Message" xml:space="preserve"><value>Plik zadań zawiera skrypty lub akcje (pre/post, runSql) — import ich nie przyjmuje.</value></data>
+  <data name="KB_0123_Action" xml:space="preserve"><value>Usuń akcje z pliku; skrypty konfiguruje Administrator w programie po imporcie.</value></data>
+  <data name="KB_0124_Message" xml:space="preserve"><value>Zadanie o tej nazwie już istnieje z inną definicją — nic nie zaimportowano.</value></data>
+  <data name="KB_0124_Action" xml:space="preserve"><value>Wybierz sposób rozwiązania konfliktu: pomiń, nadpisz albo zmień nazwę (--on-conflict skip|overwrite|rename).</value></data>
+  <data name="KB_0201_Message" xml:space="preserve"><value>Harmonogram jest niepoprawny lub zbyt częsty.</value></data>
+  <data name="KB_0201_Action" xml:space="preserve"><value>Popraw harmonogram.</value></data>
+  <data name="KB_0301_Message" xml:space="preserve"><value>Hasło jest zbyt słabe.</value></data>
+  <data name="KB_0301_Action" xml:space="preserve"><value>Użyj dłuższego, mniej popularnego hasła.</value></data>
+  <data name="KB_0401_Message" xml:space="preserve"><value>Polityka retencji jest niepoprawna.</value></data>
+  <data name="KB_0401_Action" xml:space="preserve"><value>Dodaj regułę lub skróć blokadę retencji.</value></data>
+  <data name="KB_1002_Message" xml:space="preserve"><value>Repozytorium wymaga funkcji, której ta wersja programu nie obsługuje.</value></data>
+  <data name="KB_1002_Action" xml:space="preserve"><value>Zaktualizuj Kobian Backup.</value></data>
+  <data name="KB_1003_Message" xml:space="preserve"><value>Obiekt o tym identyfikatorze już istnieje w repozytorium.</value></data>
+  <data name="KB_1003_Action" xml:space="preserve"><value>Uruchom zadanie ponownie; jeśli się powtarza — sprawdź repozytorium (check).</value></data>
+  <data name="KB_1101_Message" xml:space="preserve"><value>Plik danych nie należy do tego repozytorium lub klucza.</value></data>
+  <data name="KB_1101_Action" xml:space="preserve"><value>Sprawdź, czy cel nie został podmieniony; uruchom check.</value></data>
+  <data name="KB_1102_Message" xml:space="preserve"><value>Nie można odblokować klucza repozytorium (błędne hasło lub zmienione parametry klucza).</value></data>
+  <data name="KB_1102_Action" xml:space="preserve"><value>Sprawdź hasło; jeśli jest poprawne — plik klucza mógł zostać zmieniony.</value></data>
+  <data name="KB_1103_Message" xml:space="preserve"><value>Uwierzytelnienie danych nie powiodło się (dane uszkodzone lub zmienione).</value></data>
+  <data name="KB_1103_Action" xml:space="preserve"><value>Uruchom check; odtwórz z innej wersji lub kopii.</value></data>
+  <data name="KB_1104_Message" xml:space="preserve"><value>Nagłówek repozytorium (kobian.repo) jest niepoprawny lub został zmieniony.</value></data>
+  <data name="KB_1104_Action" xml:space="preserve"><value>Sprawdź, czy cel nie został podmieniony; użyj kopii nagłówka ze snapshotu.</value></data>
+  <data name="KB_1201_Message" xml:space="preserve"><value>Na celu jest blokada repozytorium z niepoprawnym podpisem — zignorowano ją.</value></data>
+  <data name="KB_1201_Action" xml:space="preserve"><value>Sprawdź, kto ma prawo zapisu na celu; blokady może tworzyć tylko posiadacz klucza repozytorium.</value></data>
+  <data name="KB_1202_Message" xml:space="preserve"><value>Repozytorium jest zajęte przez inną operację (blokada).</value></data>
+  <data name="KB_1202_Action" xml:space="preserve"><value>Poczekaj na zakończenie kopii lub porządkowania; blokada przerwanego hosta wygasa po 30 minutach.</value></data>
+  <data name="KB_1301_Message" xml:space="preserve"><value>Ramka danych przekracza dopuszczalny rozmiar.</value></data>
+  <data name="KB_1301_Action" xml:space="preserve"><value>Uruchom check.</value></data>
+  <data name="KB_1302_Message" xml:space="preserve"><value>Blok po rozpakowaniu przekracza dopuszczalny rozmiar.</value></data>
+  <data name="KB_1302_Action" xml:space="preserve"><value>Uruchom check.</value></data>
+  <data name="KB_1303_Message" xml:space="preserve"><value>Obiekt metadanych przekracza dopuszczalny rozmiar.</value></data>
+  <data name="KB_1303_Action" xml:space="preserve"><value>Uruchom check.</value></data>
+  <data name="KB_1304_Message" xml:space="preserve"><value>Metadane mają niepoprawną strukturę (zagnieżdżenie lub kodowanie).</value></data>
+  <data name="KB_1304_Action" xml:space="preserve"><value>Uruchom check.</value></data>
+  <data name="KB_1305_Message" xml:space="preserve"><value>Katalog w kopii ma zbyt wiele wpisów.</value></data>
+  <data name="KB_1305_Action" xml:space="preserve"><value>Uruchom check.</value></data>
+  <data name="KB_1306_Message" xml:space="preserve"><value>Niepoprawna nazwa wpisu w kopii.</value></data>
+  <data name="KB_1306_Action" xml:space="preserve"><value>Uruchom check.</value></data>
+  <data name="KB_1308_Message" xml:space="preserve"><value>Plik danych zawiera zbyt wiele ramek.</value></data>
+  <data name="KB_1308_Action" xml:space="preserve"><value>Uruchom check.</value></data>
+  <data name="KB_1309_Message" xml:space="preserve"><value>Plik danych jest niekompletny lub ma niepoprawny układ.</value></data>
+  <data name="KB_1309_Action" xml:space="preserve"><value>Uruchom check; niekompletne pliki usuwa prune.</value></data>
+  <data name="KB_1401_Message" xml:space="preserve"><value>Plik zmienił się w trakcie odczytu — zapisany z flagą niespójności.</value></data>
+  <data name="KB_1401_Action" xml:space="preserve"><value>Włącz VSS lub zaplanuj kopię poza godzinami pracy.</value></data>
+  <data name="KB_1402_Message" xml:space="preserve"><value>Błąd zapisu do repozytorium — uruchomienie przerwane, snapshot nie powstał.</value></data>
+  <data name="KB_1402_Action" xml:space="preserve"><value>Sprawdź miejsce i dostęp do celu, potem uruchom ponownie.</value></data>
+  <data name="KB_1403_Message" xml:space="preserve"><value>Niespójność referencji wykryta przed zatwierdzeniem snapshotu.</value></data>
+  <data name="KB_1403_Action" xml:space="preserve"><value>Uruchom check; zgłoś błąd.</value></data>
+  <data name="KB_1404_Message" xml:space="preserve"><value>Deduplikacja przeszła w tryb z filtrem Bloom (duże repozytorium).</value></data>
+  <data name="KB_1404_Action" xml:space="preserve"><value>Brak — informacja.</value></data>
+  <data name="KB_1405_Message" xml:space="preserve"><value>Plik źródłowy nieczytelny — pominięty.</value></data>
+  <data name="KB_1405_Action" xml:space="preserve"><value>Sprawdź uprawnienia lub blokady pliku.</value></data>
+  <data name="KB_1406_Message" xml:space="preserve"><value>Nie udało się utworzyć migawki VSS — kopia bez migawki niemożliwa.</value></data>
+  <data name="KB_1406_Action" xml:space="preserve"><value>Sprawdź usługę Kopiowanie woluminów w tle i dziennik zdarzeń; ponów kopię.</value></data>
+  <data name="KB_1501_Message" xml:space="preserve"><value>Brak packa, do którego odwołuje się indeks repozytorium.</value></data>
+  <data name="KB_1501_Action" xml:space="preserve"><value>Uruchom kobian check --repair (D8.10); odtwórz dotknięte pliki z innej kopii.</value></data>
+  <data name="KB_1502_Message" xml:space="preserve"><value>Rozmiar packa na celu różni się od zapisanego w indeksie.</value></data>
+  <data name="KB_1502_Action" xml:space="preserve"><value>Uruchom kobian check z próbkowaniem 100%; sprawdź nośnik lub serwer docelowy.</value></data>
+  <data name="KB_1503_Message" xml:space="preserve"><value>Snapshot odwołuje się do bloku nieobecnego w jego indeksach.</value></data>
+  <data name="KB_1503_Action" xml:space="preserve"><value>Uruchom kobian check --repair; wykonaj kopię pełną.</value></data>
+  <data name="KB_1504_Message" xml:space="preserve"><value>W repozytorium jest obiekt, do którego nic się nie odwołuje (np. po przerwanym zadaniu).</value></data>
+  <data name="KB_1504_Action" xml:space="preserve"><value>Brak działań — obiekt usunie konserwacja (prune); jeśli liczba rośnie, sprawdź dziennik zadań.</value></data>
+  <data name="KB_1505_Message" xml:space="preserve"><value>Indeks kopii był niedostępny — bloki odnalezione w indeksie odtworzonym z plików danych.</value></data>
+  <data name="KB_1505_Action" xml:space="preserve"><value>Uruchom kobian check --repair i sprawdź kopię; wykonaj nową kopię pełną.</value></data>
+  <data name="KB_1510_Message" xml:space="preserve"><value>Okresowa weryfikacja repozytorium (V3) wykryła uszkodzone lub brakujące dane kopii.</value></data>
+  <data name="KB_1510_Action" xml:space="preserve"><value>Uruchom kobian check --repair dla zadania; następna kopia zadania będzie pełna; sprawdź nośnik lub serwer docelowy i odtwarzaj z innej kopii (replika/USB).</value></data>
+  <data name="KB_1511_Message" xml:space="preserve"><value>Kopia zapisana w katalogu nie istnieje w repozytorium na celu (podłączono inny nośnik albo dane usunięto).</value></data>
+  <data name="KB_1511_Action" xml:space="preserve"><value>Sprawdź, czy podłączono właściwy nośnik/udział; jeśli dane usunięto — wykonaj kopię pełną i odtwarzaj z innej kopii (replika/USB).</value></data>
+  <data name="KB_1601_Message" xml:space="preserve"><value>Porządkowanie wstrzymane: nie da się odczytać snapshotu lub indeksu, który ma zostać zachowany.</value></data>
+  <data name="KB_1601_Action" xml:space="preserve"><value>Uruchom kobian check; porządkowanie nie usunie niczego, dopóki repozytorium nie jest czytelne.</value></data>
+  <data name="KB_1602_Message" xml:space="preserve"><value>Porządkowanie wstrzymane: w repozytorium nie zostałaby żadna kopia.</value></data>
+  <data name="KB_1602_Action" xml:space="preserve"><value>Sprawdź, czy zadanie wskazuje właściwe repozytorium i czy katalog nie został wyczyszczony.</value></data>
+  <data name="KB_1603_Message" xml:space="preserve"><value>Porządkowanie zatrzymane: stan repozytorium zmienił się w trakcie usuwania.</value></data>
+  <data name="KB_1603_Action" xml:space="preserve"><value>Uruchom porządkowanie ponownie później; nic, co jest nadal potrzebne, nie zostało usunięte.</value></data>
+  <data name="KB_1604_Message" xml:space="preserve"><value>Konsolidacja indeksów nie została zakończona; repozytorium pozostaje czytelne i kompletne.</value></data>
+  <data name="KB_1604_Action" xml:space="preserve"><value>Nic nie trzeba robić: kolejne porządkowanie ponowi konsolidację. Jeśli się powtarza, uruchom kobian check.</value></data>
+  <data name="KB_2001_Message" xml:space="preserve"><value>Przejściowy błąd połączenia lub zapisu na celu.</value></data>
+  <data name="KB_2001_Action" xml:space="preserve"><value>Brak — automatyczne ponowienie.</value></data>
+  <data name="KB_2101_Message" xml:space="preserve"><value>Do serwera SMB jest już połączenie z innym kontem (błąd 1219).</value></data>
+  <data name="KB_2101_Action" xml:space="preserve"><value>Zgłoś błąd - zadania z różnymi kontami do jednego serwera powinny być kolejkowane.</value></data>
+  <data name="KB_2102_Message" xml:space="preserve"><value>Cel odrzucił poświadczenia (klucz lub hasło).</value></data>
+  <data name="KB_2102_Action" xml:space="preserve"><value>Popraw klucz lub hasło dostępu do celu.</value></data>
+  <data name="KB_2103_Message" xml:space="preserve"><value>Konto na serwerze jest zablokowane, wygasło albo wymaga zmiany hasła.</value></data>
+  <data name="KB_2103_Action" xml:space="preserve"><value>Odblokuj konto lub zmień hasło na serwerze, potem zaktualizuj poświadczenie celu.</value></data>
+  <data name="KB_2104_Message" xml:space="preserve"><value>Klucz hosta serwera SSH nie zgadza się z przypiętym (lub brak przypięcia).</value></data>
+  <data name="KB_2104_Action" xml:space="preserve"><value>Zweryfikuj odcisk klucza serwera poza pasmem i zatwierdź go w konfiguracji celu.</value></data>
+  <data name="KB_2105_Message" xml:space="preserve"><value>Brak uprawnień do zapisu na celu.</value></data>
+  <data name="KB_2105_Action" xml:space="preserve"><value>Nadaj uprawnienia do folderu lub udziału.</value></data>
+  <data name="KB_2106_Message" xml:space="preserve"><value>Folder lub udział docelowy nie istnieje.</value></data>
+  <data name="KB_2106_Action" xml:space="preserve"><value>Sprawdź ścieżkę celu.</value></data>
+  <data name="KB_2109_Message" xml:space="preserve"><value>Certyfikat serwera FTPS/WebDAV (HTTPS) jest niezaufany albo jego klucz (SPKI) nie zgadza się z przypiętym.</value></data>
+  <data name="KB_2109_Action" xml:space="preserve"><value>Zweryfikuj odcisk SPKI serwera poza pasmem i zatwierdź go w konfiguracji celu albo użyj certyfikatu z zaufanego urzędu.</value></data>
+  <data name="KB_2110_Message" xml:space="preserve"><value>Serwer nie obsługuje szyfrowania TLS (FTPS: odmowa AUTH TLS; WebDAV: brak HTTPS).</value></data>
+  <data name="KB_2110_Action" xml:space="preserve"><value>Włącz TLS na serwerze (FTPS albo HTTPS) albo użyj celu SFTP.</value></data>
+  <data name="KB_2112_Message" xml:space="preserve"><value>Serwer odmówił otwarcia kolejnej sesji (limit serwera).</value></data>
+  <data name="KB_2112_Action" xml:space="preserve"><value>Brak - program zmniejsza liczbę równoległych połączeń.</value></data>
+  <data name="KB_2114_Message" xml:space="preserve"><value>Wstrzymano na 10 min próby połączenia z celem po 3 nieudanych w ciągu godziny (ochrona konta i adresu przed blokadą).</value></data>
+  <data name="KB_2114_Action" xml:space="preserve"><value>Sprawdź poświadczenia i dostępność serwera; kolejna próba nastąpi automatycznie po przerwie.</value></data>
+  <data name="KB_2115_Message" xml:space="preserve"><value>Cel FTP/WebDAV bez szyfrowania wymaga jawnego potwierdzenia — połączenie odrzucone.</value></data>
+  <data name="KB_2115_Action" xml:space="preserve"><value>Użyj FTPS albo SFTP; jawny FTP tylko z flagą niezabezpieczonego połączenia (hasło leci otwartym tekstem).</value></data>
+  <data name="KB_2116_Message" xml:space="preserve"><value>Serwer celu odrzucił obiekt jako zbyt duży (limit rozmiaru żądania).</value></data>
+  <data name="KB_2116_Action" xml:space="preserve"><value>Zwiększ na serwerze limit rozmiaru przesyłanego pliku do co najmniej 64 MB (np. client_max_body_size w nginx, LimitRequestBody w Apache).</value></data>
+  <data name="KB_2117_Message" xml:space="preserve"><value>Serwer WebDAV odrzucił żądanie albo nie obsługuje wymaganej operacji.</value></data>
+  <data name="KB_2117_Action" xml:space="preserve"><value>Sprawdź, czy adres i ścieżka wskazują zasób WebDAV oraz czy serwer obsługuje PROPFIND, MKCOL i MOVE.</value></data>
+  <data name="KB_2141_Message" xml:space="preserve"><value>Ten odcisk nie czeka na zatwierdzenie dla tego celu (zatwierdzić można tylko odcisk przedstawiony przez serwer i oczekujący).</value></data>
+  <data name="KB_2141_Action" xml:space="preserve"><value>Sprawdź listę: kobian destinations identity list — i skopiuj dokładny odcisk ze stanu pending.</value></data>
+  <data name="KB_2142_Message" xml:space="preserve"><value>Oczekiwanie na zatwierdzenie tożsamości serwera wygasło (24 h).</value></data>
+  <data name="KB_2142_Action" xml:space="preserve"><value>Połącz się z celem ponownie (sprawdzenie celu albo uruchomienie zadania), zweryfikuj odcisk poza pasmem i zatwierdź go w ciągu 24 h.</value></data>
+  <data name="KB_2143_Message" xml:space="preserve"><value>Cel ma już maksymalną liczbę zatwierdzonych kluczy serwera (4).</value></data>
+  <data name="KB_2143_Action" xml:space="preserve"><value>Zatwierdź nowy klucz z opcją zastąp (--replace) albo usuń zbędny cel.</value></data>
+  <data name="KB_2201_Message" xml:space="preserve"><value>Brak miejsca na celu.</value></data>
+  <data name="KB_2201_Action" xml:space="preserve"><value>Zwolnij miejsce lub zmień retencję.</value></data>
+  <data name="KB_2301_Message" xml:space="preserve"><value>Obiekt o tej nazwie już istnieje na celu — nie nadpisujemy.</value></data>
+  <data name="KB_2301_Action" xml:space="preserve"><value>Zgłoś błąd.</value></data>
+  <data name="KB_2302_Message" xml:space="preserve"><value>Niedozwolona nazwa obiektu w repozytorium.</value></data>
+  <data name="KB_2302_Action" xml:space="preserve"><value>Zgłoś błąd.</value></data>
+  <data name="KB_2303_Message" xml:space="preserve"><value>Ścieżka celu zawiera dowiązanie (link) — odmowa zapisu.</value></data>
+  <data name="KB_2303_Action" xml:space="preserve"><value>Usuń dowiązanie z folderu repozytorium.</value></data>
+  <data name="KB_2401_Message" xml:space="preserve"><value>Rozmiar lub suma obiektu na celu różni się od oczekiwanej.</value></data>
+  <data name="KB_2401_Action" xml:space="preserve"><value>Brak — ponowienie; przy powtórzeniach sprawdź cel.</value></data>
+  <data name="KB_3001_Message" xml:space="preserve"><value>Brak połączenia z instancją SQL Server.</value></data>
+  <data name="KB_3001_Action" xml:space="preserve"><value>Sprawdź, czy usługa SQL działa.</value></data>
+  <data name="KB_3002_Message" xml:space="preserve"><value>SQL Server odrzucił logowanie.</value></data>
+  <data name="KB_3002_Action" xml:space="preserve"><value>Uruchom skrypt uprawnień.</value></data>
+  <data name="KB_3003_Message" xml:space="preserve"><value>Brak uprawnienia BACKUP DATABASE.</value></data>
+  <data name="KB_3003_Action" xml:space="preserve"><value>Uruchom skrypt uprawnień.</value></data>
+  <data name="KB_3004_Message" xml:space="preserve"><value>Certyfikat TLS serwera SQL jest niezgodny z zatwierdzonym.</value></data>
+  <data name="KB_3004_Action" xml:space="preserve"><value>Zatwierdź certyfikat serwera SQL.</value></data>
+  <data name="KB_3005_Message" xml:space="preserve"><value>Baza danych nie istnieje na serwerze SQL lub nie jest w stanie ONLINE.</value></data>
+  <data name="KB_3005_Action" xml:space="preserve"><value>Sprawdź stan bazy w SQL Server Management Studio albo wybierz bazę ponownie w kreatorze.</value></data>
+  <data name="KB_3006_Message" xml:space="preserve"><value>Serwer SQL nie przedstawił certyfikatu TLS (szyfrowanie niedostępne).</value></data>
+  <data name="KB_3006_Action" xml:space="preserve"><value>Włącz szyfrowanie i certyfikat w SQL Server Configuration Manager albo sprawdź, czy adres wskazuje serwer SQL.</value></data>
+  <data name="KB_3007_Message" xml:space="preserve"><value>Certyfikat serwera SQL zmienił się od wyświetlenia odcisku — niczego nie zapisano.</value></data>
+  <data name="KB_3007_Action" xml:space="preserve"><value>Pobierz certyfikat ponownie i porównaj odcisk z administratorem serwera SQL.</value></data>
+  <data name="KB_3008_Message" xml:space="preserve"><value>Plik certyfikatu o tej nazwie istnieje i ma inną treść.</value></data>
+  <data name="KB_3008_Action" xml:space="preserve"><value>Zatwierdź certyfikat pod nową nazwą; stary plik może być używany przez inne zadania.</value></data>
+  <data name="KB_3009_Message" xml:space="preserve"><value>Serwer SQL nie jest na liście serwerów dozwolonych dla tej usługi Kobian.</value></data>
+  <data name="KB_3009_Action" xml:space="preserve"><value>Administrator dodaje serwer do KOBIAN_SQL_ALLOWED_SERVERS (nazwa jak w zadaniu) i restartuje usługę.</value></data>
+  <data name="KB_3010_Message" xml:space="preserve"><value>Zapytanie kontrolne ERP zostało pominięte (limit czasu, brak uprawnień do odczytu albo niedozwolony wynik) — kopia jest ważna.</value></data>
+  <data name="KB_3010_Action" xml:space="preserve"><value>Opcjonalnie nadaj kontu Kobian odczyt (db_datareader) do kontroli logicznej po odtworzeniu; bez tego kontrola będzie niepełna.</value></data>
+  <data name="KB_3101_Message" xml:space="preserve"><value>Na bazie trwa inna kopia, odtwarzanie lub DBCC — zadanie pominięte.</value></data>
+  <data name="KB_3101_Action" xml:space="preserve"><value>Brak — kolejne uruchomienie wg harmonogramu.</value></data>
+  <data name="KB_3102_Message" xml:space="preserve"><value>Za mało miejsca na plik tymczasowy kopii bazy.</value></data>
+  <data name="KB_3102_Action" xml:space="preserve"><value>Zwolnij miejsce lub wskaż inny wolumen.</value></data>
+  <data name="KB_3103_Message" xml:space="preserve"><value>Wykryto obcą pełną kopię bazy — wykonano pełną kopię.</value></data>
+  <data name="KB_3103_Action" xml:space="preserve"><value>Brak.</value></data>
+  <data name="KB_3104_Message" xml:space="preserve"><value>Wykryto kopie logów wykonane innym narzędziem.</value></data>
+  <data name="KB_3104_Action" xml:space="preserve"><value>Ustal, które narzędzie robi kopie logów.</value></data>
+  <data name="KB_3105_Message" xml:space="preserve"><value>Dziennik transakcji rośnie — brak kopii logów w modelu FULL.</value></data>
+  <data name="KB_3105_Action" xml:space="preserve"><value>Rozważ kopie logów lub model SIMPLE.</value></data>
+  <data name="KB_3106_Message" xml:space="preserve"><value>SQL Server nie może zapisać lub odczytać pliku kopii w katalogu tymczasowym (uprawnienia, ścieżka lub miejsce).</value></data>
+  <data name="KB_3106_Action" xml:space="preserve"><value>Nadaj kontu usługi SQL Server prawa zapisu i odczytu do katalogu staging, sprawdź ścieżkę i wolne miejsce.</value></data>
+  <data name="KB_3201_Message" xml:space="preserve"><value>Baza ma uszkodzone strony (błąd sumy kontrolnej podczas kopii).</value></data>
+  <data name="KB_3201_Action" xml:space="preserve"><value>Uruchom DBCC CHECKDB.</value></data>
+  <data name="KB_3202_Message" xml:space="preserve"><value>Weryfikacja kopii bazy (VERIFYONLY) nie powiodła się.</value></data>
+  <data name="KB_3202_Action" xml:space="preserve"><value>Uruchom kopię ponownie i test odtworzenia.</value></data>
+  <data name="KB_3203_Message" xml:space="preserve"><value>Zestaw kopii w msdb nie potwierdza pełnej kopii COPY_ONLY z sumami kontrolnymi.</value></data>
+  <data name="KB_3203_Action" xml:space="preserve"><value>Sprawdź, czy inne narzędzie nie zapisuje do katalogu tymczasowego Kobian; uruchom zadanie ponownie.</value></data>
+  <data name="KB_3301_Message" xml:space="preserve"><value>Baza szyfrowana TDE bez kopii certyfikatu.</value></data>
+  <data name="KB_3301_Action" xml:space="preserve"><value>Dołącz certyfikat TDE.</value></data>
+  <data name="KB_3401_Message" xml:space="preserve"><value>Wersja SQL Server niewspierana lub bez wsparcia producenta.</value></data>
+  <data name="KB_3401_Action" xml:space="preserve"><value>Zaktualizuj SQL Server.</value></data>
+  <data name="KB_3501_Message" xml:space="preserve"><value>Baza docelowa o tej nazwie już istnieje — odtworzenie nie nadpisuje istniejących baz.</value></data>
+  <data name="KB_3501_Action" xml:space="preserve"><value>Podaj inną nazwę bazy docelowej (domyślnie &lt;nazwa&gt;_restore_RRRRMMDD).</value></data>
+  <data name="KB_3502_Message" xml:space="preserve"><value>Konto usługi nie ma uprawnienia CREATE ANY DATABASE na serwerze SQL.</value></data>
+  <data name="KB_3502_Action" xml:space="preserve"><value>Nadaj kontu usługi rolę dbcreator albo uprawnienie CREATE ANY DATABASE.</value></data>
+  <data name="KB_3503_Message" xml:space="preserve"><value>Kopia zawiera pliki FILESTREAM lub pełnotekstowe — ich odtworzenie nie jest jeszcze obsługiwane.</value></data>
+  <data name="KB_3503_Action" xml:space="preserve"><value>Odtwórz plik .bak ręcznie w SQL Server Management Studio.</value></data>
+  <data name="KB_3504_Message" xml:space="preserve"><value>Serwer SQL nie podaje domyślnych katalogów danych i dziennika.</value></data>
+  <data name="KB_3504_Action" xml:space="preserve"><value>Ustaw domyślne katalogi w ustawieniach serwera SQL albo podaj je w żądaniu odtworzenia.</value></data>
+  <data name="KB_3505_Message" xml:space="preserve"><value>Odtworzona baza nie zgadza się z zapytaniami kontrolnymi zapisanymi przy kopii.</value></data>
+  <data name="KB_3505_Action" xml:space="preserve"><value>Baza została utworzona pod nową nazwą — sprawdź ją przed przełączeniem aplikacji; spróbuj starszej kopii.</value></data>
+  <data name="KB_4101_Message" xml:space="preserve"><value>Poza oknem czasowym — kopia zostanie wykonana w następnym oknie.</value></data>
+  <data name="KB_4101_Action" xml:space="preserve"><value>Brak.</value></data>
+  <data name="KB_4102_Message" xml:space="preserve"><value>Przekroczony czas oczekiwania w kolejce — inne zadania blokowały zasób.</value></data>
+  <data name="KB_4102_Action" xml:space="preserve"><value>Rozważ zmianę godzin zadań.</value></data>
+  <data name="KB_4103_Message" xml:space="preserve"><value>Poprzednie uruchomienie nadal trwa.</value></data>
+  <data name="KB_4103_Action" xml:space="preserve"><value>Wydłuż interwał lub okno.</value></data>
+  <data name="KB_4104_Message" xml:space="preserve"><value>Wyczerpany limit uruchomień wyzwalanych zdarzeniami.</value></data>
+  <data name="KB_4104_Action" xml:space="preserve"><value>Brak; przy powtórzeniach sprawdź źródło zdarzeń.</value></data>
+  <data name="KB_4105_Message" xml:space="preserve"><value>Nośnik został odłączony w trakcie kopii.</value></data>
+  <data name="KB_4105_Action" xml:space="preserve"><value>Podłącz dysk ponownie — kopia zostanie wznowiona.</value></data>
+  <data name="KB_4106_Message" xml:space="preserve"><value>Uruchomienie nie robiło postępu przez zbyt długi czas i zostało przerwane.</value></data>
+  <data name="KB_4106_Action" xml:space="preserve"><value>Sprawdź dostępność źródła i celu (dysk sieciowy, połączenie). Kopia ponowi się zgodnie z harmonogramem.</value></data>
+  <data name="KB_4201_Message" xml:space="preserve"><value>Wykryto skok zegara systemowego.</value></data>
+  <data name="KB_4201_Action" xml:space="preserve"><value>Brak.</value></data>
+  <data name="KB_4901_Message" xml:space="preserve"><value>Błąd wewnętrzny: podwójne uruchomienie tego samego wystąpienia.</value></data>
+  <data name="KB_4901_Action" xml:space="preserve"><value>Zgłoś błąd.</value></data>
+  <data name="KB_4902_Message" xml:space="preserve"><value>Błąd wewnętrzny: niedozwolone przejście stanu uruchomienia.</value></data>
+  <data name="KB_4902_Action" xml:space="preserve"><value>Zgłoś błąd.</value></data>
+  <data name="KB_5001_Message" xml:space="preserve"><value>Brak uprawnienia do zapisu w miejscu docelowym odtwarzania.</value></data>
+  <data name="KB_5001_Action" xml:space="preserve"><value>Wybierz folder, do którego masz prawo zapisu.</value></data>
+  <data name="KB_5002_Message" xml:space="preserve"><value>Nie znaleziono snapshotu o podanym identyfikatorze (lub prefiks jest niejednoznaczny).</value></data>
+  <data name="KB_5002_Action" xml:space="preserve"><value>Sprawdź identyfikator (kobian snapshots) lub użyj dłuższego prefiksu.</value></data>
+  <data name="KB_5003_Message" xml:space="preserve"><value>W kopii nie ma folderu o podanej ścieżce.</value></data>
+  <data name="KB_5003_Action" xml:space="preserve"><value>Wróć do korzenia kopii i wybierz folder z listy.</value></data>
+  <data name="KB_5101_Message" xml:space="preserve"><value>Niedozwolona nazwa w kopii — plik pominięty.</value></data>
+  <data name="KB_5101_Action" xml:space="preserve"><value>Sprawdź raport odtwarzania.</value></data>
+  <data name="KB_5102_Message" xml:space="preserve"><value>Ścieżka docelowa jest zbyt długa.</value></data>
+  <data name="KB_5102_Action" xml:space="preserve"><value>Odtwórz do krótszej ścieżki lub do ZIP.</value></data>
+  <data name="KB_5103_Message" xml:space="preserve"><value>System plików celu nie obsługuje elementu kopii (np. FAT32).</value></data>
+  <data name="KB_5103_Action" xml:space="preserve"><value>Odtwórz na NTFS.</value></data>
+  <data name="KB_5104_Message" xml:space="preserve"><value>Odmowa zapisu przez dowiązanie (link) w miejscu docelowym.</value></data>
+  <data name="KB_5104_Action" xml:space="preserve"><value>Sprawdź folder docelowy.</value></data>
+  <data name="KB_5105_Message" xml:space="preserve"><value>Plik docelowy już istnieje — nie nadpisano.</value></data>
+  <data name="KB_5105_Action" xml:space="preserve"><value>Wybierz pusty katalog docelowy lub zmień nazwę istniejącego pliku.</value></data>
+  <data name="KB_5106_Message" xml:space="preserve"><value>Za mało wolnego miejsca w folderze docelowym na odtwarzane pliki.</value></data>
+  <data name="KB_5106_Action" xml:space="preserve"><value>Zwolnij miejsce albo wybierz inny folder lub mniejszy zakres.</value></data>
+  <data name="KB_5201_Message" xml:space="preserve"><value>Suma kontrolna odtworzonego pliku jest niezgodna — plik w kwarantannie.</value></data>
+  <data name="KB_5201_Action" xml:space="preserve"><value>Uruchom check; odtwórz z innej wersji.</value></data>
+  <data name="KB_5202_Message" xml:space="preserve"><value>Brak pliku danych potrzebnego do odtworzenia.</value></data>
+  <data name="KB_5202_Action" xml:space="preserve"><value>Uruchom kobian check.</value></data>
+  <data name="KB_6101_Message" xml:space="preserve"><value>Zadanie kopii zakończyło się błędem.</value></data>
+  <data name="KB_6101_Action" xml:space="preserve"><value>Sprawdź szczegóły uruchomienia.</value></data>
+  <data name="KB_6103_Message" xml:space="preserve"><value>Brak udanej kopii dłużej niż wymagany RPO.</value></data>
+  <data name="KB_6103_Action" xml:space="preserve"><value>Sprawdź zadanie i cel.</value></data>
+  <data name="KB_6111_Message" xml:space="preserve"><value>Wykryto anomalię przypominającą ransomware; retencja wstrzymana.</value></data>
+  <data name="KB_6111_Action" xml:space="preserve"><value>Sprawdź raport porównawczy i potwierdź lub odrzuć zmianę.</value></data>
+  <data name="KB_6116_Message" xml:space="preserve"><value>System lub instancja SQL jest bez wsparcia producenta albo bez łatek od ponad 60 dni.</value></data>
+  <data name="KB_6116_Action" xml:space="preserve"><value>Zainstaluj aktualizacje lub zaplanuj migrację.</value></data>
+  <data name="KB_6117_Message" xml:space="preserve"><value>Wykryto skok zegara systemowego; retencja wstrzymana do potwierdzenia.</value></data>
+  <data name="KB_6117_Action" xml:space="preserve"><value>Sprawdź czas systemu i potwierdź w interfejsie.</value></data>
+  <data name="KB_6120_Message" xml:space="preserve"><value>Alertu nie można potwierdzić ani wyciszyć (nie istnieje, jest rozwiązany albo nie oczekuje na reakcję).</value></data>
+  <data name="KB_6120_Action" xml:space="preserve"><value>Odśwież listę alertów i wybierz alert w stanie powiadomionym.</value></data>
+  <data name="KB_6201_Message" xml:space="preserve"><value>Serwer SMTP odrzucił uwierzytelnienie (np. 550 5.7.30 — Basic Auth wyłączony).</value></data>
+  <data name="KB_6201_Action" xml:space="preserve"><value>Sprawdź login i hasło w pliku smtp.credentials; dla Microsoft 365 użyj OAuth2.</value></data>
+  <data name="KB_6203_Message" xml:space="preserve"><value>Nie udało się doręczyć powiadomienia e-mail.</value></data>
+  <data name="KB_6203_Action" xml:space="preserve"><value>Sprawdź serwer SMTP, adresy odbiorców i dziennik audytu.</value></data>
+  <data name="KB_6204_Message" xml:space="preserve"><value>Konfiguracja powiadomień e-mail jest niepoprawna.</value></data>
+  <data name="KB_6204_Action" xml:space="preserve"><value>Popraw zmienne KOBIAN_SMTP_* i plik smtp.credentials.</value></data>
+  <data name="KB_6205_Message" xml:space="preserve"><value>Adres e-mail jest niepoprawny lub niebezpieczny.</value></data>
+  <data name="KB_6205_Action" xml:space="preserve"><value>Podaj pojedynczy adres w postaci nazwa@domena, bez znaków sterujących.</value></data>
+  <data name="KB_6206_Message" xml:space="preserve"><value>Nie udało się nawiązać szyfrowanego połączenia z serwerem SMTP (TLS lub certyfikat).</value></data>
+  <data name="KB_6206_Action" xml:space="preserve"><value>Sprawdź certyfikat serwera i obsługę STARTTLS/TLS.</value></data>
+  <data name="KB_6207_Message" xml:space="preserve"><value>Powiadomienia e-mail są wysyłane bez szyfrowania (jawne SMTP).</value></data>
+  <data name="KB_6207_Action" xml:space="preserve"><value>Włącz STARTTLS lub TLS na serwerze i usuń KOBIAN_SMTP_INSECURE.</value></data>
+  <data name="KB_6208_Message" xml:space="preserve"><value>Serwer tożsamości Microsoft odrzucił pobranie tokenu OAuth2 dla powiadomień e-mail.</value></data>
+  <data name="KB_6208_Action" xml:space="preserve"><value>Sprawdź identyfikator dzierżawy, identyfikator aplikacji i sekret w smtp.oauth oraz uprawnienia SMTP.SendAsApp aplikacji.</value></data>
+  <data name="KB_6209_Message" xml:space="preserve"><value>Konfiguracja uwierzytelnienia OAuth2 dla e-mail jest niepoprawna.</value></data>
+  <data name="KB_6209_Action" xml:space="preserve"><value>Popraw zmienne KOBIAN_SMTP_OAUTH_* i plik smtp.oauth.</value></data>
+  <data name="KB_6301_Message" xml:space="preserve"><value>Nie udało się doręczyć powiadomienia webhook po wszystkich ponowieniach.</value></data>
+  <data name="KB_6301_Action" xml:space="preserve"><value>Sprawdź adres odbiorcy.</value></data>
+  <data name="KB_6302_Message" xml:space="preserve"><value>Adres webhooka jest zablokowany (adres lokalny lub niebezpieczny).</value></data>
+  <data name="KB_6302_Action" xml:space="preserve"><value>Użyj publicznego adresu https.</value></data>
+  <data name="KB_6501_Message" xml:space="preserve"><value>Weryfikacja dziennika audytu nie powiodła się.</value></data>
+  <data name="KB_6501_Action" xml:space="preserve"><value>Zgłoś incydent bezpieczeństwa; zachowaj kopię katalogu.</value></data>
+  <data name="KB_6502_Message" xml:space="preserve"><value>Schemat dziennika audytu został zmieniony poza programem.</value></data>
+  <data name="KB_6502_Action" xml:space="preserve"><value>Zgłoś incydent bezpieczeństwa; zachowaj kopię katalogu.</value></data>
+  <data name="KB_6503_Message" xml:space="preserve"><value>Dziennik audytu nie zgadza się z kotwicą.</value></data>
+  <data name="KB_6503_Action" xml:space="preserve"><value>Zgłoś incydent bezpieczeństwa; porównaj z kotwicą z raportu dziennego.</value></data>
+  <data name="KB_7001_Message" xml:space="preserve"><value>Nie można ustalić tożsamości wywołującego — połączenie z usługą odrzucone.</value></data>
+  <data name="KB_7001_Action" xml:space="preserve"><value>Uruchom Kobian lokalnie na koncie z grupy Kobian Operators lub Administratorzy (nie przez sieć ani konto anonimowe).</value></data>
+  <data name="KB_7006_Message" xml:space="preserve"><value>Wersja klienta jest starsza niż wymagana przez usługę — dostępne tylko polecenia do odczytu.</value></data>
+  <data name="KB_7006_Action" xml:space="preserve"><value>Zaktualizuj Kobian Backup.</value></data>
+  <data name="KB_7007_Message" xml:space="preserve"><value>Usługa Kobian już działa na tym komputerze — druga instancja została zatrzymana bez zmian w katalogu.</value></data>
+  <data name="KB_7007_Action" xml:space="preserve"><value>Nie uruchamiaj Agenta ręcznie, gdy działa usługa KobianAgent; sprawdź stan usługi w Menedżerze usług.</value></data>
+  <data name="KB_7008_Message" xml:space="preserve"><value>Start procesu pomocniczego Kobian.Worker został zablokowany przez politykę systemu.</value></data>
+  <data name="KB_7008_Action" xml:space="preserve"><value>Dodaj regułę wydawcy dla Kobian (WDAC/AppLocker/ASR) — dokumentacja administratora.</value></data>
+  <data name="KB_7010_Message" xml:space="preserve"><value>Brak połączenia z usługą Kobian Backup.</value></data>
+  <data name="KB_7010_Action" xml:space="preserve"><value>Sprawdź, czy usługa działa (services.msc), i spróbuj ponownie.</value></data>
+  <data name="KB_7011_Message" xml:space="preserve"><value>Brak uprawnień do wywołania tej operacji usługi.</value></data>
+  <data name="KB_7011_Action" xml:space="preserve"><value>Uruchom polecenie jako użytkownik z odpowiednią rolą.</value></data>
+  <data name="KB_7012_Message" xml:space="preserve"><value>Operacja nie jest jeszcze dostępna w tej wersji usługi.</value></data>
+  <data name="KB_7012_Action" xml:space="preserve"><value>Zaktualizuj Kobian Backup lub skonfiguruj brakujące elementy.</value></data>
+  <data name="KB_7013_Message" xml:space="preserve"><value>Usługa Kobian działa na niezałatanym środowisku .NET (poniżej wymaganej wersji z poprawkami bezpieczeństwa).</value></data>
+  <data name="KB_7013_Action" xml:space="preserve"><value>Zainstaluj aktualizację .NET 10 (co najmniej 10.0.13) i uruchom ponownie usługę.</value></data>
+  <data name="KB_7014_Message" xml:space="preserve"><value>Proces pomocniczy zwrócił niepoprawną odpowiedź — proces zakończony.</value></data>
+  <data name="KB_7014_Action" xml:space="preserve"><value>Zgłoś błąd; sprawdź integralność instalacji.</value></data>
+  <data name="KB_7015_Message" xml:space="preserve"><value>Plik procesu pomocniczego Kobian.Worker nie ma ważnego podpisu — uruchomienie wstrzymane.</value></data>
+  <data name="KB_7015_Action" xml:space="preserve"><value>Zainstaluj ponownie Kobian Backup z oficjalnego instalatora; zgłoś incydent.</value></data>
+  <data name="KB_7016_Message" xml:space="preserve"><value>Nie udało się uruchomić procesu pomocniczego Kobian.Worker.</value></data>
+  <data name="KB_7016_Action" xml:space="preserve"><value>Sprawdź instalację (plik Kobian.Worker.exe obok usługi) i dziennik zdarzeń.</value></data>
+  <data name="KB_9001_Message" xml:space="preserve"><value>Usługa Kobian jest niedostępna.</value></data>
+  <data name="KB_9001_Action" xml:space="preserve"><value>Uruchom usługę Kobian i spróbuj ponownie.</value></data>
+</root>

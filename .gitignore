@@ -1,0 +1,10 @@
+bin/
+obj/
+.toolchain/
+_to_delete/
+*.tgz
+*.user
+.vs/
+
+# paczki Linux/macOS (tools/package-unix.sh)
+dist/

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pipeline backup/restore, Planner, Chunker, Packer, RetentionEngine. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Kobian.Engine</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kobian.Tests.Unit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="ZstdSharp.Port" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Kobian.Domain\Kobian.Domain.csproj" />
+    <ProjectReference Include="..\Kobian.Format\Kobian.Format.csproj" />
+    <ProjectReference Include="..\Kobian.Crypto\Kobian.Crypto.csproj" />
+    <ProjectReference Include="..\Kobian.Application\Kobian.Application.csproj" />
+  </ItemGroup>
+</Project>

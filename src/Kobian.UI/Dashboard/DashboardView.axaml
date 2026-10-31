@@ -1,0 +1,199 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="using:Kobian.UI.Dashboard" xmlns:c="using:Kobian.UI.Controls" xmlns:l="using:Kobian.UI.Localization"
+             x:Class="Kobian.UI.Dashboard.DashboardView" x:DataType="d:DashboardViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="40,32" Spacing="28" MaxWidth="1100" HorizontalAlignment="Stretch">
+
+      <Border IsVisible="{Binding ShowStaleBanner}" Background="{DynamicResource Kb.Brush.AtRisk.Bg}" CornerRadius="{StaticResource Kb.Radius.Control}" Padding="16,10"
+              AutomationProperties.AutomationId="SCR-01.ConnectionBanner" AutomationProperties.LiveSetting="Assertive">
+        <TextBlock Text="{l:T Connection.Lost}" Foreground="{DynamicResource Kb.Brush.AtRisk.Text}" FontWeight="SemiBold" TextWrapping="Wrap" />
+      </Border>
+
+      <!-- BL-62: usługa na niezałatanym .NET (KB-7013) — ostrzeżenie dla administratora -->
+      <Border IsVisible="{Binding ShowRuntimeBanner}" Background="{DynamicResource Kb.Brush.Warning.Bg}" CornerRadius="{StaticResource Kb.Radius.Control}" Padding="16,10"
+              AutomationProperties.AutomationId="SCR-01.RuntimeBanner" AutomationProperties.LiveSetting="Polite">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="{l:T Runtime.Unpatched}" Foreground="{DynamicResource Kb.Brush.Warning.Text}" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" />
+          <Border Grid.Column="1" Background="{DynamicResource Kb.Brush.Sunken}" CornerRadius="4" Padding="6,2" Margin="16,0,0,0" VerticalAlignment="Center">
+            <TextBlock Text="KB-7013" FontSize="12" FontFamily="Consolas, Cascadia Mono, monospace" Foreground="{DynamicResource Kb.Brush.TextMuted}" />
+          </Border>
+        </Grid>
+      </Border>
+
+      <!-- SEC-17.4: ostrzeżenie (nie „zagrożone”) — kopie działają, wstrzymane jest tylko porządkowanie starych kopii -->
+      <Border IsVisible="{Binding ShowRetentionHoldBanner}" Background="{DynamicResource Kb.Brush.Warning.Bg}" CornerRadius="{StaticResource Kb.Radius.Control}" Padding="16,10"
+              AutomationProperties.AutomationId="SCR-01.RetentionHoldBanner" AutomationProperties.LiveSetting="Polite">
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Text="{l:T Retention.Held}" Foreground="{DynamicResource Kb.Brush.Warning.Text}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Grid.Row="1" Margin="0,4,0,0" Text="{Binding RetentionHoldDetail}" Foreground="{DynamicResource Kb.Brush.Warning.Text}" TextWrapping="Wrap" />
+          <Border Grid.Row="2" IsVisible="{Binding RetentionHoldCommand, Converter={x:Static ObjectConverters.IsNotNull}}" HorizontalAlignment="Left" Margin="0,6,0,0"
+                  Background="{DynamicResource Kb.Brush.Surface}" CornerRadius="4" Padding="8,3">
+            <SelectableTextBlock Text="{Binding RetentionHoldCommand}" FontSize="12" FontFamily="Consolas, Cascadia Mono, monospace" Foreground="{DynamicResource Kb.Brush.Text}"
+                                 TextWrapping="NoWrap" AutomationProperties.AutomationId="SCR-01.RetentionHoldCommand" />
+          </Border>
+          <Border Grid.Column="1" Grid.RowSpan="3" Background="{DynamicResource Kb.Brush.Sunken}" CornerRadius="4" Padding="6,2" Margin="16,0,0,0" VerticalAlignment="Center">
+            <TextBlock Text="KB-6117" FontSize="12" FontFamily="Consolas, Cascadia Mono, monospace" Foreground="{DynamicResource Kb.Brush.TextMuted}" />
+          </Border>
+        </Grid>
+      </Border>
+
+      <!-- RD-57 (6.7): rola Podgląd — dlaczego akcje są wyszarzone i co zrobić; informacja, nie ostrzeżenie -->
+      <Border IsVisible="{Binding ShowReadOnlyBanner}" Background="{DynamicResource Kb.Brush.Sunken}" CornerRadius="{StaticResource Kb.Radius.Control}" Padding="16,10"
+              AutomationProperties.AutomationId="SCR-01.ReadOnlyBanner" AutomationProperties.LiveSetting="Polite">
+        <StackPanel Spacing="4">
+          <TextBlock Text="{l:T ReadOnly.Title}" Foreground="{DynamicResource Kb.Brush.Text}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding ReadOnlyDetail}" Foreground="{DynamicResource Kb.Brush.TextMuted}" TextWrapping="Wrap" AutomationProperties.AutomationId="SCR-01.ReadOnlyDetail" />
+        </StackPanel>
+      </Border>
+
+      <!-- Nagłówek: stan globalny, jedno zdanie, jedna akcja -->
+      <Border Classes="card" Padding="28" AutomationProperties.AutomationId="SCR-01.Hero">
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
+          <Border IsVisible="{Binding IsEmpty}" Width="56" Height="56" CornerRadius="16" HorizontalAlignment="Left" Background="{DynamicResource Kb.Brush.Sunken}">
+            <PathIcon Data="{StaticResource Kb.Icon.Brand}" Width="30" Height="30" Foreground="{DynamicResource Kb.Brush.Accent}" />
+          </Border>
+          <StackPanel IsVisible="{Binding IsOffline}" Orientation="Horizontal" Spacing="10">
+            <c:ProtectionBadge Classes="large" State="AtRisk" Text="{l:T Offline.Badge}" />
+            <Border Background="{DynamicResource Kb.Brush.Sunken}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+              <TextBlock Text="{Binding OfflineCode}" FontSize="12" FontFamily="Consolas, Cascadia Mono, monospace" Foreground="{DynamicResource Kb.Brush.TextMuted}" />
+            </Border>
+          </StackPanel>
+          <c:ProtectionBadge Classes="large" IsVisible="{Binding HasJobs}" State="{Binding Overall, FallbackValue=Protected, TargetNullValue=Protected}"
+                             AutomationProperties.AutomationId="SCR-01.State" />
+          <TextBlock Grid.Row="1" Classes="display" Margin="0,16,0,0" Text="{Binding Headline}" AutomationProperties.AutomationId="SCR-01.Headline" />
+          <TextBlock Grid.Row="2" Classes="body" Margin="0,6,0,0" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{Binding Subline}" />
+          <TextBlock Grid.Row="3" Classes="muted" Margin="0,12,0,0" Text="{Binding Summary}" IsVisible="{Binding HasJobs}" />
+          <StackPanel Grid.Column="1" Grid.RowSpan="4" VerticalAlignment="Center" Spacing="10" Margin="24,0,0,0">
+            <Button Classes="primary" Content="{Binding PrimaryActionText}" Command="{Binding PrimaryCommand}" HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center" AutomationProperties.AutomationId="SCR-01.PrimaryAction" />
+            <Button Classes="secondary" Command="{Binding RefreshCommand}" IsVisible="{Binding !IsOffline}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    AutomationProperties.AutomationId="SCR-01.Refresh" AutomationProperties.Name="{l:T Action.Refresh}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <PathIcon Data="{StaticResource Kb.Icon.Refresh}" Width="14" Height="14" />
+                <TextBlock Text="{l:T Action.Refresh}" />
+              </StackPanel>
+            </Button>
+            <TextBlock Classes="muted" HorizontalAlignment="Center" Text="{Binding UpdatedText}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Wynik akcji (Uruchom, potwierdzenie alertu): poza panelem alertów — bez aktywnych alertów komunikat po „Uruchom” (powodzenie, odmowa roli, brak połączenia) był niewidoczny -->
+      <Border IsVisible="{Binding HasAlertMessage}" Background="{DynamicResource Kb.Brush.Sunken}" CornerRadius="{StaticResource Kb.Radius.Control}" Padding="16,10"
+              AutomationProperties.AutomationId="SCR-01.AlertMessage" AutomationProperties.LiveSetting="Polite">
+        <TextBlock Text="{Binding AlertMessage}" Foreground="{DynamicResource Kb.Brush.Text}" TextWrapping="Wrap" />
+      </Border>
+
+      <!-- BL-45/BL-82 (D9.7): aktywne alerty — tytuł z kodu reguły, waga słownie (kolor nie jest jedyną informacją), potwierdzenie (Operator) i wyciszenie (Administrator) -->
+      <StackPanel Spacing="12" IsVisible="{Binding HasAlerts}" AutomationProperties.AutomationId="SCR-01.Alerts">
+        <TextBlock Classes="title" Text="{l:T Dashboard.Alerts}" />
+        <Border Classes="card">
+          <ItemsControl ItemsSource="{Binding Alerts}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="d:AlertTileViewModel">
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,8" AutomationProperties.Name="{Binding AccessibleName}">
+                  <Panel Width="120" Margin="0,0,16,0" VerticalAlignment="Top">
+                    <Border IsVisible="{Binding IsWarning}" Background="{DynamicResource Kb.Brush.Warning.Bg}" CornerRadius="4" Padding="8,3">
+                      <TextBlock Text="{Binding SeverityText}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" TextWrapping="NoWrap" Foreground="{DynamicResource Kb.Brush.Warning.Text}" />
+                    </Border>
+                    <Border IsVisible="{Binding !IsWarning}" Background="{DynamicResource Kb.Brush.AtRisk.Bg}" CornerRadius="4" Padding="8,3">
+                      <TextBlock Text="{Binding SeverityText}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" TextWrapping="NoWrap" Foreground="{DynamicResource Kb.Brush.AtRisk.Text}" />
+                    </Border>
+                  </Panel>
+                  <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                    <TextBlock Classes="body" FontWeight="SemiBold" Text="{Binding Title}" TextWrapping="Wrap" />
+                    <WrapPanel ItemSpacing="8" LineSpacing="2">
+                      <TextBlock Classes="muted" Text="{Binding Subject}" IsVisible="{Binding Subject, Converter={x:Static ObjectConverters.IsNotNull}}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                      <TextBlock Classes="muted" Text="{Binding StateText}" TextWrapping="NoWrap" />
+                      <TextBlock Classes="muted" Text="{Binding OpenedText}" TextWrapping="NoWrap" />
+                      <TextBlock Classes="muted" Text="{Binding EscalatedText}" IsVisible="{Binding EscalatedText, Converter={x:Static ObjectConverters.IsNotNull}}" TextWrapping="NoWrap" />
+                      <Border IsVisible="{Binding Kb, Converter={x:Static ObjectConverters.IsNotNull}}" Background="{DynamicResource Kb.Brush.Sunken}" CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Kb}" FontSize="11" FontFamily="Consolas, Cascadia Mono, monospace" Foreground="{DynamicResource Kb.Brush.TextMuted}" />
+                      </Border>
+                    </WrapPanel>
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="16,0,0,0" VerticalAlignment="Center">
+                    <Button Classes="secondary" Content="{l:T Alert.Action.Ack}" IsVisible="{Binding CanAcknowledge}"
+                            Command="{Binding $parent[UserControl].((d:DashboardViewModel)DataContext).AcknowledgeAlertCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.AutomationId="SCR-01.AlertAck" />
+                    <ComboBox ItemsSource="{Binding SilenceOptions}" SelectedItem="{Binding SelectedSilence}" IsVisible="{Binding CanSilence}"
+                              MinWidth="96" VerticalAlignment="Center"
+                              AutomationProperties.Name="{l:T Alert.Silence.Duration}" AutomationProperties.AutomationId="SCR-01.AlertSilenceDuration" />
+                    <Button Classes="secondary" Content="{l:T Alert.Action.Silence}" IsVisible="{Binding CanSilence}"
+                            Command="{Binding $parent[UserControl].((d:DashboardViewModel)DataContext).SilenceAlertCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.AutomationId="SCR-01.AlertSilence" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Border>
+      </StackPanel>
+
+      <!-- Kafelki zadań -->
+      <StackPanel Spacing="12" IsVisible="{Binding HasJobs}">
+        <TextBlock Classes="title" Text="{l:T Dashboard.Jobs}" />
+        <ItemsControl ItemsSource="{Binding Jobs}" AutomationProperties.AutomationId="SCR-01.Jobs">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate><c:AdaptiveGrid MinItemWidth="320" Spacing="16" MaxColumns="3" /></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="d:JobTileViewModel">
+              <Border Classes="card" AutomationProperties.Name="{Binding AccessibleName}">
+                <StackPanel Spacing="12">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Classes="title" FontSize="16" Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    <c:ProtectionBadge Grid.Column="1" State="{Binding State}" />
+                  </Grid>
+                  <TextBlock Classes="body" Text="{Binding Detail}" MinHeight="40" />
+                  <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" Margin="0,4,0,0">
+                    <TextBlock Classes="label" Text="{l:T Job.LastSuccess}" />
+                    <TextBlock Grid.Column="1" Classes="label" Text="{l:T Job.Next}" />
+                    <TextBlock Grid.Row="1" Classes="body" Text="{Binding LastCopy}" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" Classes="body" Text="{Binding Next}" />
+                  </Grid>
+                  <Border Height="1" Background="{DynamicResource Kb.Brush.Border}" />
+                  <DockPanel LastChildFill="True">
+                    <Button DockPanel.Dock="Right" Classes="secondary" Content="{Binding ActionText}" Margin="12,0,0,0"
+                            Command="{Binding $parent[UserControl].((d:DashboardViewModel)DataContext).ActCommand}" CommandParameter="{Binding}" />
+                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                      <TextBlock Classes="muted" Text="{Binding Destination}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Classes="muted" Text="{Binding VerifyText}" TextWrapping="NoWrap" />
+                        <Border IsVisible="{Binding Code, Converter={x:Static ObjectConverters.IsNotNull}}" Background="{DynamicResource Kb.Brush.Sunken}"
+                                CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Code}" FontSize="11" FontFamily="Consolas, Cascadia Mono, monospace" Foreground="{DynamicResource Kb.Brush.TextMuted}" />
+                        </Border>
+                      </StackPanel>
+                    </StackPanel>
+                  </DockPanel>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+
+      <!-- Miejsce na celach -->
+      <StackPanel Spacing="12" IsVisible="{Binding HasDestinations}">
+        <TextBlock Classes="title" Text="{l:T Dashboard.Destinations}" />
+        <Border Classes="card">
+          <ItemsControl ItemsSource="{Binding Destinations}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="d:DestinationTile">
+                <Grid ColumnDefinitions="2*,3*,Auto" Margin="0,7" AutomationProperties.Name="{Binding AccessibleName}">
+                  <TextBlock Classes="body" Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Margin="0,0,16,0" />
+                  <ProgressBar Grid.Column="1" Classes="space" Classes.low="{Binding Low}" Minimum="0" Maximum="100" Value="{Binding UsedPercent}" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" Margin="16,0,0,0" MinWidth="120" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <PathIcon IsVisible="{Binding Low}" Data="{StaticResource Kb.Icon.Warning}" Width="14" Height="14" Foreground="{DynamicResource Kb.Brush.Warning.Text}" />
+                    <TextBlock Classes="muted" Classes.lowtext="{Binding Low}" Text="{Binding FreeText}" TextWrapping="NoWrap" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Border>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "ZstdSharp.Port": {
+        "type": "Direct",
+        "requested": "[0.8.8, )",
+        "resolved": "0.8.8",
+        "contentHash": "UIDFkA5DC3en3tOJ3Mof11yBx9kUQLsaeo/oFdvN6Bbkr9E9+VCqfIadHci8cu+I51K2Sl7XYWVl2R/mA75NBQ=="
+      },
+      "kobian.application": {
+        "type": "Project",
+        "dependencies": {
+          "Kobian.Domain": "[1.0.0, )"
+        }
+      },
+      "kobian.crypto": {
+        "type": "Project",
+        "dependencies": {
+          "Kobian.Domain": "[1.0.0, )"
+        }
+      },
+      "kobian.domain": {
+        "type": "Project"
+      },
+      "kobian.format": {
+        "type": "Project",
+        "dependencies": {
+          "Kobian.Domain": "[1.0.0, )",
+          "System.Formats.Cbor": "[10.0.13, )"
+        }
+      },
+      "System.Formats.Cbor": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.13, )",
+        "resolved": "10.0.13",
+        "contentHash": "WdxppUxfamltxOsieYg3gJCJW+lB/udiWrya4UCUg0DjTr/w07E4XoivqS35xoM5kVfMyyXEkRgPBRb24H+fWA=="
+      }
+    },
+    "net10.0/linux-arm64": {},
+    "net10.0/linux-x64": {},
+    "net10.0/osx-arm64": {},
+    "net10.0/osx-x64": {},
+    "net10.0/win-x64": {}
+  }
+}

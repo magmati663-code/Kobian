@@ -1,0 +1,33 @@
+<Project>
+  <!-- D2.7: wspólne ustawienia; patrz docs/konwencje.md -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <Deterministic>true</Deterministic>
+    <!-- InvariantGlobalization wyłączone: strefy IANA na Windows (D7.2) i lokalizacja UI wymagają ICU; kod deterministyczny używa CultureInfo.InvariantCulture (CA1305). -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
+    <Company>Kobian Backup</Company>
+    <Product>Kobian Backup</Product>
+    <Copyright>Apache-2.0 (D10.4)</Copyright>
+  </PropertyGroup>
+  <!-- Paczki: Windows (MSI) oraz Linux/macOS (tools/package-unix.sh). Publikacja z RID przywraca też biblioteki per RID, więc RID-y są w plikach blokady
+       wszystkich projektów produktu — publikacja działa w trybie RestoreLockedMode (te same, sprawdzone wersje pakietów na każdej platformie). -->
+  <PropertyGroup Condition="'$(IsTestProject)' != 'true' And !$(MSBuildProjectName.StartsWith('Kobian.Tests.'))">
+    <RuntimeIdentifiers>win-x64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true' Or $(MSBuildProjectName.StartsWith('Kobian.Tests.'))">
+    <!-- testy: podkreślenia w nazwach (CA1707), brak ConfigureAwait (CA2007), typy publiczne (CA1515) -->
+    <NoWarn>$(NoWarn);CA1707;CA2007;CA1515;CA1861</NoWarn>
+  </PropertyGroup>
+</Project>

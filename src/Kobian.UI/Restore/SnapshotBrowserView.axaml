@@ -1,0 +1,173 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:r="using:Kobian.UI.Restore" xmlns:c="using:Kobian.UI.Controls" xmlns:l="using:Kobian.UI.Localization"
+             x:Class="Kobian.UI.Restore.SnapshotBrowserView" x:DataType="r:SnapshotBrowserViewModel">
+  <!-- SCR-06 Przeglądarka kopii (R2.6.1, BL-63): oś czasu kopii + zawartość folderu, okruszki, „W górę”, „Odtwórz…” → SCR-07. Kolory z tokenów; AutomationId „SCR-06.*”. -->
+  <UserControl.Styles>
+    <!-- Dock i szerokość wyłącznie w stylach (wartość lokalna przesłoniłaby ContainerQuery — pułapka z it. 57). -->
+    <Style Selector="Border.snaprail"><Setter Property="Width" Value="260" /><Setter Property="Margin" Value="0,0,20,0" /><Setter Property="DockPanel.Dock" Value="Left" /></Style>
+    <Style Selector="ListBox.snaplist"><Setter Property="Background" Value="Transparent" /></Style>
+    <Style Selector="ListBox.snaplist ListBoxItem">
+      <Setter Property="Padding" Value="14,10" /><Setter Property="Margin" Value="0,0,0,4" /><Setter Property="CornerRadius" Value="{StaticResource Kb.Radius.Control}" />
+    </Style>
+    <!-- Pasek akcentu rezerwuje miejsce także bez zaznaczenia — tekst nie przesuwa się o 3 px (przegląd zrzutu it. 76). -->
+    <Style Selector="ListBox.snaplist ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="BorderBrush" Value="Transparent" /><Setter Property="BorderThickness" Value="3,0,0,0" />
+    </Style>
+    <Style Selector="ListBox.snaplist ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Kb.Brush.Sunken}" />
+    </Style>
+    <!-- Zaznaczenie: tło zagłębione + pasek akcentu (bez systemowego niebieskiego — pułapka z it. 59). -->
+    <Style Selector="ListBox.snaplist ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Kb.Brush.Sunken}" /><Setter Property="BorderBrush" Value="{DynamicResource Kb.Brush.Accent}" /><Setter Property="BorderThickness" Value="3,0,0,0" />
+    </Style>
+    <Style Selector="Border.browserow">
+      <Setter Property="Padding" Value="16,9" /><Setter Property="BorderBrush" Value="{DynamicResource Kb.Brush.Border}" /><Setter Property="BorderThickness" Value="0,0,0,1" />
+    </Style>
+    <Style Selector="ContentPresenter:nth-last-child(1) > Border.browserow"><Setter Property="BorderThickness" Value="0" /></Style>
+    <Style Selector="Button.crumb">
+      <Setter Property="Background" Value="Transparent" /><Setter Property="Padding" Value="4,2" /><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Accent}" />
+    </Style>
+    <Style Selector="Button.crumb.last"><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Text}" /><Setter Property="FontWeight" Value="SemiBold" /></Style>
+    <Style Selector="PathIcon.kind"><Setter Property="Width" Value="16" /><Setter Property="Height" Value="16" /><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.TextMuted}" /></Style>
+    <Style Selector="PathIcon.kind.dir"><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Accent}" /></Style>
+    <!-- Wąsko: oś czasu nad listą (jedna kolumna), kolumna „Zmieniono” chowana. -->
+    <!-- Prawa kolumna węższa niż 640 px: bez kolumny „Zmieniono” (data zostaje w nazwie dostępnej wiersza). -->
+    <ContainerQuery Name="browselist" Query="max-width:640">
+      <Style Selector=":is(Control).browsemeta"><Setter Property="IsVisible" Value="False" /></Style>
+    </ContainerQuery>
+    <ContainerQuery Name="browse" Query="max-width:760">
+      <Style Selector="Border.snaprail"><Setter Property="Width" Value="NaN" /><Setter Property="Margin" Value="0,0,0,16" /><Setter Property="DockPanel.Dock" Value="Top" /></Style>
+      <Style Selector=":is(Control).browsemeta"><Setter Property="IsVisible" Value="False" /></Style>
+      <Style Selector="ListBox.snaplist"><Setter Property="MaxHeight" Value="180" /></Style>
+    </ContainerQuery>
+  </UserControl.Styles>
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="40,32" Spacing="20" MaxWidth="1100" HorizontalAlignment="Stretch" Container.Name="browse" Container.Sizing="Width">
+
+      <Border IsVisible="{Binding ShowStaleBanner}" Background="{DynamicResource Kb.Brush.AtRisk.Bg}" CornerRadius="{StaticResource Kb.Radius.Control}" Padding="16,10"
+              AutomationProperties.AutomationId="SCR-06.ConnectionBanner" AutomationProperties.LiveSetting="Assertive">
+        <TextBlock Text="{l:T Connection.Lost}" Foreground="{DynamicResource Kb.Brush.AtRisk.Text}" FontWeight="SemiBold" TextWrapping="Wrap" />
+      </Border>
+
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Classes="display" Text="{Binding Title}" AutomationProperties.AutomationId="SCR-06.Title" />
+        <Button Grid.Column="1" Classes="secondary" Command="{Binding RefreshCommand}" VerticalAlignment="Center" AutomationProperties.AutomationId="SCR-06.Refresh"
+                AutomationProperties.Name="{l:T Action.Refresh}" ToolTip.Tip="{l:T Action.Refresh}">
+          <PathIcon Data="{StaticResource Kb.Icon.Refresh}" Width="14" Height="14" />
+        </Button>
+      </Grid>
+
+      <Border Classes="card" IsVisible="{Binding IsOffline}" Padding="28" AutomationProperties.AutomationId="SCR-06.Offline">
+        <StackPanel Spacing="10">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <c:ProtectionBadge Classes="large" State="AtRisk" Text="{l:T Offline.Badge}" />
+            <Border Classes="code" VerticalAlignment="Center"><TextBlock Text="{Binding OfflineCode}" /></Border>
+          </StackPanel>
+          <TextBlock Classes="title" Text="{l:T Offline.Headline}" />
+          <Button Classes="primary" HorizontalAlignment="Left" Content="{l:T Offline.Retry}" Command="{Binding RefreshCommand}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" IsVisible="{Binding IsEmpty}" Padding="28" AutomationProperties.AutomationId="SCR-06.Empty">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="title" Text="{l:T Browse.Empty}" />
+          <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{l:T Browse.EmptyHint}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <DockPanel IsVisible="{Binding HasSnapshots}" LastChildFill="True">
+        <!-- Oś czasu kopii -->
+        <Border Classes="card snaprail" Padding="10" VerticalAlignment="Top">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label" Text="{l:T Browse.Snapshots}" Margin="6,4,0,2" />
+            <ListBox Classes="snaplist" ItemsSource="{Binding Snapshots}" SelectedItem="{Binding SelectedSnapshot}" MaxHeight="520"
+                     AutomationProperties.AutomationId="SCR-06.Snapshots" AutomationProperties.Name="{l:T Browse.Snapshots}">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="r:SnapshotOption">
+                  <StackPanel Spacing="2" AutomationProperties.Name="{Binding AccessibleName}">
+                    <TextBlock Classes="body" FontWeight="SemiBold" Text="{Binding When}" />
+                    <TextBlock Classes="muted" Text="{Binding Job}" TextTrimming="CharacterEllipsis" />
+                    <Border Classes="pill" Classes.full="{Binding IsFull}" HorizontalAlignment="Left" Margin="0,4,0,0"><TextBlock Text="{Binding Mode}" /></Border>
+                    <Border Classes="pill" Classes.failed="{Binding IsUnrecoverable}" Classes.warning="{Binding IsPartial}" HorizontalAlignment="Left" IsVisible="{Binding IsDamaged}"><TextBlock Text="{Binding DamageText}" /></Border>
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </StackPanel>
+        </Border>
+
+        <!-- Zawartość folderu -->
+        <StackPanel Spacing="12" Container.Name="browselist" Container.Sizing="Width">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Button Classes="secondary" Command="{Binding UpCommand}" IsEnabled="{Binding CanGoUp}" VerticalAlignment="Center" Margin="0,0,12,0"
+                    AutomationProperties.AutomationId="SCR-06.Up" AutomationProperties.Name="{l:T Browse.Up}" ToolTip.Tip="{l:T Browse.Up}">
+              <PathIcon Data="{StaticResource Kb.Icon.Up}" Width="14" Height="14" />
+            </Button>
+            <ItemsControl Grid.Column="1" ItemsSource="{Binding Breadcrumbs}" VerticalAlignment="Center" AutomationProperties.AutomationId="SCR-06.Breadcrumbs">
+              <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="r:BreadcrumbItem">
+                  <StackPanel Orientation="Horizontal">
+                    <Button Classes="crumb" Classes.last="{Binding IsLast}" Content="{Binding Text}" CommandParameter="{Binding}"
+                            Command="{Binding $parent[UserControl].((r:SnapshotBrowserViewModel)DataContext).GoToCommand}" />
+                    <TextBlock Classes="muted" Text="›" VerticalAlignment="Center" Margin="2,0" IsVisible="{Binding !IsLast}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+              <Button Classes="primary" Content="{Binding RestoreFolderText}" Command="{Binding RestoreFolderCommand}" IsEnabled="{Binding CanRestore}"
+                      IsVisible="{Binding !IsDatabaseSnapshot}" AutomationProperties.AutomationId="SCR-06.RestoreFolder" />
+              <Button Classes="primary" Content="{l:T Browse.RestoreDb}" Command="{Binding RestoreDatabaseCommand}" IsVisible="{Binding IsDatabaseSnapshot}" IsEnabled="{Binding !IsUnrecoverableSnapshot}"
+                      AutomationProperties.AutomationId="SCR-06.RestoreDatabase" />
+            </StackPanel>
+          </Grid>
+          <TextBlock Classes="muted" Text="{Binding FolderSummary}" IsVisible="{Binding HasRows}" />
+
+          <Border Classes="notice warning" Classes.error="{Binding IsUnrecoverableSnapshot}" IsVisible="{Binding HasDamageNotice}" AutomationProperties.AutomationId="SCR-06.Damage">
+            <TextBlock Text="{Binding DamageNotice}" TextWrapping="Wrap" />
+          </Border>
+
+          <Border Classes="notice error" IsVisible="{Binding HasError}" AutomationProperties.AutomationId="SCR-06.Error" AutomationProperties.LiveSetting="Assertive">
+            <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" />
+          </Border>
+
+          <Border Classes="card" Padding="28" IsVisible="{Binding IsFolderEmpty}" AutomationProperties.AutomationId="SCR-06.FolderEmpty">
+            <TextBlock Classes="body" Foreground="{DynamicResource Kb.Brush.TextMuted}" Text="{l:T Browse.FolderEmpty}" />
+          </Border>
+
+          <Border Classes="card" Padding="0" IsVisible="{Binding HasRows}">
+            <ItemsControl ItemsSource="{Binding Rows}" AutomationProperties.AutomationId="SCR-06.Rows">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="r:BrowseRowViewModel">
+                  <Border Classes="browserow" AutomationProperties.Name="{Binding AccessibleName}">
+                    <Grid ColumnDefinitions="28,*,96,150,Auto">
+                      <Panel VerticalAlignment="Center">
+                        <PathIcon Classes="kind dir" Data="{StaticResource Kb.Icon.Folder}" IsVisible="{Binding IsDirectory}" />
+                        <PathIcon Classes="kind" Data="{StaticResource Kb.Icon.File}" IsVisible="{Binding IsFile}" />
+                        <PathIcon Classes="kind" Data="{StaticResource Kb.Icon.Link}" IsVisible="{Binding IsLink}" />
+                      </Panel>
+                      <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <TextBlock Classes="body" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontWeight="{Binding IsDirectory, Converter={x:Static r:BoldConverter.Instance}}" />
+                        <TextBlock Classes="muted" Text="{l:T Browse.Kind.Link}" IsVisible="{Binding IsLink}" />
+                      </StackPanel>
+                      <TextBlock Grid.Column="2" Classes="muted" Text="{Binding SizeText}" TextAlignment="Right" VerticalAlignment="Center" Margin="0,0,16,0" />
+                      <TextBlock Grid.Column="3" Classes="muted browsemeta" Text="{Binding ModifiedText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,16,0" />
+                      <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Button Classes="secondary" Content="{l:T Browse.Open}" IsVisible="{Binding IsDirectory}" CommandParameter="{Binding}"
+                                Command="{Binding $parent[UserControl].((r:SnapshotBrowserViewModel)DataContext).OpenCommand}" />
+                        <Button Classes="secondary" Content="{l:T Browse.RestoreItem}" IsVisible="{Binding CanRestoreItem}" CommandParameter="{Binding}"
+                                Command="{Binding $parent[UserControl].((r:SnapshotBrowserViewModel)DataContext).RestoreItemCommand}" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+          <TextBlock Classes="muted" IsVisible="{Binding Truncated}" Text="{l:T Browse.Truncated}" TextWrapping="Wrap" />
+        </StackPanel>
+      </DockPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

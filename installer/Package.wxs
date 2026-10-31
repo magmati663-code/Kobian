@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Kobian Backup — instalator MSI per-machine (D10.2, S2=B; it. 100 — SZKIELET, PROWIZORYCZNIE Qb50).
+  Budowa wyłącznie na Windows (WiX Toolset v7, warunki OSMF — Q37 właściciela): installer/README.md, kolejka W-42.
+  Wartości usługi MUSZĄ zgadzać się z AgentServiceProfile (test InstallerPackageTests w Kobian.Tests.Unit pilnuje zgodności).
+  Odinstalowanie NIE usuwa %ProgramData%\Kobian (katalog, klucze, sekrety) ani grup „Kobian Operators”/„Kobian Admins”.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Kobian Backup" Manufacturer="Kobian" Language="1045" Version="$(var.ProductVersion)"
+           UpgradeCode="0A768157-25B0-4600-A632-C4EA65C3AF5F" Scope="perMachine" Compressed="yes" InstallerVersion="500">
+    <MajorUpgrade DowngradeErrorMessage="Zainstalowana jest nowsza wersja Kobian Backup." Schedule="afterInstallInitialize" />
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Kobian">
+        <Directory Id="AgentFolder" Name="Agent" />
+        <Directory Id="ClientFolder" Name="Client" />
+      </Directory>
+    </StandardDirectory>
+
+    <!-- Agent: plik wykonywalny jako KeyPath komponentu usługi (ServiceInstall wymaga pliku w tym samym komponencie). -->
+    <Component Id="AgentService" Directory="AgentFolder" Guid="*">
+      <File Id="AgentExe" Source="$(var.AgentPublishDir)\Kobian.Agent.exe" KeyPath="yes" />
+      <ServiceInstall Id="KobianAgentService" Name="KobianAgent" DisplayName="Kobian Backup Agent"
+                      Description="Kobian Backup: harmonogram i wykonywanie kopii zapasowych, API lokalne (named pipe)."
+                      Type="ownProcess" Start="auto" ErrorControl="normal" Account="NT SERVICE\KobianAgent" Vital="yes">
+        <!-- D2.5 Automatic (Delayed Start); D2.12 pkt 1 lista uprawnień tokenu; pkt 4 ServiceSidType = Unrestricted. -->
+        <ServiceConfig DelayedAutoStart="yes" ServiceSid="unrestricted" OnInstall="yes" OnReinstall="yes">
+          <RequiredPrivilege Name="SeBackupPrivilege" />
+          <RequiredPrivilege Name="SeRestorePrivilege" />
+          <RequiredPrivilege Name="SeChangeNotifyPrivilege" />
+          <RequiredPrivilege Name="SeShutdownPrivilege" />
+        </ServiceConfig>
+        <!-- D2.12 pkt 4 / NFR-09: restart po 1 min ×2, potem 5 min; licznik zerowany po dobie (sekundy). -->
+        <ServiceConfigFailureActions OnInstall="yes" OnReinstall="yes" ResetPeriod="86400">
+          <Failure Action="restart" Delay="60000" />
+          <Failure Action="restart" Delay="60000" />
+          <Failure Action="restart" Delay="300000" />
+        </ServiceConfigFailureActions>
+      </ServiceInstall>
+      <ServiceControl Id="KobianAgentControl" Name="KobianAgent" Start="install" Stop="both" Remove="uninstall" Wait="yes" />
+    </Component>
+
+    <ComponentGroup Id="AgentFiles" Directory="AgentFolder">
+      <Files Include="$(var.AgentPublishDir)\**">
+        <Exclude Files="$(var.AgentPublishDir)\Kobian.Agent.exe" />
+      </Files>
+    </ComponentGroup>
+    <ComponentGroup Id="ClientFiles" Directory="ClientFolder">
+      <Files Include="$(var.ClientPublishDir)\**" />
+    </ComponentGroup>
+
+    <Feature Id="Main" Title="Kobian Backup" Level="1">
+      <ComponentRef Id="AgentService" />
+      <ComponentGroupRef Id="AgentFiles" />
+      <ComponentGroupRef Id="ClientFiles" />
+    </Feature>
+
+    <!-- Kolejność: KobianProvision po InstallServices (5800), przed StartServices (5900) — usługa startuje z gotowym ACL; KobianUnprovision po StopServices.
+         D2.12 / 2.6 (SEC-10.7): grupy, katalog danych z ACL, VssAccessControl, prawa LSA — kroki z AgentInstallPlan wykonywane przez Agenta jako LocalSystem.
+         Bez powłoki i bez skryptów: ExeCommand to jeden stały argument. -->
+    <CustomAction Id="KobianProvision" FileRef="AgentExe" ExeCommand="--provision" Execute="deferred" Impersonate="no" Return="check" />
+    <CustomAction Id="KobianUnprovision" FileRef="AgentExe" ExeCommand="--unprovision" Execute="deferred" Impersonate="no" Return="ignore" />
+    <InstallExecuteSequence>
+      <Custom Action="KobianProvision" After="InstallServices" Condition="NOT REMOVE" />
+      <Custom Action="KobianUnprovision" After="StopServices" Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+    </InstallExecuteSequence>
+  </Package>
+</Wix>

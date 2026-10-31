@@ -1,0 +1,16 @@
+<!--
+  Projekt WiX (it. 100, SZKIELET) — POZA Kobian.sln: pętla budowy (Linux) go nie buduje i nie pobiera WiX.
+  Budowa na Windows (W-42), po decyzji Q37 (OSMF):
+    dotnet publish src\Kobian.Agent -c Release -r win-x64 -f net10.0-windows10.0.17763.0 -o out\agent
+    dotnet publish src\Kobian.Cli -c Release -r win-x64 -o out\client
+    dotnet build installer\Kobian.Installer.wixproj -c Release -p:ProductVersion=0.1.0 -p:AgentPublishDir=..\out\agent -p:ClientPublishDir=..\out\client
+  Wersja SDK przypięta; audyt: budowa/zaleznosci.md (WixToolset.Sdk).
+-->
+<Project Sdk="WixToolset.Sdk/7.0.0">
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <ProductVersion Condition="'$(ProductVersion)' == ''">0.1.0</ProductVersion>
+    <DefineConstants>ProductVersion=$(ProductVersion);AgentPublishDir=$(AgentPublishDir);ClientPublishDir=$(ClientPublishDir)</DefineConstants>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Action.Disabled" xml:space="preserve"><value>Wznów zadanie</value></data>
+  <data name="Action.HostKeyMismatch" xml:space="preserve"><value>Zweryfikuj serwer</value></data>
+  <data name="Action.LastRunFailed" xml:space="preserve"><value>Pokaż przyczynę</value></data>
+  <data name="Action.LastRunWarning" xml:space="preserve"><value>Pokaż pominięte pliki</value></data>
+  <data name="Action.LowSpace" xml:space="preserve"><value>Zarządzaj miejscem</value></data>
+  <data name="Action.NeverSucceeded" xml:space="preserve"><value>Uruchom kopię teraz</value></data>
+  <data name="Action.NewJob" xml:space="preserve"><value>Utwórz pierwsze zadanie</value></data>
+  <data name="Action.NotDeleteProtected" xml:space="preserve"><value>Jak zabezpieczyć cel</value></data>
+  <data name="Action.NotVerified" xml:space="preserve"><value>Zweryfikuj teraz</value></data>
+  <data name="Action.Ok" xml:space="preserve"><value>Uruchom kopię teraz</value></data>
+  <data name="Action.Overdue" xml:space="preserve"><value>Uruchom kopię teraz</value></data>
+  <data name="Action.Refresh" xml:space="preserve"><value>Odśwież</value></data>
+  <data name="Action.RepositoryDamaged" xml:space="preserve"><value>Sprawdź repozytorium</value></data>
+  <data name="ReadOnly.Title" xml:space="preserve"><value>Tryb podglądu: widzisz stan kopii, ale nie możesz uruchamiać ani zmieniać zadań.</value></data>
+  <data name="ReadOnly.Elevate" xml:space="preserve"><value>Twoje konto jest administratorem, ale Kobian działa bez podniesionych uprawnień. Zamknij aplikację i uruchom ją ponownie poleceniem „Uruchom jako administrator”.</value></data>
+  <data name="ReadOnly.AskOperator" xml:space="preserve"><value>Aby uruchamiać kopie, poproś administratora komputera o dodanie Twojego konta do grupy „Kobian Operators”.</value></data>
+  <data name="Action.RequiresOperator" xml:space="preserve"><value>Wymaga roli Operator Kobian</value></data>
+  <data name="Action.RunNow" xml:space="preserve"><value>Uruchom teraz</value></data>
+  <data name="Action.V3Overdue" xml:space="preserve"><value>Sprawdź dane teraz</value></data>
+  <data name="App.Tagline" xml:space="preserve"><value>Kopie zapasowe</value></data>
+  <data name="App.Title" xml:space="preserve"><value>Kobian Backup</value></data>
+  <data name="Retention.Held" xml:space="preserve"><value>Porządkowanie starych kopii jest wstrzymane — wykryto duży skok zegara systemu. Nowe kopie wykonują się normalnie.</value></data>
+  <data name="Retention.Held.Admin" xml:space="preserve"><value>Sprawdź datę i godzinę komputera, potem potwierdź wznowienie poleceniem:</value></data>
+  <data name="Retention.Held.Other" xml:space="preserve"><value>Poproś administratora o sprawdzenie zegara i potwierdzenie wznowienia porządkowania.</value></data>
+  <data name="Connection.Lost" xml:space="preserve"><value>Brak połączenia z usługą Kobian. Dane mogą być nieaktualne.</value></data>
+  <data name="Dashboard.Destinations" xml:space="preserve"><value>Miejsce na celach</value></data>
+  <data name="Dashboard.Jobs" xml:space="preserve"><value>Zadania kopii</value></data>
+  <data name="Dashboard.UpdatedAt" xml:space="preserve"><value>Stan z {0}</value></data>
+  <data name="Hero.AtRisk" xml:space="preserve"><value>Część danych nie jest chroniona</value></data>
+  <data name="Hero.Empty" xml:space="preserve"><value>Nie masz jeszcze żadnego zadania kopii</value></data>
+  <data name="Hero.EmptyHint" xml:space="preserve"><value>Kreator zajmie około 5 minut i zakończy się próbnym odtworzeniem jednego pliku.</value></data>
+  <data name="Hero.Paused" xml:space="preserve"><value>Kopie są wstrzymane</value></data>
+  <data name="Hero.Protected" xml:space="preserve"><value>Twoje dane są chronione</value></data>
+  <data name="Hero.Summary" xml:space="preserve"><value>{0} z {1} zadań chronionych</value></data>
+  <data name="Hero.Warning" xml:space="preserve"><value>Kopie działają, ale wymagają uwagi</value></data>
+  <data name="Job.Destination" xml:space="preserve"><value>Cel</value></data>
+  <data name="Job.LastCopy" xml:space="preserve"><value>Ostatnia kopia</value></data>
+  <data name="Job.Next" xml:space="preserve"><value>Następna</value></data>
+  <data name="Nav.ComingSoon" xml:space="preserve"><value>Ten ekran pojawi się w kolejnej wersji.</value></data>
+  <data name="Nav.Dashboard" xml:space="preserve"><value>Pulpit</value></data>
+  <data name="Nav.Destinations" xml:space="preserve"><value>Cele</value></data>
+  <data name="Nav.History" xml:space="preserve"><value>Historia</value></data>
+  <data name="Nav.Jobs" xml:space="preserve"><value>Zadania</value></data>
+  <data name="Nav.Restore" xml:space="preserve"><value>Przywracanie</value></data>
+  <data name="Nav.Settings" xml:space="preserve"><value>Ustawienia</value></data>
+  <data name="Plural.Day.Few" xml:space="preserve"><value>{0} dni</value></data>
+  <data name="Plural.Day.Many" xml:space="preserve"><value>{0} dni</value></data>
+  <data name="Plural.Day.One" xml:space="preserve"><value>{0} dnia</value></data>
+  <data name="Plural.File.Few" xml:space="preserve"><value>{0} pliki</value></data>
+  <data name="Plural.File.Many" xml:space="preserve"><value>{0} plików</value></data>
+  <data name="Plural.File.One" xml:space="preserve"><value>{0} plik</value></data>
+  <data name="Plural.Hour.Few" xml:space="preserve"><value>{0} godzin</value></data>
+  <data name="Plural.Hour.Many" xml:space="preserve"><value>{0} godzin</value></data>
+  <data name="Plural.Hour.One" xml:space="preserve"><value>{0} godziny</value></data>
+  <data name="Reason.Disabled" xml:space="preserve"><value>Zadanie wyłączone — kopie nie są wykonywane.</value></data>
+  <data name="Reason.HostKeyMismatch" xml:space="preserve"><value>Serwer przedstawił inny klucz niż zapamiętany. Kopie wstrzymane dla bezpieczeństwa.</value></data>
+  <data name="Reason.LastRunFailed" xml:space="preserve"><value>Ostatnia kopia nie powiodła się.</value></data>
+  <data name="Reason.LastRunWarning" xml:space="preserve"><value>Kopia wykonana z ostrzeżeniami.</value></data>
+  <data name="Reason.LastRunWarningFiles" xml:space="preserve"><value>Kopia wykonana z ostrzeżeniami — pominięto {0} (zablokowane).</value></data>
+  <data name="Reason.LowSpace" xml:space="preserve"><value>Na celu zostało {0}% wolnego miejsca.</value></data>
+  <data name="Reason.NeverSucceeded" xml:space="preserve"><value>Nie wykonano jeszcze żadnej udanej kopii.</value></data>
+  <data name="Reason.NotDeleteProtected" xml:space="preserve"><value>Cel nie chroni kopii przed usunięciem (np. przez ransomware).</value></data>
+  <data name="Reason.NotVerified" xml:space="preserve"><value>Ostatnia kopia nie została jeszcze zweryfikowana.</value></data>
+  <data name="Reason.Ok" xml:space="preserve"><value>Ostatnia kopia: {0} · Następna: {1}</value></data>
+  <data name="Reason.Overdue" xml:space="preserve"><value>Brak udanej kopii od {0}.</value></data>
+  <data name="Reason.RepositoryDamaged" xml:space="preserve"><value>Repozytorium na celu jest uszkodzone. Następna kopia będzie pełna.</value></data>
+  <data name="Reason.V3Overdue" xml:space="preserve"><value>Zaległa okresowa kontrola danych na celu.</value></data>
+  <data name="Space.Free" xml:space="preserve"><value>{0}% wolne</value></data>
+  <data name="State.AtRisk" xml:space="preserve"><value>Zagrożone</value></data>
+  <data name="State.Paused" xml:space="preserve"><value>Wstrzymane</value></data>
+  <data name="State.Protected" xml:space="preserve"><value>Chronione</value></data>
+  <data name="State.Warning" xml:space="preserve"><value>Uwaga</value></data>
+  <data name="Time.Never" xml:space="preserve"><value>nigdy</value></data>
+  <data name="Time.NotScheduled" xml:space="preserve"><value>ręcznie</value></data>
+  <data name="Time.Today" xml:space="preserve"><value>dziś {0}</value></data>
+  <data name="Time.Tomorrow" xml:space="preserve"><value>jutro {0}</value></data>
+  <data name="Time.Yesterday" xml:space="preserve"><value>wczoraj {0}</value></data>
+  <data name="Verify.NotVerified" xml:space="preserve"><value>Niezweryfikowana</value></data>
+  <data name="Verify.Verified" xml:space="preserve"><value>Zweryfikowana</value></data>
+  <data name="Job.LastSuccess" xml:space="preserve"><value>Ostatnia udana kopia</value></data>
+  <data name="Reason.OkTile" xml:space="preserve"><value>Kopie wykonywane zgodnie z harmonogramem i zweryfikowane.</value></data>
+  <data name="Space.FreeLow" xml:space="preserve"><value>tylko {0}% wolne</value></data>
+  <data name="Verify.Level" xml:space="preserve"><value>Zweryfikowana (V{0})</value></data>
+  <data name="Offline.Headline" xml:space="preserve"><value>Usługa Kobian nie działa</value></data>
+  <data name="Offline.Detail" xml:space="preserve"><value>Kopie nie są wykonywane, dopóki usługa nie zostanie uruchomiona.</value></data>
+  <data name="Offline.Retry" xml:space="preserve"><value>Spróbuj ponownie</value></data>
+  <data name="Offline.Badge" xml:space="preserve"><value>Brak połączenia</value></data>
+  <data name="Cron.Custom" xml:space="preserve"><value>własny harmonogram ({0})</value></data>
+  <data name="Cron.Hourly" xml:space="preserve"><value>co godzinę</value></data>
+  <data name="Cron.HourlyAt" xml:space="preserve"><value>co godzinę, w minucie :{0}</value></data>
+  <data name="Cron.Daily" xml:space="preserve"><value>codziennie o {0}</value></data>
+  <data name="Cron.Weekdays" xml:space="preserve"><value>w dni robocze o {0}</value></data>
+  <data name="Cron.Weekly" xml:space="preserve"><value>co tydzień: {0}, {1}</value></data>
+  <data name="Jobs.Pause" xml:space="preserve"><value>Wstrzymaj</value></data>
+  <data name="Jobs.Resume" xml:space="preserve"><value>Wznów</value></data>
+  <data name="Jobs.Activity.Queued" xml:space="preserve"><value>W kolejce</value></data>
+  <data name="Jobs.Activity.Running" xml:space="preserve"><value>W toku</value></data>
+  <data name="Jobs.Started" xml:space="preserve"><value>Uruchomiono kopię zadania „{0}”.</value></data>
+  <data name="Jobs.Paused" xml:space="preserve"><value>Harmonogram zadania „{0}” wstrzymany — uruchomienie ręczne nadal działa.</value></data>
+  <data name="Jobs.Resumed" xml:space="preserve"><value>Harmonogram zadania „{0}” wznowiony.</value></data>
+  <data name="Jobs.Manual" xml:space="preserve"><value>tylko ręcznie</value></data>
+  <data name="Jobs.SchedulePaused" xml:space="preserve"><value>wstrzymany ({0})</value></data>
+  <data name="Jobs.Filter.All" xml:space="preserve"><value>Wszystkie</value></data>
+  <data name="Jobs.Filter.Attention" xml:space="preserve"><value>Wymagają uwagi</value></data>
+  <data name="Jobs.Filter.Paused" xml:space="preserve"><value>Wstrzymane</value></data>
+  <data name="Jobs.FilterName" xml:space="preserve"><value>Filtr zadań</value></data>
+  <data name="Jobs.FilterEmpty" xml:space="preserve"><value>Brak zadań w tym widoku.</value></data>
+  <data name="Jobs.Subtitle" xml:space="preserve"><value>Wszystkie zadania kopii — stan, harmonogram i ostatnia udana kopia.</value></data>
+  <data name="Jobs.Schedule" xml:space="preserve"><value>Harmonogram</value></data>
+  <data name="Nav.NewJob" xml:space="preserve"><value>Nowe zadanie</value></data>
+  <data name="History.AllJobs" xml:space="preserve"><value>Wszystkie zadania</value></data>
+  <data name="History.Mode.Full" xml:space="preserve"><value>pełna</value></data>
+  <data name="History.Mode.Incremental" xml:space="preserve"><value>przyrostowa</value></data>
+  <data name="History.Today" xml:space="preserve"><value>Dziś</value></data>
+  <data name="History.Yesterday" xml:space="preserve"><value>Wczoraj</value></data>
+  <data name="History.Summary" xml:space="preserve"><value>{0} · ostatnia {1}</value></data>
+  <data name="History.JobFilter" xml:space="preserve"><value>Zadanie</value></data>
+  <data name="History.Empty" xml:space="preserve"><value>Brak wykonanych kopii</value></data>
+  <data name="History.EmptyHint" xml:space="preserve"><value>Pierwsza kopia pojawi się tutaj po uruchomieniu zadania.</value></data>
+  <data name="History.Restore" xml:space="preserve"><value>Odtwórz</value></data>
+  <data name="History.Truncated" xml:space="preserve"><value>Pokazano 500 najnowszych pozycji — wybierz zadanie, aby zawęzić listę.</value></data>
+  <data name="Plural.Copy.One" xml:space="preserve"><value>{0} kopia</value></data>
+  <data name="Plural.Copy.Few" xml:space="preserve"><value>{0} kopie</value></data>
+  <data name="Plural.Copy.Many" xml:space="preserve"><value>{0} kopii</value></data>
+  <data name="Reason.SchedulePaused" xml:space="preserve"><value>Harmonogram wstrzymany — kopie automatyczne nie są wykonywane.</value></data>
+  <data name="Wizard.Step.1" xml:space="preserve"><value>Co chronić</value></data>
+  <data name="Wizard.Step.2" xml:space="preserve"><value>Gdzie</value></data>
+  <data name="Wizard.Step.3" xml:space="preserve"><value>Kiedy</value></data>
+  <data name="Wizard.Step.4" xml:space="preserve"><value>Zabezpieczenie</value></data>
+  <data name="Wizard.Step.5" xml:space="preserve"><value>Jak długo</value></data>
+  <data name="Wizard.Step.6" xml:space="preserve"><value>Podsumowanie</value></data>
+  <data name="Wizard.StepOf" xml:space="preserve"><value>Krok {0} z {1}</value></data>
+  <data name="Wizard.Next" xml:space="preserve"><value>Dalej</value></data>
+  <data name="Wizard.Back" xml:space="preserve"><value>Wstecz</value></data>
+  <data name="Wizard.Cancel" xml:space="preserve"><value>Anuluj</value></data>
+  <data name="Wizard.Save" xml:space="preserve"><value>Zapisz zadanie</value></data>
+  <data name="Wizard.Close" xml:space="preserve"><value>Zamknij</value></data>
+  <data name="Wizard.S1.Title" xml:space="preserve"><value>Wybierz foldery do ochrony</value></data>
+  <data name="Wizard.S1.Hint" xml:space="preserve"><value>Dodaj co najmniej jeden folder. Podfoldery wybranego folderu są chronione automatycznie.</value></data>
+  <data name="Wizard.S1.Watermark" xml:space="preserve"><value>Ścieżka folderu, np. C:\Users\Anna\Documents</value></data>
+  <data name="Wizard.S1.Add" xml:space="preserve"><value>Dodaj folder</value></data>
+  <data name="Wizard.S1.Remove" xml:space="preserve"><value>Usuń</value></data>
+  <data name="Wizard.S2.Title" xml:space="preserve"><value>Gdzie zapisywać kopie</value></data>
+  <data name="Wizard.Dest.Local" xml:space="preserve"><value>Dysk lokalny lub USB</value></data>
+  <data name="Wizard.Dest.Sftp" xml:space="preserve"><value>Serwer SFTP</value></data>
+  <data name="Wizard.Dest.Smb" xml:space="preserve"><value>Udział sieciowy (SMB)</value></data>
+  <data name="Wizard.S2.SmbCredential" xml:space="preserve"><value>Poświadczenie (nazwa wpisu w magazynie sekretów usługi)</value></data>
+  <data name="Wizard.S2.SmbHint" xml:space="preserve"><value>Podaj folder jako ścieżkę UNC, np. \\nas\kopie\biuro. Hasło do udziału zapisuje administrator w magazynie sekretów usługi — kreator go nie przyjmuje.</value></data>
+  <data name="Wizard.S2.Host" xml:space="preserve"><value>Serwer</value></data>
+  <data name="Wizard.S2.Port" xml:space="preserve"><value>Port</value></data>
+  <data name="Wizard.S2.User" xml:space="preserve"><value>Użytkownik</value></data>
+  <data name="Wizard.S2.Path" xml:space="preserve"><value>Folder docelowy</value></data>
+  <data name="Wizard.S2.PathWatermark" xml:space="preserve"><value>np. E:\KopieKobian</value></data>
+  <data name="Wizard.S2.Hint" xml:space="preserve"><value>Najlepiej inny dysk niż chronione dane. Po „Dalej” sprawdzimy, czy cel jest dostępny i zapisywalny.</value></data>
+  <data name="Wizard.Identity.Title" xml:space="preserve"><value>Potwierdź tożsamość serwera</value></data>
+  <data name="Wizard.Identity.Hint" xml:space="preserve"><value>Łączysz się z tym serwerem pierwszy raz. Porównaj odcisk klucza z odciskiem od administratora serwera — zatwierdź tylko, gdy są identyczne.</value></data>
+  <data name="Wizard.Identity.Approve" xml:space="preserve"><value>Odciski są zgodne — zatwierdź</value></data>
+  <data name="Wizard.S3.Title" xml:space="preserve"><value>Kiedy wykonywać kopię</value></data>
+  <data name="Wizard.Schedule.Daily" xml:space="preserve"><value>Codziennie</value></data>
+  <data name="Wizard.Schedule.Weekdays" xml:space="preserve"><value>Dni robocze</value></data>
+  <data name="Wizard.Schedule.Hourly" xml:space="preserve"><value>Co godzinę</value></data>
+  <data name="Wizard.Schedule.Manual" xml:space="preserve"><value>Tylko ręcznie</value></data>
+  <data name="Wizard.S3.Time" xml:space="preserve"><value>Godzina (GG:MM)</value></data>
+  <data name="Wizard.Schedule.ManualHint" xml:space="preserve"><value>Kopia tylko po kliknięciu „Uruchom teraz” — pulpit nie ostrzeże o zaległości.</value></data>
+  <data name="Wizard.Schedule.BadTime" xml:space="preserve"><value>Wpisz godzinę w formacie GG:MM, np. 21:00.</value></data>
+  <data name="Wizard.S4.Title" xml:space="preserve"><value>Ustaw hasło repozytorium</value></data>
+  <data name="Wizard.S4.Hint" xml:space="preserve"><value>Kopie są szyfrowane. Bez hasła albo klucza odzyskiwania nikt — także pomoc techniczna — nie odtworzy danych. Co najmniej 12 znaków; najlepiej kilka słów.</value></data>
+  <data name="Wizard.S4.Password" xml:space="preserve"><value>Hasło</value></data>
+  <data name="Wizard.S4.Confirm" xml:space="preserve"><value>Powtórz hasło</value></data>
+  <data name="Wizard.Security.Create" xml:space="preserve"><value>Utwórz repozytorium</value></data>
+  <data name="Wizard.Security.Mismatch" xml:space="preserve"><value>Hasła różnią się — wpisz to samo hasło w obu polach.</value></data>
+  <data name="Wizard.Key.Title" xml:space="preserve"><value>Zapisz klucz odzyskiwania</value></data>
+  <data name="Wizard.Key.Hint" xml:space="preserve"><value>To jedyny sposób odzyskania danych, gdy hasło zaginie. Zapisz go na papierze i schowaj poza komputerem. Aby przejść dalej, przepisz dwie wskazane grupy.</value></data>
+  <data name="Wizard.Key.Group" xml:space="preserve"><value>Grupa {0}</value></data>
+  <data name="Wizard.Key.Confirm" xml:space="preserve"><value>Zapisałem klucz — dalej</value></data>
+  <data name="Wizard.Key.Mismatch" xml:space="preserve"><value>Wpisane grupy nie zgadzają się z kluczem. Sprawdź zapis i spróbuj ponownie.</value></data>
+  <data name="Wizard.S5.Title" xml:space="preserve"><value>Jak długo przechowywać kopie</value></data>
+  <data name="Wizard.S5.Hint" xml:space="preserve"><value>Kopie spoza tych reguł zostaną wskazane do usunięcia przy porządkowaniu (najpierw podgląd). Każda reguła zachowuje najnowszą kopię z danego okresu.</value></data>
+  <data name="Wizard.S5.Daily" xml:space="preserve"><value>Dzienne (dni)</value></data>
+  <data name="Wizard.S5.Weekly" xml:space="preserve"><value>Tygodniowe (tygodnie)</value></data>
+  <data name="Wizard.S5.Monthly" xml:space="preserve"><value>Miesięczne (miesiące)</value></data>
+  <data name="Wizard.Retention.Summary" xml:space="preserve"><value>dzienne: {0}, tygodniowe: {1}, miesięczne: {2}</value></data>
+  <data name="Wizard.S6.Title" xml:space="preserve"><value>Sprawdź i zapisz</value></data>
+  <data name="Wizard.S6.Name" xml:space="preserve"><value>Nazwa zadania</value></data>
+  <data name="Wizard.S6.Sources" xml:space="preserve"><value>Foldery</value></data>
+  <data name="Wizard.S6.Destination" xml:space="preserve"><value>Cel</value></data>
+  <data name="Wizard.S6.Schedule" xml:space="preserve"><value>Harmonogram</value></data>
+  <data name="Wizard.S6.Retention" xml:space="preserve"><value>Przechowywanie</value></data>
+  <data name="Wizard.S6.RunNow" xml:space="preserve"><value>Wykonaj pierwszą kopię teraz</value></data>
+  <data name="Wizard.Final.Title" xml:space="preserve"><value>Zadanie zapisane</value></data>
+  <data name="Wizard.Final.Running" xml:space="preserve"><value>Trwa pierwsza kopia…</value></data>
+  <data name="Wizard.Final.Protected" xml:space="preserve"><value>Pierwsza kopia wykonana i zweryfikowana. Dane są chronione.</value></data>
+  <data name="Wizard.Final.Saved" xml:space="preserve"><value>Zadanie zapisane. Pierwsza kopia wykona się zgodnie z harmonogramem.</value></data>
+  <data name="Wizard.Final.Failed" xml:space="preserve"><value>Zadanie zapisane, ale pierwsza kopia nie powiodła się: {0}</value></data>
+  <data name="History.Run.Failed" xml:space="preserve"><value>nieudana</value></data>
+  <data name="History.Run.Warning" xml:space="preserve"><value>z ostrzeżeniem</value></data>
+  <data name="History.Run.Skipped" xml:space="preserve"><value>pominięta</value></data>
+  <data name="History.Run.Missed" xml:space="preserve"><value>opuszczona</value></data>
+  <data name="History.Run.Interrupted" xml:space="preserve"><value>przerwana</value></data>
+  <data name="History.Run.Cancelled" xml:space="preserve"><value>anulowana</value></data>
+  <data name="History.Run.Running" xml:space="preserve"><value>w toku</value></data>
+  <data name="History.Run.Queued" xml:space="preserve"><value>w kolejce</value></data>
+  <data name="History.Run.Other" xml:space="preserve"><value>uruchomienie</value></data>
+  <data name="History.Kind.Restore" xml:space="preserve"><value>odtwarzanie</value></data>
+  <data name="History.Kind.Check" xml:space="preserve"><value>weryfikacja</value></data>
+  <data name="History.FailedCount" xml:space="preserve"><value>nieudane: {0}</value></data>
+  <data name="History.Kind.Restore.Failed" xml:space="preserve"><value>odtwarzanie nieudane</value></data>
+  <data name="History.Kind.Restore.Warning" xml:space="preserve"><value>odtwarzanie z uwagami</value></data>
+  <data name="History.Kind.Check.Failed" xml:space="preserve"><value>weryfikacja nieudana</value></data>
+  <data name="History.Kind.Check.Warning" xml:space="preserve"><value>weryfikacja z uwagami</value></data>
+  <data name="History.Kind.Forget" xml:space="preserve"><value>porządkowanie kopii</value></data>
+  <data name="History.Kind.Forget.Failed" xml:space="preserve"><value>porządkowanie nieudane</value></data>
+  <data name="History.Kind.Forget.Warning" xml:space="preserve"><value>porządkowanie z uwagami</value></data>
+  <data name="History.Kind.Prune" xml:space="preserve"><value>zwalnianie miejsca</value></data>
+  <data name="History.Kind.Prune.Failed" xml:space="preserve"><value>zwalnianie miejsca nieudane</value></data>
+  <data name="History.Kind.Prune.Warning" xml:space="preserve"><value>zwalnianie miejsca z uwagami</value></data>
+  <data name="Wizard.Retention.Preview" xml:space="preserve"><value>Po ustabilizowaniu: ok. {0}, najstarsza sprzed {1}</value></data>
+  <data name="Wizard.Retention.Age.Months" xml:space="preserve"><value>ok. {0} mies.</value></data>
+  <data name="Wizard.Retention.Age.Weeks" xml:space="preserve"><value>ok. {0} tyg.</value></data>
+  <data name="Wizard.Retention.Age.Days" xml:space="preserve"><value>{0} dni</value></data>
+  <data name="Wizard.Source.Files" xml:space="preserve"><value>Pliki i foldery</value></data>
+  <data name="Wizard.Source.Database" xml:space="preserve"><value>Baza SQL Server</value></data>
+  <data name="Wizard.Db.Title" xml:space="preserve"><value>Wybierz bazę danych do ochrony</value></data>
+  <data name="Wizard.Db.Hint" xml:space="preserve"><value>Agent łączy się z serwerem i tylko odczytuje listę baz. Kopia powstaje poleceniem BACKUP z sumą kontrolną — baza działa w tym czasie normalnie.</value></data>
+  <data name="Wizard.Db.Server" xml:space="preserve"><value>Serwer SQL</value></data>
+  <data name="Wizard.Db.ServerWatermark" xml:space="preserve"><value>np. SERWER\SQLEXPRESS albo serwer,1433</value></data>
+  <data name="Wizard.Db.Auth" xml:space="preserve"><value>Logowanie</value></data>
+  <data name="Wizard.Db.Auth.Windows" xml:space="preserve"><value>Konto usługi (Windows)</value></data>
+  <data name="Wizard.Db.Auth.Sql" xml:space="preserve"><value>Login SQL</value></data>
+  <data name="Wizard.Db.Credential" xml:space="preserve"><value>Nazwa poświadczenia SQL w Agencie</value></data>
+  <data name="Wizard.Db.CredentialHint" xml:space="preserve"><value>Login i hasło przechowuje Agent (katalog sekretów) — kreator ich nie widzi.</value></data>
+  <data name="Wizard.Db.Certificate" xml:space="preserve"><value>Zatwierdzony certyfikat serwera (plik .cer, opcjonalnie)</value></data>
+  <data name="Wizard.Db.Discover" xml:space="preserve"><value>Pokaż bazy</value></data>
+  <data name="Wizard.Db.Discovering" xml:space="preserve"><value>Odczytuję listę baz…</value></data>
+  <data name="Wizard.Db.ServerVersion" xml:space="preserve"><value>SQL Server {0} (wersja {1})</value></data>
+  <data name="Wizard.Db.Express" xml:space="preserve"><value>edycja Express</value></data>
+  <data name="Wizard.Db.Empty" xml:space="preserve"><value>brak baz użytkownika do ochrony</value></data>
+  <data name="Wizard.Db.Truncated" xml:space="preserve"><value>pokazano pierwsze 500 baz</value></data>
+  <data name="Wizard.Db.Recovery" xml:space="preserve"><value>model odzyskiwania {0}</value></data>
+  <data name="Wizard.Db.NoBackupRight" xml:space="preserve"><value>brak uprawnienia do kopii</value></data>
+  <data name="Wizard.Db.SelectFirst" xml:space="preserve"><value>Wybierz bazę z listy — najpierw kliknij „Pokaż bazy”.</value></data>
+  <data name="Wizard.Db.ShowScript" xml:space="preserve"><value>Pokaż skrypt uprawnień</value></data>
+  <data name="Wizard.Db.HideScript" xml:space="preserve"><value>Ukryj skrypt uprawnień</value></data>
+  <data name="Wizard.Db.ScriptHint" xml:space="preserve"><value>Przekaż skrypt administratorowi SQL Server: nadaje kontu usługi Kobian tylko prawo wykonania kopii.</value></data>
+  <data name="Wizard.Db.SourceText" xml:space="preserve"><value>Baza {0} na serwerze {1}</value></data>
+  <data name="Wizard.Db.FetchCertificate" xml:space="preserve"><value>Pobierz certyfikat serwera</value></data>
+  <data name="Wizard.Db.Fetching" xml:space="preserve"><value>Odczytuję certyfikat…</value></data>
+  <data name="Wizard.Db.CertTitle" xml:space="preserve"><value>Sprawdź certyfikat serwera SQL</value></data>
+  <data name="Wizard.Db.CertHint" xml:space="preserve"><value>Porównaj odcisk SHA-256 z administratorem serwera SQL (SQL Server Configuration Manager → Protokoły → Certyfikat). Zatwierdź tylko zgodny — Agent zapamięta ten certyfikat i odrzuci każdy inny.</value></data>
+  <data name="Wizard.Db.CertDetails" xml:space="preserve"><value>{0} · wystawca {1} · ważny do {2}</value></data>
+  <data name="Wizard.Db.CertSelfIssued" xml:space="preserve"><value>certyfikat samopodpisany</value></data>
+  <data name="Wizard.Db.CertTrusted" xml:space="preserve"><value>zaufany w systemie — zatwierdzenie opcjonalne</value></data>
+  <data name="Wizard.Db.CertApprove" xml:space="preserve"><value>Zatwierdź odcisk</value></data>
+  <data name="Wizard.Db.CertReject" xml:space="preserve"><value>Odrzuć</value></data>
+  <data name="Wizard.Db.CertApproved" xml:space="preserve"><value>Zatwierdzono certyfikat: {0}</value></data>
+  <data name="Browse.Title" xml:space="preserve"><value>Przeglądanie kopii</value></data>
+  <data name="Browse.Snapshots" xml:space="preserve"><value>Kopie</value></data>
+  <data name="Browse.Kind.Folder" xml:space="preserve"><value>folder</value></data>
+  <data name="Browse.Kind.File" xml:space="preserve"><value>plik</value></data>
+  <data name="Browse.Kind.Link" xml:space="preserve"><value>dowiązanie (nie jest odtwarzane)</value></data>
+  <data name="Browse.RestoreAll" xml:space="preserve"><value>Odtwórz całą kopię…</value></data>
+  <data name="Browse.RestoreFolder" xml:space="preserve"><value>Odtwórz ten folder…</value></data>
+  <data name="Browse.RestoreItem" xml:space="preserve"><value>Odtwórz…</value></data>
+  <data name="Browse.Open" xml:space="preserve"><value>Otwórz</value></data>
+  <data name="Browse.Up" xml:space="preserve"><value>W górę</value></data>
+  <data name="Browse.RootCrumb" xml:space="preserve"><value>Kopia z {0}</value></data>
+  <data name="Browse.Empty" xml:space="preserve"><value>Brak kopii do przeglądania</value></data>
+  <data name="Browse.EmptyHint" xml:space="preserve"><value>Po pierwszej kopii jej zawartość będzie można przeglądać i odtwarzać tutaj.</value></data>
+  <data name="Browse.FolderEmpty" xml:space="preserve"><value>Ten folder kopii jest pusty.</value></data>
+  <data name="Browse.Truncated" xml:space="preserve"><value>Pokazano pierwsze 5000 pozycji — odtwórz folder, aby otrzymać wszystkie pliki.</value></data>
+  <data name="Browse.Col.Name" xml:space="preserve"><value>Nazwa</value></data>
+  <data name="Browse.Col.Size" xml:space="preserve"><value>Rozmiar</value></data>
+  <data name="Browse.Col.Modified" xml:space="preserve"><value>Zmieniono</value></data>
+  <data name="Plural.Folder.One" xml:space="preserve"><value>{0} folder</value></data>
+  <data name="Plural.Folder.Few" xml:space="preserve"><value>{0} foldery</value></data>
+  <data name="Plural.Folder.Many" xml:space="preserve"><value>{0} folderów</value></data>
+  <data name="Restore.Title" xml:space="preserve"><value>Odtwarzanie plików</value></data>
+  <data name="Restore.SnapshotLine" xml:space="preserve"><value>Kopia z {0} · {1} · {2}</value></data>
+  <data name="Restore.WhatAll" xml:space="preserve"><value>Cała kopia</value></data>
+  <data name="Restore.WhatFolder" xml:space="preserve"><value>Folder: {0}</value></data>
+  <data name="Restore.WhatFile" xml:space="preserve"><value>Plik: {0}</value></data>
+  <data name="Restore.Source" xml:space="preserve"><value>Co odtworzyć</value></data>
+  <data name="Restore.TargetLabel" xml:space="preserve"><value>Folder docelowy</value></data>
+  <data name="Restore.TargetHint" xml:space="preserve"><value>Istniejący folder na komputerze z usługą Kobian, np. D:\Odtworzone. Ścieżka z kopii zostanie zachowana.</value></data>
+  <data name="Restore.TargetInvalid" xml:space="preserve"><value>Podaj pełną ścieżkę istniejącego folderu (np. D:\Odtworzone).</value></data>
+  <data name="Restore.Preview" xml:space="preserve"><value>Pliki trafią do: {0}</value></data>
+  <data name="Restore.NoOverwrite" xml:space="preserve"><value>Istniejące pliki nigdy nie są nadpisywane — zostaną pominięte i wykazane w wyniku. Dowiązania nie są odtwarzane.</value></data>
+  <data name="Restore.Plan.Summary" xml:space="preserve"><value>Do odtworzenia: {0}</value></data>
+  <data name="Restore.Plan.Free" xml:space="preserve"><value>wolne {0}</value></data>
+  <data name="Restore.Plan.Conflicts" xml:space="preserve"><value>Pominięte — już są w folderze docelowym i nie zostaną nadpisane: {0}</value></data>
+  <data name="Restore.Plan.More" xml:space="preserve"><value>…i jeszcze {0}</value></data>
+  <data name="Restore.StartAnyway" xml:space="preserve"><value>Odtwórz mimo to</value></data>
+  <data name="Restore.Planning" xml:space="preserve"><value>Sprawdzanie kopii i folderu docelowego…</value></data>
+  <data name="Restore.Plan.Resumable" xml:space="preserve"><value>Z przerwanej próby: {0} już odtworzone — zostaną pominięte bez konfliktu.</value></data>
+  <data name="Restore.RunningPlan" xml:space="preserve"><value>Odtwarzanie: {0} ({1})… Każdy plik jest sprawdzany sumą kontrolną.</value></data>
+  <data name="Restore.Start" xml:space="preserve"><value>Odtwórz</value></data>
+  <data name="Restore.Cancel" xml:space="preserve"><value>Anuluj</value></data>
+  <data name="Restore.Running" xml:space="preserve"><value>Odtwarzanie… Każdy plik jest sprawdzany sumą kontrolną.</value></data>
+  <data name="Restore.Done.Ok" xml:space="preserve"><value>Odtworzono — wszystkie pliki zgodne z kopią.</value></data>
+  <data name="Restore.Done.Warning" xml:space="preserve"><value>Odtworzono z uwagami.</value></data>
+  <data name="Restore.Done.Failed" xml:space="preserve"><value>Odtwarzanie nie powiodło się.</value></data>
+  <data name="Restore.Retry" xml:space="preserve"><value>Spróbuj ponownie</value></data>
+  <data name="Restore.Close" xml:space="preserve"><value>Gotowe</value></data>
+  <data name="Restore.ShowHistory" xml:space="preserve"><value>Pokaż w historii</value></data>
+  <data name="Restore.PickFolder" xml:space="preserve"><value>Wybierz…</value></data>
+  <data name="Restore.Badge.Ok" xml:space="preserve"><value>odtworzono</value></data>
+  <data name="Restore.Badge.Warning" xml:space="preserve"><value>z uwagami</value></data>
+  <data name="Restore.Badge.Failed" xml:space="preserve"><value>błąd</value></data>
+  <data name="Settings.Appearance" xml:space="preserve"><value>Wygląd</value></data>
+  <data name="Settings.Theme" xml:space="preserve"><value>Motyw</value></data>
+  <data name="Settings.Theme.system" xml:space="preserve"><value>Jak w systemie</value></data>
+  <data name="Settings.Theme.light" xml:space="preserve"><value>Jasny</value></data>
+  <data name="Settings.Theme.dark" xml:space="preserve"><value>Ciemny</value></data>
+  <data name="Settings.Language" xml:space="preserve"><value>Język</value></data>
+  <data name="Settings.Lang.system" xml:space="preserve"><value>Jak w systemie</value></data>
+  <data name="Settings.Lang.pl" xml:space="preserve"><value>Polski</value></data>
+  <data name="Settings.Lang.en" xml:space="preserve"><value>English</value></data>
+  <data name="Settings.RestartNeeded" xml:space="preserve"><value>Nowy język będzie widoczny po ponownym uruchomieniu aplikacji.</value></data>
+  <data name="Settings.Service" xml:space="preserve"><value>Usługa Kobian</value></data>
+  <data name="Settings.Version" xml:space="preserve"><value>Wersja usługi</value></data>
+  <data name="Settings.YourRole" xml:space="preserve"><value>Twoja rola</value></data>
+  <data name="Settings.Role.Viewer" xml:space="preserve"><value>Podgląd</value></data>
+  <data name="Settings.Role.Operator" xml:space="preserve"><value>Operator</value></data>
+  <data name="Settings.Role.Admin" xml:space="preserve"><value>Administrator</value></data>
+  <data name="Settings.Runtime" xml:space="preserve"><value>Poprawki .NET</value></data>
+  <data name="Settings.RuntimeOk" xml:space="preserve"><value>aktualne (co najmniej 10.0.13)</value></data>
+  <data name="Settings.Audit" xml:space="preserve"><value>Dziennik audytu</value></data>
+  <data name="Settings.AuditHint" xml:space="preserve"><value>Sprawdza, czy nikt nie zmienił zapisanych operacji (łańcuch skrótów SHA-256).</value></data>
+  <data name="Settings.AnchorLine" xml:space="preserve"><value>Ostatnia kotwica dziennika ({0}):</value></data>
+  <data name="Settings.AnchorName" xml:space="preserve"><value>Kotwica dziennika audytu</value></data>
+  <data name="Settings.AnchorHint" xml:space="preserve"><value>Zapisz ją poza serwerem (np. w zgłoszeniu). Później: kobian audit verify --anchor &lt;kotwica&gt; wykryje przepisanie lub skrócenie dziennika.</value></data>
+  <data name="Settings.AuditVerify" xml:space="preserve"><value>Sprawdź dziennik</value></data>
+  <data name="Settings.AuditOk" xml:space="preserve"><value>Dziennik spójny — {0}.</value></data>
+  <data name="Settings.AuditBroken" xml:space="preserve"><value>Dziennik zmieniony poza aplikacją od wpisu {0}.</value></data>
+  <data name="Settings.Offline" xml:space="preserve"><value>Brak połączenia z usługą — widoczne są tylko ustawienia tego komputera.</value></data>
+  <data name="Settings.LocalNote" xml:space="preserve"><value>Ustawienia wyglądu i języka dotyczą tylko Twojego konta na tym komputerze.</value></data>
+  <data name="Plural.Entry.One" xml:space="preserve"><value>{0} wpis</value></data>
+  <data name="Plural.Entry.Few" xml:space="preserve"><value>{0} wpisy</value></data>
+  <data name="Plural.Entry.Many" xml:space="preserve"><value>{0} wpisów</value></data>
+  <data name="Runtime.Unpatched" xml:space="preserve"><value>Usługa działa na niezałatanym .NET — kopie działają, ale zainstaluj aktualizację .NET 10.</value></data>
+  <data name="Settings.RuntimeBad" xml:space="preserve"><value>niezałatane: {0} ({1}) — zainstaluj aktualizację .NET 10 i uruchom ponownie usługę</value></data>
+  <data name="Dest.Scheme.local" xml:space="preserve"><value>Dysk lokalny / USB</value></data>
+  <data name="Dest.Scheme.sftp" xml:space="preserve"><value>Serwer SFTP</value></data>
+  <data name="Dest.Scheme.smb" xml:space="preserve"><value>Udział sieciowy (SMB)</value></data>
+  <data name="Dest.Scheme.ftp" xml:space="preserve"><value>Serwer FTP</value></data>
+  <data name="Dest.Scheme.ftps" xml:space="preserve"><value>Serwer FTPS</value></data>
+  <data name="Dest.Scheme.other" xml:space="preserve"><value>Inny</value></data>
+  <data name="Dest.UsedBy" xml:space="preserve"><value>Używany przez: {0}</value></data>
+  <data name="Dest.Unreadable" xml:space="preserve"><value>Nie udało się odczytać definicji zadań: {0} — sprawdź je w liście zadań.</value></data>
+  <data name="Dest.Check" xml:space="preserve"><value>Sprawdź miejsce</value></data>
+  <data name="Dest.Space" xml:space="preserve"><value>Wolne {0} z {1} ({2}%)</value></data>
+  <data name="Dest.SpaceUnknown" xml:space="preserve"><value>Połączenie działa — cel nie podaje wolnego miejsca.</value></data>
+  <data name="Dest.Empty" xml:space="preserve"><value>Brak celów kopii</value></data>
+  <data name="Dest.EmptyHint" xml:space="preserve"><value>Cel pojawi się tutaj po utworzeniu pierwszego zadania.</value></data>
+  <data name="Dest.Note" xml:space="preserve"><value>Cele pochodzą z zadań. Dodawanie i edycja celów oraz poświadczeń — w kolejnej wersji.</value></data>
+  <data name="Dest.LowSpace" xml:space="preserve"><value>mało miejsca</value></data>
+  <data name="DbRestore.Title" xml:space="preserve"><value>Odtwarzanie bazy danych</value></data>
+  <data name="DbRestore.TargetLabel" xml:space="preserve"><value>Nazwa nowej bazy</value></data>
+  <data name="DbRestore.TargetPlaceholder" xml:space="preserve"><value>puste = nazwa z datą, np. Firma_restore_20261014</value></data>
+  <data name="DbRestore.TargetHint" xml:space="preserve"><value>Baza zostanie utworzona obok istniejących na tym samym serwerze SQL. Bazy produkcyjnej nie zmieniamy.</value></data>
+  <data name="DbRestore.NameInvalid" xml:space="preserve"><value>Nazwa bazy: do 128 znaków, bez znaków sterujących.</value></data>
+  <data name="DbRestore.NoOverwrite" xml:space="preserve"><value>Istniejąca baza nigdy nie jest nadpisywana — jeśli nazwa jest zajęta, odtwarzanie zatrzyma się z komunikatem (KB-3501).</value></data>
+  <data name="DbRestore.Start" xml:space="preserve"><value>Odtwórz jako nową bazę</value></data>
+  <data name="DbRestore.Running" xml:space="preserve"><value>Odtwarzanie bazy… Plik kopii jest sprawdzany sumami kontrolnymi.</value></data>
+  <data name="DbRestore.Done" xml:space="preserve"><value>Odtworzono jako nową bazę: {0}</value></data>
+  <data name="Browse.RestoreDb" xml:space="preserve"><value>Odtwórz jako nową bazę…</value></data>
+  <data name="History.Mode.Database" xml:space="preserve"><value>kopia bazy</value></data>
+  <data name="Snapshot.Damage.Unrecoverable" xml:space="preserve"><value>nie do odtworzenia</value></data>
+  <data name="Snapshot.Damage.Partial" xml:space="preserve"><value>uszkodzona: {0}</value></data>
+  <data name="Browse.Damage.Unrecoverable" xml:space="preserve"><value>Tej kopii nie da się odtworzyć (wynik weryfikacji z naprawą). Wybierz inną kopię z listy.</value></data>
+  <data name="Browse.Damage.Partial" xml:space="preserve"><value>Ta kopia jest częściowo uszkodzona — nie da się odtworzyć: {0}. Pozostałe pliki i foldery odtworzysz normalnie.</value></data>
+  <data name="Wizard.Dest.Ftps" xml:space="preserve"><value>Serwer FTPS</value></data>
+  <data name="Wizard.Ftps.HostWatermark" xml:space="preserve"><value>np. nas.firma.local lub 192.168.1.20</value></data>
+  <data name="Wizard.Ftps.Mode" xml:space="preserve"><value>Szyfrowanie połączenia</value></data>
+  <data name="Wizard.Ftps.Mode.Explicit" xml:space="preserve"><value>Standardowe (zalecane) · port 21</value></data>
+  <data name="Wizard.Ftps.Mode.Implicit" xml:space="preserve"><value>Starsze serwery NAS · port 990</value></data>
+  <data name="Wizard.Ftps.ModeHint" xml:space="preserve"><value>Oba tryby szyfrują hasło i dane. Jeśli nie wiesz, zostaw „Standardowe”; port 990 wybierz, gdy tak podaje instrukcja serwera lub administrator.</value></data>
+  <data name="Wizard.Ftps.ModeShort.Explicit" xml:space="preserve"><value>Explicit TLS</value></data>
+  <data name="Wizard.Ftps.ModeShort.Implicit" xml:space="preserve"><value>Implicit TLS</value></data>
+  <data name="Wizard.Ftps.Credential" xml:space="preserve"><value>Poświadczenie (nazwa wpisu w magazynie sekretów usługi)</value></data>
+  <data name="Wizard.Ftps.CredentialHint" xml:space="preserve"><value>Login i hasło do serwera zapisuje administrator w magazynie sekretów usługi — kreator ich nie przyjmuje. Zalecane konto bez prawa usuwania plików.</value></data>
+  <data name="Wizard.Ftps.PathWatermark" xml:space="preserve"><value>np. /kopie/biuro</value></data>
+  <data name="Wizard.Ftps.PathHint" xml:space="preserve"><value>Folder na serwerze, zaczynający się od „/”. Po „Dalej” sprawdzimy połączenie, certyfikat serwera i prawo zapisu.</value></data>
+  <data name="Wizard.Ftps.PlainFtp" xml:space="preserve"><value>Zwykły FTP bez szyfrowania nie jest dostępny w kreatorze — hasło i dane szłyby otwartym tekstem. Użyj FTPS albo SFTP.</value></data>
+  <data name="Wizard.Ftps.Summary" xml:space="preserve"><value>{0} · {1} · poświadczenie „{2}”</value></data>
+  <data name="Wizard.Ftps.Err.HostRequired" xml:space="preserve"><value>Podaj nazwę lub adres serwera.</value></data>
+  <data name="Wizard.Ftps.Err.HostScheme" xml:space="preserve"><value>Wpisz samą nazwę serwera, bez „ftp://” ani „ftps://”.</value></data>
+  <data name="Wizard.Ftps.Err.HostPath" xml:space="preserve"><value>Wpisz samą nazwę serwera — folder podaj niżej, w polu „Folder docelowy”.</value></data>
+  <data name="Wizard.Ftps.Err.HostUser" xml:space="preserve"><value>Wpisz samą nazwę serwera, bez użytkownika i „@” — login jest w poświadczeniu.</value></data>
+  <data name="Wizard.Ftps.Err.HostPort" xml:space="preserve"><value>Wpisz samą nazwę serwera — port podaj w polu „Port”.</value></data>
+  <data name="Wizard.Ftps.Err.HostInvalid" xml:space="preserve"><value>Nazwa serwera może zawierać tylko litery, cyfry, kropki i myślniki (albo adres IP).</value></data>
+  <data name="Wizard.Ftps.Err.Port" xml:space="preserve"><value>Port musi być liczbą od 1 do 65535.</value></data>
+  <data name="Wizard.Ftps.Err.PathRequired" xml:space="preserve"><value>Podaj folder na serwerze, np. /kopie/biuro.</value></data>
+  <data name="Wizard.Ftps.Err.PathAbsolute" xml:space="preserve"><value>Folder na serwerze musi zaczynać się od „/” i używać ukośników „/”, np. /kopie/biuro.</value></data>
+  <data name="Wizard.Ftps.Err.PathDotDot" xml:space="preserve"><value>Folder nie może zawierać „..” (przejścia do folderu nadrzędnego).</value></data>
+  <data name="Wizard.Ftps.Err.PathInvalid" xml:space="preserve"><value>Folder zawiera niedozwolone znaki albo jest za długi.</value></data>
+  <data name="Wizard.Ftps.Err.CredentialRequired" xml:space="preserve"><value>Podaj nazwę wpisu poświadczenia z magazynu sekretów usługi.</value></data>
+  <data name="Wizard.Ftps.Err.CredentialInvalid" xml:space="preserve"><value>Nazwa wpisu: litery, cyfry, „.”, „_”, „-” (do 64 znaków), bez „..”.</value></data>
+  <data name="Wizard.Ftps.Identity.Hint" xml:space="preserve"><value>System nie ufa certyfikatowi tego serwera (np. certyfikat samopodpisany albo połączenie po adresie IP). Porównaj odcisk klucza certyfikatu z odciskiem od administratora serwera — zatwierdź tylko, gdy są identyczne. Zatwierdzony odcisk zostanie zapisany w zadaniu i przetrwa odnowienie certyfikatu z tym samym kluczem.</value></data>
+  <data name="Wizard.Ftps.Identity.Fingerprint" xml:space="preserve"><value>Odcisk klucza certyfikatu (SHA-256 SPKI)</value></data>
+  <data name="Wizard.Ftps.Identity.AdminHint" xml:space="preserve"><value>Administrator odczyta odcisk na serwerze poleceniem z przewodnika „Cel FTPS”. Inny odcisk = nie zatwierdzaj, wróć i sprawdź adres serwera.</value></data>
+  <data name="Wizard.Identity.Server" xml:space="preserve"><value>Serwer: {0}</value></data>
+  <data name="Wizard.Identity.Presented" xml:space="preserve"><value>Odcisk przedstawiony przez serwer: {0}</value></data>
+  <data name="Dest.Encrypted" xml:space="preserve"><value>Połączenie szyfrowane</value></data>
+  <data name="Dest.Ftps.Pin" xml:space="preserve"><value>przypięty klucz {0}</value></data>
+  <data name="Dest.Ftps.SystemTrust" xml:space="preserve"><value>certyfikat zaufany przez system</value></data>
+  <data name="Dest.Ftps.NoDetails" xml:space="preserve"><value>Szyfrowanie TLS — tryb i odcisk certyfikatu zapisane w definicji zadania</value></data>
+  <data name="Dest.CheckUnavailable" xml:space="preserve"><value>Sprawdzanie tego celu z listy — w kolejnej wersji usługi (lista celów nie podaje jeszcze adresu serwera). Połączenie sprawdza kreator i pierwsza kopia.</value></data>
+  <data name="Alert.A01" xml:space="preserve"><value>Zadanie zakończyło się błędem</value></data>
+  <data name="Alert.A02" xml:space="preserve"><value>Zadanie zakończyło się ostrzeżeniem</value></data>
+  <data name="Alert.A03" xml:space="preserve"><value>Brak udanej kopii dłużej niż dopuszcza harmonogram</value></data>
+  <data name="Alert.A04" xml:space="preserve"><value>Weryfikacja wykryła uszkodzone repozytorium kopii</value></data>
+  <data name="Alert.A05" xml:space="preserve"><value>Test odtwarzania nie powiódł się</value></data>
+  <data name="Alert.A06" xml:space="preserve"><value>Kończy się miejsce na celu kopii</value></data>
+  <data name="Alert.A07" xml:space="preserve"><value>Z celu zniknęła kopia spoza zasad retencji</value></data>
+  <data name="Alert.A08" xml:space="preserve"><value>Zmieniono retencję, harmonogram lub usunięto kopię</value></data>
+  <data name="Alert.A09" xml:space="preserve"><value>Zmienił się klucz lub certyfikat serwera celu</value></data>
+  <data name="Alert.A10" xml:space="preserve"><value>Cel kopii nie chroni przed usuwaniem</value></data>
+  <data name="Alert.A11" xml:space="preserve"><value>Wykryto anomalię przypominającą ransomware</value></data>
+  <data name="Alert.A12" xml:space="preserve"><value>Usługa Kobian nie odpowiada</value></data>
+  <data name="Alert.A13" xml:space="preserve"><value>Zbliża się wygaśnięcie certyfikatu lub sekretu</value></data>
+  <data name="Alert.A14" xml:space="preserve"><value>Dostępna aktualizacja bezpieczeństwa</value></data>
+  <data name="Alert.A15" xml:space="preserve"><value>Nieudane potwierdzenia lub wielokrotne odmowy API</value></data>
+  <data name="Alert.A16" xml:space="preserve"><value>System lub SQL Server bez wsparcia producenta</value></data>
+  <data name="Alert.A17" xml:space="preserve"><value>Skok zegara systemu — porządkowanie kopii wstrzymane</value></data>
+  <data name="Alert.Unknown" xml:space="preserve"><value>Alert {0}</value></data>
+  <data name="Alert.Severity.Warning" xml:space="preserve"><value>Ostrzeżenie</value></data>
+  <data name="Alert.Severity.Critical" xml:space="preserve"><value>Krytyczny</value></data>
+  <data name="Alert.Severity.Security" xml:space="preserve"><value>Bezpieczeństwo</value></data>
+  <data name="Alert.State.Open" xml:space="preserve"><value>Nowy</value></data>
+  <data name="Alert.State.Notified" xml:space="preserve"><value>Wysłano powiadomienie</value></data>
+  <data name="Alert.State.Acknowledged" xml:space="preserve"><value>Potwierdzony</value></data>
+  <data name="Alert.State.Silenced" xml:space="preserve"><value>Wyciszony</value></data>
+  <data name="Alert.Acknowledged" xml:space="preserve"><value>Alert potwierdzony.</value></data>
+  <data name="Alert.Silenced" xml:space="preserve"><value>Alert wyciszony na 4 godziny.</value></data>
+  <data name="Alert.Escalated" xml:space="preserve"><value>Eskalowany</value></data>
+  <data name="Dashboard.Alerts" xml:space="preserve"><value>Alerty</value></data>
+  <data name="Alert.Action.Ack" xml:space="preserve"><value>Potwierdź</value></data>
+  <data name="Alert.Action.Silence" xml:space="preserve"><value>Wycisz na 4 h</value></data>
+</root>

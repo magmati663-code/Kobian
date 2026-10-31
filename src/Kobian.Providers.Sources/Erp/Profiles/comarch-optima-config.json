@@ -1,0 +1,12 @@
+{
+  "id": "comarch-optima-config",
+  "version": 1,
+  "priority": 60,
+  "status": "confirmed",
+  "match": { "allTables": ["CDN.Bazy"], "anyTables": null },
+  "consistencyGroup": "optima-config",
+  "controlQueries": [
+    { "id": "optima-bazy", "sql": "SELECT COUNT(*) AS n FROM CDN.Bazy", "tolerance": "exact" }
+  ],
+  "restoreNotesKey": "Erp_OptimaConfig_RestoreNotes"
+}

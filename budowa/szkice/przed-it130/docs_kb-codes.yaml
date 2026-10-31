@@ -1,0 +1,1556 @@
+# Rejestr kodów błędów Kobian Backup (D1.8). Jedno źródło prawdy: KbCode (src/Kobian.Domain/KbCode.cs)
+# musi zawierać dokładnie te kody (test Kobian.Tests.Unit.KbRegistryTests). Generator enum/.resx — BL-4.
+# Pola: code, name (stała C#), class (transient|permanent|integrity|security), severity (info|warning|error|critical),
+# message.pl, message.en, action, source (ID planu), since. Komunikaty bez sekretów i danych klienta (SEC-11.5).
+# Kody oznaczone source „budowa it. N” są nowe (nie występują w planie) — do akceptacji PO.
+
+- code: KB-0001
+  name: Internal
+  class: permanent
+  severity: error
+  message.pl: "Błąd wewnętrzny programu."
+  message.en: "Internal program error."
+  action: "Zgłoś błąd z identyfikatorem uruchomienia."
+  action.en: "Report the bug with the run ID."
+  source: "budowa it. 3"
+  since: "0.1"
+
+- code: KB-1002
+  name: UnsupportedFeature
+  class: permanent
+  severity: error
+  message.pl: "Repozytorium wymaga funkcji, której ta wersja programu nie obsługuje."
+  message.en: "The repository requires a feature this program version does not support."
+  action: "Zaktualizuj Kobian Backup."
+  action.en: "Update Kobian Backup."
+  source: "D3.11"
+  since: "0.1"
+
+- code: KB-1003
+  name: ObjectAlreadyExists
+  class: integrity
+  severity: error
+  message.pl: "Obiekt o tym identyfikatorze już istnieje w repozytorium."
+  message.en: "An object with this identifier already exists in the repository."
+  action: "Uruchom zadanie ponownie; jeśli się powtarza — sprawdź repozytorium (check)."
+  action.en: "Run the job again; if it repeats, check the repository (check)."
+  source: "D3.9"
+  since: "0.1"
+
+- code: KB-1101
+  name: PackCommitMismatch
+  class: security
+  severity: critical
+  message.pl: "Plik danych nie należy do tego repozytorium lub klucza."
+  message.en: "The data file does not belong to this repository or key."
+  action: "Sprawdź, czy cel nie został podmieniony; uruchom check."
+  action.en: "Check that the destination was not swapped; run check."
+  source: "D3.9"
+  since: "0.1"
+
+- code: KB-1102
+  name: KeyUnwrapFailed
+  class: security
+  severity: critical
+  message.pl: "Nie można odblokować klucza repozytorium (błędne hasło lub zmienione parametry klucza)."
+  message.en: "Cannot unlock the repository key (wrong password or modified key parameters)."
+  action: "Sprawdź hasło; jeśli jest poprawne — plik klucza mógł zostać zmieniony."
+  action.en: "Check the password; if it is correct, the key file may have been changed."
+  source: "D3.11, V-04"
+  since: "0.1"
+
+- code: KB-1103
+  name: AuthenticationFailed
+  class: integrity
+  severity: critical
+  message.pl: "Uwierzytelnienie danych nie powiodło się (dane uszkodzone lub zmienione)."
+  message.en: "Data authentication failed (data corrupted or modified)."
+  action: "Uruchom check; odtwórz z innej wersji lub kopii."
+  action.en: "Run check; restore from another version or copy."
+  source: "budowa it. 3 (D3.10)"
+  since: "0.1"
+
+- code: KB-1104
+  name: RepoHeaderInvalid
+  class: security
+  severity: critical
+  message.pl: "Nagłówek repozytorium (kobian.repo) jest niepoprawny lub został zmieniony."
+  message.en: "The repository header (kobian.repo) is invalid or has been modified."
+  action: "Sprawdź, czy cel nie został podmieniony; użyj kopii nagłówka ze snapshotu."
+  action.en: "Check that the destination was not swapped; use the header copy from the snapshot."
+  source: "D3.11, SEC-7.3, V-09 (budowa it. 43)"
+  since: "0.1"
+
+- code: KB-1301
+  name: FrameTooLarge
+  class: integrity
+  severity: error
+  message.pl: "Ramka danych przekracza dopuszczalny rozmiar."
+  message.en: "Data frame exceeds the allowed size."
+  action: "Uruchom check."
+  action.en: "Run check."
+  source: "R2.3.8"
+  since: "0.1"
+
+- code: KB-1302
+  name: BlockTooLarge
+  class: integrity
+  severity: error
+  message.pl: "Blok po rozpakowaniu przekracza dopuszczalny rozmiar."
+  message.en: "Block exceeds the allowed size after decompression."
+  action: "Uruchom check."
+  action.en: "Run check."
+  source: "R2.3.8"
+  since: "0.1"
+
+- code: KB-1303
+  name: MetadataTooLarge
+  class: integrity
+  severity: error
+  message.pl: "Obiekt metadanych przekracza dopuszczalny rozmiar."
+  message.en: "Metadata object exceeds the allowed size."
+  action: "Uruchom check."
+  action.en: "Run check."
+  source: "R2.3.8"
+  since: "0.1"
+
+- code: KB-1304
+  name: MetadataMalformed
+  class: integrity
+  severity: error
+  message.pl: "Metadane mają niepoprawną strukturę (zagnieżdżenie lub kodowanie)."
+  message.en: "Metadata has an invalid structure (nesting or encoding)."
+  action: "Uruchom check."
+  action.en: "Run check."
+  source: "R2.3.8, D3.8"
+  since: "0.1"
+
+- code: KB-1308
+  name: TooManyFrames
+  class: integrity
+  severity: error
+  message.pl: "Plik danych zawiera zbyt wiele ramek."
+  message.en: "The data file contains too many frames."
+  action: "Uruchom check."
+  action.en: "Run check."
+  source: "R2.3.8"
+  since: "0.1"
+
+- code: KB-1309
+  name: PackLayoutInvalid
+  class: integrity
+  severity: error
+  message.pl: "Plik danych jest niekompletny lub ma niepoprawny układ."
+  message.en: "The data file is incomplete or has an invalid layout."
+  action: "Uruchom check; niekompletne pliki usuwa prune."
+  action.en: "Run check; incomplete files are removed by prune."
+  source: "budowa it. 3 (D3.10, V-06)"
+  since: "0.1"
+
+- code: KB-2001
+  name: TransientIo
+  class: transient
+  severity: warning
+  message.pl: "Przejściowy błąd połączenia lub zapisu na celu."
+  message.en: "Transient connection or write error on the destination."
+  action: "Brak — automatyczne ponowienie."
+  action.en: "None - automatic retry."
+  source: "D4.8"
+  since: "0.1"
+
+- code: KB-2105
+  name: AccessDenied
+  class: permanent
+  severity: error
+  message.pl: "Brak uprawnień do zapisu na celu."
+  message.en: "No permission to write to the destination."
+  action: "Nadaj uprawnienia do folderu lub udziału."
+  action.en: "Grant permissions to the folder or share."
+  source: "D4.8"
+  since: "0.1"
+
+- code: KB-2106
+  name: DestinationNotFound
+  class: permanent
+  severity: error
+  message.pl: "Folder lub udział docelowy nie istnieje."
+  message.en: "The destination folder or share does not exist."
+  action: "Sprawdź ścieżkę celu."
+  action.en: "Check the destination path."
+  source: "D4.8"
+  since: "0.1"
+
+- code: KB-2201
+  name: DestinationFull
+  class: permanent
+  severity: error
+  message.pl: "Brak miejsca na celu."
+  message.en: "No space left on the destination."
+  action: "Zwolnij miejsce lub zmień retencję."
+  action.en: "Free up space or change the retention."
+  source: "D4.8"
+  since: "0.1"
+
+- code: KB-2301
+  name: ObjectExists
+  class: permanent
+  severity: error
+  message.pl: "Obiekt o tej nazwie już istnieje na celu — nie nadpisujemy."
+  message.en: "An object with this name already exists on the destination — never overwritten."
+  action: "Zgłoś błąd."
+  action.en: "Report the bug."
+  source: "D4.7, D4.8"
+  since: "0.1"
+
+- code: KB-2302
+  name: InvalidObjectName
+  class: permanent
+  severity: error
+  message.pl: "Niedozwolona nazwa obiektu w repozytorium."
+  message.en: "Invalid repository object name."
+  action: "Zgłoś błąd."
+  action.en: "Report the bug."
+  source: "D4.6, D4.8"
+  since: "0.1"
+
+- code: KB-2303
+  name: ReparsePointRefused
+  class: security
+  severity: critical
+  message.pl: "Ścieżka celu zawiera dowiązanie (link) — odmowa zapisu."
+  message.en: "The destination path contains a link — write refused."
+  action: "Usuń dowiązanie z folderu repozytorium."
+  action.en: "Remove the link from the repository folder."
+  source: "budowa it. 4 (D8.9 dla celu)"
+  since: "0.1"
+
+- code: KB-2401
+  name: SizeMismatch
+  class: integrity
+  severity: error
+  message.pl: "Rozmiar lub suma obiektu na celu różni się od oczekiwanej."
+  message.en: "Object size or checksum on the destination differs from expected."
+  action: "Brak — ponowienie; przy powtórzeniach sprawdź cel."
+  action.en: "None - retry; if it repeats, check the destination."
+  source: "D4.7, D4.8"
+  since: "0.1"
+
+- code: KB-3001
+  name: SqlUnreachable
+  class: transient
+  severity: warning
+  message.pl: "Brak połączenia z instancją SQL Server."
+  message.en: "Cannot connect to the SQL Server instance."
+  action: "Sprawdź, czy usługa SQL działa."
+  action.en: "Check that the SQL service is running."
+  source: "R2.5.7"
+  since: "0.1"
+
+- code: KB-3002
+  name: SqlLoginFailed
+  class: permanent
+  severity: error
+  message.pl: "SQL Server odrzucił logowanie."
+  message.en: "SQL Server rejected the login."
+  action: "Uruchom skrypt uprawnień."
+  action.en: "Run the permissions script."
+  source: "R2.5.7, AC-02.3"
+  since: "0.1"
+
+- code: KB-3003
+  name: SqlBackupPermissionMissing
+  class: permanent
+  severity: error
+  message.pl: "Brak uprawnienia BACKUP DATABASE."
+  message.en: "BACKUP DATABASE permission is missing."
+  action: "Uruchom skrypt uprawnień."
+  action.en: "Run the permissions script."
+  source: "R2.5.7, AC-02.3"
+  since: "0.1"
+
+- code: KB-3004
+  name: SqlTlsPinMismatch
+  class: security
+  severity: critical
+  message.pl: "Certyfikat TLS serwera SQL jest niezgodny z zatwierdzonym."
+  message.en: "SQL Server TLS certificate does not match the approved one."
+  action: "Zatwierdź certyfikat serwera SQL."
+  action.en: "Approve the SQL Server certificate."
+  source: "R2.5.7"
+  since: "0.1"
+
+- code: KB-3010
+  name: SqlControlQuerySkipped
+  class: permanent
+  severity: warning
+  message.pl: "Zapytanie kontrolne ERP zostało pominięte (limit czasu, brak uprawnień do odczytu albo niedozwolony wynik) — kopia jest ważna."
+  message.en: "An ERP control query was skipped (timeout, missing read permission or disallowed result) — the backup is valid."
+  action: "Opcjonalnie nadaj kontu Kobian odczyt (db_datareader) do kontroli logicznej po odtworzeniu; bez tego kontrola będzie niepełna."
+  action.en: "Optionally grant the Kobian account read access (db_datareader) for the logical check after restore; without it the check will be incomplete."
+  source: "D5.11, SEC-15.3, Qb103"
+  since: "0.1"
+
+- code: KB-3101
+  name: SqlConcurrentOperation
+  class: permanent
+  severity: warning
+  message.pl: "Na bazie trwa inna kopia, odtwarzanie lub DBCC — zadanie pominięte."
+  message.en: "Another backup, restore or DBCC is running on the database — job skipped."
+  action: "Brak — kolejne uruchomienie wg harmonogramu."
+  action.en: "None - the next run follows the schedule."
+  source: "R2.5.7, AC-02.2"
+  since: "0.1"
+
+- code: KB-3102
+  name: SqlStagingSpace
+  class: permanent
+  severity: error
+  message.pl: "Za mało miejsca na plik tymczasowy kopii bazy."
+  message.en: "Not enough space for the database backup staging file."
+  action: "Zwolnij miejsce lub wskaż inny wolumen."
+  action.en: "Free up space or choose another volume."
+  source: "R2.5.7"
+  since: "0.1"
+
+- code: KB-3103
+  name: SqlForeignFullBackup
+  class: permanent
+  severity: warning
+  message.pl: "Wykryto obcą pełną kopię bazy — wykonano pełną kopię."
+  message.en: "A foreign full backup was detected — a full backup was taken."
+  action: "Brak."
+  action.en: "None."
+  source: "R2.5.7, D5.2"
+  since: "0.1"
+
+- code: KB-3104
+  name: SqlForeignLogBackups
+  class: permanent
+  severity: warning
+  message.pl: "Wykryto kopie logów wykonane innym narzędziem."
+  message.en: "Log backups made by another tool were detected."
+  action: "Ustal, które narzędzie robi kopie logów."
+  action.en: "Find out which tool makes the log backups."
+  source: "R2.5.7"
+  since: "0.1"
+
+- code: KB-3105
+  name: SqlLogGrowing
+  class: permanent
+  severity: warning
+  message.pl: "Dziennik transakcji rośnie — brak kopii logów w modelu FULL."
+  message.en: "Transaction log is growing — no log backups in FULL recovery."
+  action: "Rozważ kopie logów lub model SIMPLE."
+  action.en: "Consider log backups or the SIMPLE recovery model."
+  source: "R2.5.7"
+  since: "0.1"
+
+- code: KB-3201
+  name: SqlPageChecksumError
+  class: integrity
+  severity: critical
+  message.pl: "Baza ma uszkodzone strony (błąd sumy kontrolnej podczas kopii)."
+  message.en: "The database has damaged pages (checksum error during backup)."
+  action: "Uruchom DBCC CHECKDB."
+  action.en: "Run DBCC CHECKDB."
+  source: "R2.5.7"
+  since: "0.1"
+
+- code: KB-3202
+  name: SqlVerifyFailed
+  class: integrity
+  severity: error
+  message.pl: "Weryfikacja kopii bazy (VERIFYONLY) nie powiodła się."
+  message.en: "Database backup verification (VERIFYONLY) failed."
+  action: "Uruchom kopię ponownie i test odtworzenia."
+  action.en: "Run the backup again and test the restore."
+  source: "R2.5.7"
+  since: "0.1"
+
+- code: KB-3301
+  name: SqlTdeCertificateMissing
+  class: permanent
+  severity: warning
+  message.pl: "Baza szyfrowana TDE bez kopii certyfikatu."
+  message.en: "TDE-encrypted database without a certificate backup."
+  action: "Dołącz certyfikat TDE."
+  action.en: "Include the TDE certificate."
+  source: "R2.5.7"
+  since: "0.1"
+
+- code: KB-3401
+  name: SqlVersionUnsupported
+  class: permanent
+  severity: warning
+  message.pl: "Wersja SQL Server niewspierana lub bez wsparcia producenta."
+  message.en: "SQL Server version unsupported or out of vendor support."
+  action: "Zaktualizuj SQL Server."
+  action.en: "Update SQL Server."
+  source: "R2.5.7, D5.8"
+  since: "0.1"
+
+- code: KB-0101
+  name: SourcesNotReadable
+  class: permanent
+  severity: error
+  message.pl: "Wybrane źródło nie istnieje lub nie jest czytelne dla usługi."
+  message.en: "The selected source does not exist or is not readable by the service."
+  action: "Wybierz inny folder lub nadaj uprawnienia."
+  action.en: "Choose another folder or grant permissions."
+  source: "R2.6.2"
+  since: "0.1"
+
+- code: KB-0102
+  name: SourcesOverlap
+  class: permanent
+  severity: error
+  message.pl: "Źródła w zadaniu nakładają się (folder i jego podfolder)."
+  message.en: "Sources in the job overlap (a folder and its subfolder)."
+  action: "Usuń podfolder z listy."
+  action.en: "Remove the subfolder from the list."
+  source: "R2.6.2"
+  since: "0.1"
+
+- code: KB-0201
+  name: ScheduleInvalid
+  class: permanent
+  severity: error
+  message.pl: "Harmonogram jest niepoprawny lub zbyt częsty."
+  message.en: "The schedule is invalid or too frequent."
+  action: "Popraw harmonogram."
+  action.en: "Fix the schedule."
+  source: "R2.6.2"
+  since: "0.1"
+
+- code: KB-0301
+  name: PasswordWeak
+  class: permanent
+  severity: error
+  message.pl: "Hasło jest zbyt słabe."
+  message.en: "The password is too weak."
+  action: "Użyj dłuższego, mniej popularnego hasła."
+  action.en: "Use a longer, less common password."
+  source: "R2.6.2, SEC-6.5"
+  since: "0.1"
+
+- code: KB-0401
+  name: RetentionInvalid
+  class: permanent
+  severity: error
+  message.pl: "Polityka retencji jest niepoprawna."
+  message.en: "The retention policy is invalid."
+  action: "Dodaj regułę lub skróć blokadę retencji."
+  action.en: "Add a rule or shorten the retention hold."
+  source: "R2.6.2"
+  since: "0.1"
+
+- code: KB-4101
+  name: OutsideWindow
+  class: permanent
+  severity: info
+  message.pl: "Poza oknem czasowym — kopia zostanie wykonana w następnym oknie."
+  message.en: "Outside the time window — the backup will run in the next window."
+  action: "Brak."
+  action.en: "None."
+  source: "R2.7.6"
+  since: "0.1"
+
+- code: KB-4102
+  name: QueueTimeout
+  class: permanent
+  severity: warning
+  message.pl: "Przekroczony czas oczekiwania w kolejce — inne zadania blokowały zasób."
+  message.en: "Queue wait time exceeded — other jobs held the resource."
+  action: "Rozważ zmianę godzin zadań."
+  action.en: "Consider changing the job times."
+  source: "R2.7.6"
+  since: "0.1"
+
+- code: KB-4103
+  name: PreviousRunActive
+  class: permanent
+  severity: info
+  message.pl: "Poprzednie uruchomienie nadal trwa."
+  message.en: "The previous run is still in progress."
+  action: "Wydłuż interwał lub okno."
+  action.en: "Lengthen the interval or the window."
+  source: "R2.7.6"
+  since: "0.1"
+
+- code: KB-4104
+  name: EventBudgetExhausted
+  class: security
+  severity: warning
+  message.pl: "Wyczerpany limit uruchomień wyzwalanych zdarzeniami."
+  message.en: "Event-triggered run budget exhausted."
+  action: "Brak; przy powtórzeniach sprawdź źródło zdarzeń."
+  action.en: "None; if it repeats, check the event source."
+  source: "R2.7.6, SEC-7.4"
+  since: "0.1"
+
+- code: KB-4105
+  name: MediaRemoved
+  class: transient
+  severity: error
+  message.pl: "Nośnik został odłączony w trakcie kopii."
+  message.en: "The media was removed during the backup."
+  action: "Podłącz dysk ponownie — kopia zostanie wznowiona."
+  action.en: "Reconnect the drive - the backup will resume."
+  source: "R2.7.6"
+  since: "0.1"
+
+- code: KB-4201
+  name: ClockJump
+  class: permanent
+  severity: info
+  message.pl: "Wykryto skok zegara systemowego."
+  message.en: "A system clock jump was detected."
+  action: "Brak."
+  action.en: "None."
+  source: "R2.7.6"
+  since: "0.1"
+
+- code: KB-4901
+  name: OccurrenceDuplicate
+  class: permanent
+  severity: critical
+  message.pl: "Błąd wewnętrzny: podwójne uruchomienie tego samego wystąpienia."
+  message.en: "Internal error: duplicate run of the same occurrence."
+  action: "Zgłoś błąd."
+  action.en: "Report the bug."
+  source: "R2.7.6, D7.7"
+  since: "0.1"
+
+- code: KB-4902
+  name: IllegalTransition
+  class: permanent
+  severity: critical
+  message.pl: "Błąd wewnętrzny: niedozwolone przejście stanu uruchomienia."
+  message.en: "Internal error: illegal run state transition."
+  action: "Zgłoś błąd."
+  action.en: "Report the bug."
+  source: "R2.7.6, D7.8"
+  since: "0.1"
+
+- code: KB-5001
+  name: RestoreTargetAccessDenied
+  class: permanent
+  severity: error
+  message.pl: "Brak uprawnienia do zapisu w miejscu docelowym odtwarzania."
+  message.en: "No write permission at the restore destination."
+  action: "Wybierz folder, do którego masz prawo zapisu."
+  action.en: "Choose a folder you have write access to."
+  source: "R2.8.7, AC-07.2"
+  since: "0.1"
+
+- code: KB-5002
+  name: SnapshotNotFound
+  class: permanent
+  severity: error
+  message.pl: "Nie znaleziono snapshotu o podanym identyfikatorze (lub prefiks jest niejednoznaczny)."
+  message.en: "No snapshot with the given identifier was found (or the prefix is ambiguous)."
+  action: "Sprawdź identyfikator (kobian snapshots) lub użyj dłuższego prefiksu."
+  action.en: "Check the ID (kobian snapshots) or use a longer prefix."
+  source: "BL-43, AC-37.1"
+  since: "0.1"
+
+- code: KB-5101
+  name: RestoreNameInvalid
+  class: security
+  severity: error
+  message.pl: "Niedozwolona nazwa w kopii — plik pominięty."
+  message.en: "Invalid name in the backup — file skipped."
+  action: "Sprawdź raport odtwarzania."
+  action.en: "Check the restore report."
+  source: "R2.8.7, D8.9 R1/R2"
+  since: "0.1"
+
+- code: KB-5102
+  name: RestorePathTooLong
+  class: permanent
+  severity: error
+  message.pl: "Ścieżka docelowa jest zbyt długa."
+  message.en: "The destination path is too long."
+  action: "Odtwórz do krótszej ścieżki lub do ZIP."
+  action.en: "Restore to a shorter path or to a ZIP."
+  source: "R2.8.7, D8.9 R6"
+  since: "0.1"
+
+- code: KB-5103
+  name: RestoreFsLimit
+  class: permanent
+  severity: warning
+  message.pl: "System plików celu nie obsługuje elementu kopii (np. FAT32)."
+  message.en: "The destination file system cannot hold this item (e.g. FAT32)."
+  action: "Odtwórz na NTFS."
+  action.en: "Restore to NTFS."
+  source: "R2.8.7, D8.9 R7"
+  since: "0.1"
+
+- code: KB-5104
+  name: RestoreReparseRefused
+  class: security
+  severity: critical
+  message.pl: "Odmowa zapisu przez dowiązanie (link) w miejscu docelowym."
+  message.en: "Write through a link at the destination was refused."
+  action: "Sprawdź folder docelowy."
+  action.en: "Check the target folder."
+  source: "R2.8.7, D8.9 R8"
+  since: "0.1"
+
+- code: KB-5201
+  name: RestoreHashMismatch
+  class: integrity
+  severity: critical
+  message.pl: "Suma kontrolna odtworzonego pliku jest niezgodna — plik w kwarantannie."
+  message.en: "Restored file checksum mismatch — file quarantined."
+  action: "Uruchom check; odtwórz z innej wersji."
+  action.en: "Run check; restore from another version."
+  source: "R2.8.7, AC-07.3"
+  since: "0.1"
+
+- code: KB-5202
+  name: RestorePackMissing
+  class: integrity
+  severity: critical
+  message.pl: "Brak pliku danych potrzebnego do odtworzenia."
+  message.en: "A data file required for restore is missing."
+  action: "Uruchom kobian check."
+  action.en: "Run kobian check."
+  source: "R2.8.7"
+  since: "0.1"
+
+- code: KB-6101
+  name: AlertJobFailed
+  class: permanent
+  severity: error
+  message.pl: "Zadanie kopii zakończyło się błędem."
+  message.en: "The backup job failed."
+  action: "Sprawdź szczegóły uruchomienia."
+  action.en: "Check the run details."
+  source: "R2.9.6, A01"
+  since: "0.1"
+
+- code: KB-6103
+  name: AlertNoRecentBackup
+  class: permanent
+  severity: critical
+  message.pl: "Brak udanej kopii dłużej niż wymagany RPO."
+  message.en: "No successful backup for longer than the required RPO."
+  action: "Sprawdź zadanie i cel."
+  action.en: "Check the job and the destination."
+  source: "R2.9.6, A03"
+  since: "0.1"
+
+- code: KB-6301
+  name: WebhookDeliveryFailed
+  class: transient
+  severity: warning
+  message.pl: "Nie udało się doręczyć powiadomienia webhook po wszystkich ponowieniach."
+  message.en: "Webhook delivery failed after all retries."
+  action: "Sprawdź adres odbiorcy."
+  action.en: "Check the recipient address."
+  source: "R2.9.6"
+  since: "0.1"
+
+- code: KB-6302
+  name: WebhookUrlBlocked
+  class: security
+  severity: error
+  message.pl: "Adres webhooka jest zablokowany (adres lokalny lub niebezpieczny)."
+  message.en: "The webhook URL is blocked (local or unsafe address)."
+  action: "Użyj publicznego adresu https."
+  action.en: "Use a public https address."
+  source: "R2.9.6, SEC-9.3"
+  since: "0.1"
+
+- code: KB-6501
+  name: AuditChainBroken
+  class: security
+  severity: critical
+  message.pl: "Weryfikacja dziennika audytu nie powiodła się."
+  message.en: "Audit log verification failed."
+  action: "Zgłoś incydent bezpieczeństwa; zachowaj kopię katalogu."
+  action.en: "Report a security incident; keep a copy of the catalog."
+  source: "R2.9.6, D9.9"
+  since: "0.1"
+
+- code: KB-1305
+  name: TreeTooManyEntries
+  class: integrity
+  severity: error
+  message.pl: "Katalog w kopii ma zbyt wiele wpisów."
+  message.en: "A directory in the backup has too many entries."
+  action: "Uruchom check."
+  action.en: "Run check."
+  source: "R2.3.8, D3.18"
+  since: "0.1"
+
+- code: KB-1306
+  name: TreeNameInvalid
+  class: integrity
+  severity: error
+  message.pl: "Niepoprawna nazwa wpisu w kopii."
+  message.en: "Invalid entry name in the backup."
+  action: "Uruchom check."
+  action.en: "Run check."
+  source: "R2.3.8"
+  since: "0.1"
+
+- code: KB-6111
+  name: AlertRansomwareAnomaly
+  class: security
+  severity: critical
+  message.pl: "Wykryto anomalię przypominającą ransomware; retencja wstrzymana."
+  message.en: "A ransomware-like anomaly was detected; retention is paused."
+  action: "Sprawdź raport porównawczy i potwierdź lub odrzuć zmianę."
+  action.en: "Review the comparison report and confirm or reject the change."
+  source: "R2.9.6, D9.3, A11"
+  since: "0.1"
+
+- code: KB-6116
+  name: AlertUnsupportedOrUnpatched
+  class: security
+  severity: warning
+  message.pl: "System lub instancja SQL jest bez wsparcia producenta albo bez łatek od ponad 60 dni."
+  message.en: "The OS or SQL instance is out of vendor support or unpatched for over 60 days."
+  action: "Zainstaluj aktualizacje lub zaplanuj migrację."
+  action.en: "Install updates or plan a migration."
+  source: "R2.9.6, D9.8, A16"
+  since: "0.1"
+
+- code: KB-6117
+  name: AlertClockJump
+  class: security
+  severity: critical
+  message.pl: "Wykryto skok zegara systemowego; retencja wstrzymana do potwierdzenia."
+  message.en: "A system clock jump was detected; retention is paused until confirmed."
+  action: "Sprawdź czas systemu i potwierdź w interfejsie."
+  action.en: "Check the system time and confirm in the interface."
+  source: "R2.9.6, D9.8, A17, SEC-17.4"
+  since: "0.1"
+
+- code: KB-1401
+  name: SourceChangedDuringRead
+  class: integrity
+  severity: warning
+  message.pl: "Plik zmienił się w trakcie odczytu — zapisany z flagą niespójności."
+  message.en: "File changed while being read — stored with an unstable flag."
+  action: "Włącz VSS lub zaplanuj kopię poza godzinami pracy."
+  action.en: "Enable VSS or schedule the backup outside working hours."
+  source: "D3.17, R3.3"
+  since: "0.1"
+
+- code: KB-1402
+  name: RepoWriteFailed
+  class: transient
+  severity: error
+  message.pl: "Błąd zapisu do repozytorium — uruchomienie przerwane, snapshot nie powstał."
+  message.en: "Repository write failed — run aborted, no snapshot created."
+  action: "Sprawdź miejsce i dostęp do celu, potem uruchom ponownie."
+  action.en: "Check the space and access to the destination, then run again."
+  source: "D3.14, AC-08.4"
+  since: "0.1"
+
+- code: KB-1403
+  name: ReferenceIntegrityFailed
+  class: integrity
+  severity: critical
+  message.pl: "Niespójność referencji wykryta przed zatwierdzeniem snapshotu."
+  message.en: "Reference inconsistency detected before snapshot commit."
+  action: "Uruchom check; zgłoś błąd."
+  action.en: "Run check; report the bug."
+  source: "D3.14 (I-3)"
+  since: "0.1"
+
+- code: KB-1404
+  name: DedupBloomMode
+  class: permanent
+  severity: info
+  message.pl: "Deduplikacja przeszła w tryb z filtrem Bloom (duże repozytorium)."
+  message.en: "Deduplication switched to Bloom filter mode (large repository)."
+  action: "Brak — informacja."
+  action.en: "None - informational."
+  source: "D3.15"
+  since: "0.1"
+
+- code: KB-1405
+  name: SourceUnreadable
+  class: permanent
+  severity: warning
+  message.pl: "Plik źródłowy nieczytelny — pominięty."
+  message.en: "Source file unreadable — skipped."
+  action: "Sprawdź uprawnienia lub blokady pliku."
+  action.en: "Check permissions or file locks."
+  source: "D3.14"
+  since: "0.1"
+
+- code: KB-7006
+  name: ClientRevisionTooOld
+  class: permanent
+  severity: error
+  message.pl: "Wersja klienta jest starsza niż wymagana przez usługę — dostępne tylko polecenia do odczytu."
+  message.en: "Client revision is older than the service requires — read-only commands only."
+  action: "Zaktualizuj Kobian Backup."
+  action.en: "Update Kobian Backup."
+  source: "D2.16, AC-37.2"
+  since: "0.1"
+
+- code: KB-7010
+  name: AgentUnreachable
+  class: transient
+  severity: error
+  message.pl: "Brak połączenia z usługą Kobian Backup."
+  message.en: "Cannot connect to the Kobian Backup service."
+  action: "Sprawdź, czy usługa działa (services.msc), i spróbuj ponownie."
+  action.en: "Check that the service is running (services.msc) and try again."
+  source: "6.8, AC-37.1 (budowa it. 36)"
+  since: "0.1"
+
+- code: KB-5105
+  name: RestoreTargetExists
+  class: permanent
+  severity: warning
+  message.pl: "Plik docelowy już istnieje — nie nadpisano."
+  message.en: "Target file already exists — not overwritten."
+  action: "Wybierz pusty katalog docelowy lub zmień nazwę istniejącego pliku."
+  action.en: "Choose an empty target folder or rename the existing file."
+  source: "D8.9 (budowa it. 38)"
+  since: "0.1"
+
+- code: KB-7011
+  name: ApiAccessDenied
+  class: permanent
+  severity: error
+  message.pl: "Brak uprawnień do wywołania tej operacji usługi."
+  message.en: "Not authorized to call this service operation."
+  action: "Uruchom polecenie jako użytkownik z odpowiednią rolą."
+  action.en: "Run the command as a user with the appropriate role."
+  source: "D2.9"
+  since: "0.1"
+
+- code: KB-7012
+  name: OperationNotAvailable
+  class: permanent
+  severity: error
+  message.pl: "Operacja nie jest jeszcze dostępna w tej wersji usługi."
+  message.en: "Operation is not yet available in this service version."
+  action: "Zaktualizuj Kobian Backup lub skonfiguruj brakujące elementy."
+  action.en: "Update Kobian Backup or configure the missing components."
+  source: "BL-14, BL-15"
+  since: "0.1"
+
+- code: KB-0103
+  name: JobDefinitionInvalid
+  class: permanent
+  severity: error
+  message.pl: "Definicja zadania jest niepoprawna lub nieobsługiwana w tej wersji."
+  message.en: "The job definition is invalid or not supported in this version."
+  action: "Popraw definicję zadania (źródło, cel, klucz)."
+  action.en: "Fix the job definition (source, destination, key)."
+  source: "BL-15, BL-42"
+  since: "0.1"
+
+- code: KB-0104
+  name: JobNotFound
+  class: permanent
+  severity: error
+  message.pl: "Zadanie o podanej nazwie nie istnieje."
+  message.en: "No job with the given name exists."
+  action: "Sprawdź nazwę zadania (kobian status)."
+  action.en: "Check the job name (kobian status)."
+  source: "BL-15, BL-42"
+  since: "0.1"
+
+- code: KB-0105
+  name: JobDisabled
+  class: permanent
+  severity: warning
+  message.pl: "Zadanie jest wyłączone — uruchomienie pominięte."
+  message.en: "The job is disabled — the run was skipped."
+  action: "Włącz zadanie, aby je uruchomić."
+  action.en: "Enable the job to run it."
+  source: "BL-15, BL-42"
+  since: "0.1"
+
+- code: KB-2102
+  name: AuthRejected
+  class: permanent
+  severity: error
+  message.pl: "Cel odrzucił poświadczenia (klucz lub hasło)."
+  message.en: "The destination rejected the credentials (key or password)."
+  action: "Popraw klucz lub hasło dostępu do celu."
+  action.en: "Fix the access key or password for the destination."
+  source: "D4.8, BL-33"
+  since: "0.1"
+
+- code: KB-2104
+  name: HostKeyMismatch
+  class: security
+  severity: critical
+  message.pl: "Klucz hosta serwera SSH nie zgadza się z przypiętym (lub brak przypięcia)."
+  message.en: "The SSH server host key does not match the pinned key (or none is pinned)."
+  action: "Zweryfikuj odcisk klucza serwera poza pasmem i zatwierdź go w konfiguracji celu."
+  action.en: "Verify the server key fingerprint out of band and approve it in the destination settings."
+  source: "D4.11, BL-33, budowa it. 51"
+  since: "0.1"
+
+- code: KB-2112
+  name: ServerSessionLimit
+  class: transient
+  severity: warning
+  message.pl: "Serwer odmówił otwarcia kolejnej sesji (limit serwera)."
+  message.en: "The server refused a new session (server limit)."
+  action: "Brak - program zmniejsza liczbę równoległych połączeń."
+  action.en: "None - the program reduces the number of parallel connections."
+  source: "D4.16, BL-33"
+  since: "0.1"
+
+- code: KB-1501
+  name: CheckPackMissing
+  class: integrity
+  severity: critical
+  message.pl: "Brak packa, do którego odwołuje się indeks repozytorium."
+  message.en: "A pack referenced by the repository index is missing."
+  action: "Uruchom kobian check --repair (D8.10); odtwórz dotknięte pliki z innej kopii."
+  action.en: "Run kobian check --repair (D8.10); restore the affected files from another copy."
+  source: "BL-26, 3.7 V2, AC-09.1 (budowa it. 55)"
+  since: "0.1"
+
+- code: KB-1502
+  name: CheckPackSizeMismatch
+  class: integrity
+  severity: critical
+  message.pl: "Rozmiar packa na celu różni się od zapisanego w indeksie."
+  message.en: "The size of a pack on the destination differs from the size recorded in the index."
+  action: "Uruchom kobian check z próbkowaniem 100%; sprawdź nośnik lub serwer docelowy."
+  action.en: "Run kobian check with 100% sampling; check the medium or the destination server."
+  source: "BL-26, 3.7 V2 (budowa it. 55)"
+  since: "0.1"
+
+- code: KB-1503
+  name: CheckBlockNotIndexed
+  class: integrity
+  severity: critical
+  message.pl: "Snapshot odwołuje się do bloku nieobecnego w jego indeksach."
+  message.en: "A snapshot references a block that is missing from its indexes."
+  action: "Uruchom kobian check --repair; wykonaj kopię pełną."
+  action.en: "Run kobian check --repair; make a full backup."
+  source: "BL-26, 3.7 V2 (budowa it. 55)"
+  since: "0.1"
+
+- code: KB-1504
+  name: CheckOrphanObject
+  class: integrity
+  severity: warning
+  message.pl: "W repozytorium jest obiekt, do którego nic się nie odwołuje (np. po przerwanym zadaniu)."
+  message.en: "The repository contains an object nothing refers to (e.g. after an interrupted job)."
+  action: "Brak działań — obiekt usunie konserwacja (prune); jeśli liczba rośnie, sprawdź dziennik zadań."
+  action.en: "No action needed - maintenance (prune) will remove the object; if the count grows, check the job log."
+  source: "BL-26, D3.16 (budowa it. 55)"
+  since: "0.1"
+
+- code: KB-0106
+  name: JobNameTaken
+  class: permanent
+  severity: error
+  message.pl: "Zadanie o tej nazwie już istnieje."
+  message.en: "A job with this name already exists."
+  action: "Wybierz inną nazwę zadania."
+  action.en: "Choose another job name."
+  source: "BL-60"
+  since: "0.1"
+
+- code: KB-1601
+  name: PruneBlockedUnreadable
+  class: integrity
+  severity: error
+  message.pl: "Porządkowanie wstrzymane: nie da się odczytać snapshotu lub indeksu, który ma zostać zachowany."
+  message.en: "Prune stopped: a snapshot or index that must be kept cannot be read."
+  action: "Uruchom kobian check; porządkowanie nie usunie niczego, dopóki repozytorium nie jest czytelne."
+  action.en: "Run kobian check; pruning removes nothing while the repository is not readable."
+  source: "BL-25, D3.7, PM-18 (budowa it. 67)"
+  since: "0.1"
+
+- code: KB-1602
+  name: PruneWouldEmptyRepository
+  class: integrity
+  severity: error
+  message.pl: "Porządkowanie wstrzymane: w repozytorium nie zostałaby żadna kopia."
+  message.en: "Prune stopped: no backup would remain in the repository."
+  action: "Sprawdź, czy zadanie wskazuje właściwe repozytorium i czy katalog nie został wyczyszczony."
+  action.en: "Check that the job points to the right repository and that the catalog was not wiped."
+  source: "BL-25, D3.7, PM-18 (budowa it. 67)"
+  since: "0.1"
+
+- code: KB-1201
+  name: RepoLockInvalid
+  class: security
+  severity: warning
+  message.pl: "Na celu jest blokada repozytorium z niepoprawnym podpisem — zignorowano ją."
+  message.en: "A repository lock with an invalid signature was found on the destination and ignored."
+  action: "Sprawdź, kto ma prawo zapisu na celu; blokady może tworzyć tylko posiadacz klucza repozytorium."
+  action.en: "Check who has write access to the destination; only the holder of the repository key may create locks."
+  source: "D3.13, SEC-13.6 (budowa it. 68)"
+  since: "0.1"
+
+- code: KB-1202
+  name: RepoLocked
+  class: transient
+  severity: warning
+  message.pl: "Repozytorium jest zajęte przez inną operację (blokada)."
+  message.en: "The repository is in use by another operation (locked)."
+  action: "Poczekaj na zakończenie kopii lub porządkowania; blokada przerwanego hosta wygasa po 30 minutach."
+  action.en: "Wait for the backup or pruning to finish; the lock of an interrupted host expires after 30 minutes."
+  source: "D3.13 (budowa it. 68)"
+  since: "0.1"
+
+- code: KB-1603
+  name: PruneStoppedInconsistent
+  class: integrity
+  severity: error
+  message.pl: "Porządkowanie zatrzymane: stan repozytorium zmienił się w trakcie usuwania."
+  message.en: "Prune stopped: the repository changed while objects were being deleted."
+  action: "Uruchom porządkowanie ponownie później; nic, co jest nadal potrzebne, nie zostało usunięte."
+  action.en: "Run pruning again later; nothing that is still needed has been removed."
+  source: "BL-25, D3.7, PM-18 (budowa it. 68)"
+  since: "0.1"
+
+- code: KB-3005
+  name: SqlDatabaseUnavailable
+  class: permanent
+  severity: error
+  message.pl: "Baza danych nie istnieje na serwerze SQL lub nie jest w stanie ONLINE."
+  message.en: "The database does not exist on the SQL Server or is not ONLINE."
+  action: "Sprawdź stan bazy w SQL Server Management Studio albo wybierz bazę ponownie w kreatorze."
+  action.en: "Check the database state in SQL Server Management Studio or select the database again in the wizard."
+  source: "budowa it. 70 (R2.5.2 D-02)"
+  since: "0.1"
+
+- code: KB-3203
+  name: SqlBackupSetMismatch
+  class: integrity
+  severity: error
+  message.pl: "Zestaw kopii w msdb nie potwierdza pełnej kopii COPY_ONLY z sumami kontrolnymi."
+  message.en: "The msdb backup set does not confirm a full COPY_ONLY backup with checksums."
+  action: "Sprawdź, czy inne narzędzie nie zapisuje do katalogu tymczasowego Kobian; uruchom zadanie ponownie."
+  action.en: "Check that no other tool writes to the Kobian temporary folder; run the job again."
+  source: "budowa it. 70 (AC-02.1, K15.1)"
+  since: "0.1"
+
+- code: KB-3006
+  name: SqlTlsUnavailable
+  class: security
+  severity: critical
+  message.pl: "Serwer SQL nie przedstawił certyfikatu TLS (szyfrowanie niedostępne)."
+  message.en: "The SQL Server did not present a TLS certificate (encryption unavailable)."
+  action: "Włącz szyfrowanie i certyfikat w SQL Server Configuration Manager albo sprawdź, czy adres wskazuje serwer SQL."
+  action.en: "Enable encryption and a certificate in SQL Server Configuration Manager, or check that the address points to a SQL Server."
+  source: "BL-40 cz. 5, Qb32 (budowa it. 74)"
+  since: "0.1"
+
+- code: KB-3007
+  name: SqlCertificateChanged
+  class: security
+  severity: critical
+  message.pl: "Certyfikat serwera SQL zmienił się od wyświetlenia odcisku — niczego nie zapisano."
+  message.en: "The SQL Server certificate changed after its fingerprint was shown — nothing was saved."
+  action: "Pobierz certyfikat ponownie i porównaj odcisk z administratorem serwera SQL."
+  action.en: "Download the certificate again and compare the fingerprint with the SQL Server administrator."
+  source: "BL-40 cz. 5, Qb32 (budowa it. 74)"
+  since: "0.1"
+
+- code: KB-3008
+  name: SqlCertificateNameTaken
+  class: permanent
+  severity: error
+  message.pl: "Plik certyfikatu o tej nazwie istnieje i ma inną treść."
+  message.en: "A certificate file with this name already exists with different content."
+  action: "Zatwierdź certyfikat pod nową nazwą; stary plik może być używany przez inne zadania."
+  action.en: "Approve the certificate under a new name; the old file may be used by other jobs."
+  source: "BL-40 cz. 5, Qb32 (budowa it. 74)"
+  since: "0.1"
+
+- code: KB-5003
+  name: SnapshotPathNotFound
+  class: permanent
+  severity: error
+  message.pl: "W kopii nie ma folderu o podanej ścieżce."
+  message.en: "The backup does not contain a folder at the given path."
+  action: "Wróć do korzenia kopii i wybierz folder z listy."
+  action.en: "Go back to the backup root and choose a folder from the list."
+  source: "BL-63, SCR-06, AC-07.1"
+  since: "0.1"
+
+- code: KB-3009
+  name: SqlServerNotAllowed
+  class: security
+  severity: error
+  message.pl: "Serwer SQL nie jest na liście serwerów dozwolonych dla tej usługi Kobian."
+  message.en: "The SQL Server is not on the list of servers allowed for this Kobian service."
+  action: "Administrator dodaje serwer do KOBIAN_SQL_ALLOWED_SERVERS (nazwa jak w zadaniu) i restartuje usługę."
+  action.en: "The administrator adds the server to KOBIAN_SQL_ALLOWED_SERVERS (name as in the job) and restarts the service."
+  source: "RD-39, Qb35, D5.7"
+  since: "0.1"
+
+- code: KB-7013
+  name: RuntimeUnpatched
+  class: security
+  severity: warning
+  message.pl: "Usługa Kobian działa na niezałatanym środowisku .NET (poniżej wymaganej wersji z poprawkami bezpieczeństwa)."
+  message.en: "The Kobian service runs on an unpatched .NET runtime (below the required security patch level)."
+  action: "Zainstaluj aktualizację .NET 10 (co najmniej 10.0.13) i uruchom ponownie usługę."
+  action.en: "Install the .NET 10 update (at least 10.0.13) and restart the service."
+  source: "BL-62, SEC-DEP"
+  since: "0.1"
+
+- code: KB-3501
+  name: SqlRestoreTargetExists
+  class: permanent
+  severity: error
+  message.pl: "Baza docelowa o tej nazwie już istnieje — odtworzenie nie nadpisuje istniejących baz."
+  message.en: "A target database with this name already exists — restore never overwrites existing databases."
+  action: "Podaj inną nazwę bazy docelowej (domyślnie <nazwa>_restore_RRRRMMDD)."
+  action.en: "Provide another target database name (default <name>_restore_YYYYMMDD)."
+  source: "SCR-08, AC-32.1, AC-32.2"
+  since: "0.1"
+
+- code: KB-3502
+  name: SqlRestorePermissionMissing
+  class: permanent
+  severity: error
+  message.pl: "Konto usługi nie ma uprawnienia CREATE ANY DATABASE na serwerze SQL."
+  message.en: "The service account lacks CREATE ANY DATABASE on the SQL Server."
+  action: "Nadaj kontu usługi rolę dbcreator albo uprawnienie CREATE ANY DATABASE."
+  action.en: "Grant the service account the dbcreator role or the CREATE ANY DATABASE permission."
+  source: "SCR-08, D5.7"
+  since: "0.1"
+
+- code: KB-3503
+  name: SqlRestoreUnsupportedFile
+  class: permanent
+  severity: error
+  message.pl: "Kopia zawiera pliki FILESTREAM lub pełnotekstowe — ich odtworzenie nie jest jeszcze obsługiwane."
+  message.en: "The backup contains FILESTREAM or full-text files — restoring them is not supported yet."
+  action: "Odtwórz plik .bak ręcznie w SQL Server Management Studio."
+  action.en: "Restore the .bak file manually in SQL Server Management Studio."
+  source: "SCR-08, 8.4"
+  since: "0.1"
+
+- code: KB-3504
+  name: SqlDefaultPathUnknown
+  class: permanent
+  severity: error
+  message.pl: "Serwer SQL nie podaje domyślnych katalogów danych i dziennika."
+  message.en: "The SQL Server does not report default data and log directories."
+  action: "Ustaw domyślne katalogi w ustawieniach serwera SQL albo podaj je w żądaniu odtworzenia."
+  action.en: "Set the default directories in the SQL Server settings or provide them in the restore request."
+  source: "SCR-08, 8.4"
+  since: "0.1"
+
+- code: KB-3505
+  name: SqlRestoreControlMismatch
+  class: integrity
+  severity: warning
+  message.pl: "Odtworzona baza nie zgadza się z zapytaniami kontrolnymi zapisanymi przy kopii."
+  message.en: "The restored database does not match the control queries recorded at backup time."
+  action: "Baza została utworzona pod nową nazwą — sprawdź ją przed przełączeniem aplikacji; spróbuj starszej kopii."
+  action.en: "The database was created under a new name - check it before switching the application over; try an older backup."
+  source: "D5.11, D8.4, AC-32.1"
+  since: "0.1"
+
+- code: KB-7007
+  name: SecondInstance
+  class: permanent
+  severity: error
+  message.pl: "Usługa Kobian już działa na tym komputerze — druga instancja została zatrzymana bez zmian w katalogu."
+  message.en: "The Kobian service is already running on this computer — the second instance stopped without changing the catalog."
+  action: "Nie uruchamiaj Agenta ręcznie, gdy działa usługa KobianAgent; sprawdź stan usługi w Menedżerze usług."
+  action.en: "Do not start the Agent manually while the KobianAgent service is running; check the service state in Services."
+  source: "D2.15, AC-37.3, CE-12"
+  since: "0.1"
+
+- code: KB-2101
+  name: SmbCredentialConflict
+  class: permanent
+  severity: error
+  message.pl: "Do serwera SMB jest już połączenie z innym kontem (błąd 1219)."
+  message.en: "The SMB server already has a connection under a different account (error 1219)."
+  action: "Zgłoś błąd - zadania z różnymi kontami do jednego serwera powinny być kolejkowane."
+  action.en: "Report the bug - jobs with different accounts to one server should be queued."
+  source: "D4.8, D7.4, BL-73"
+  since: "0.1"
+
+- code: KB-2103
+  name: AccountLockedOrExpired
+  class: permanent
+  severity: error
+  message.pl: "Konto na serwerze jest zablokowane, wygasło albo wymaga zmiany hasła."
+  message.en: "The account on the server is locked, expired or must change its password."
+  action: "Odblokuj konto lub zmień hasło na serwerze, potem zaktualizuj poświadczenie celu."
+  action.en: "Unlock the account or change the password on the server, then update the destination credential."
+  source: "D4.8, BL-73"
+  since: "0.1"
+
+- code: KB-7001
+  name: CallerUnauthenticated
+  class: security
+  severity: error
+  message.pl: "Nie można ustalić tożsamości wywołującego — połączenie z usługą odrzucone."
+  message.en: "Caller identity could not be established — connection to the service rejected."
+  action: "Uruchom Kobian lokalnie na koncie z grupy Kobian Operators lub Administratorzy (nie przez sieć ani konto anonimowe)."
+  action.en: "Run Kobian locally under an account in the Kobian Operators or Administrators group (not over the network or as an anonymous account)."
+  source: "D2.9, BL-17 (budowa it. 95)"
+  since: "0.1"
+
+- code: KB-2114
+  name: DestinationOpenThrottled
+  class: transient
+  severity: warning
+  message.pl: "Wstrzymano na 10 min próby połączenia z celem po 3 nieudanych w ciągu godziny (ochrona konta i adresu przed blokadą)."
+  message.en: "Connection attempts to the destination are paused for 10 minutes after 3 failures within an hour (protects the account and address from lockout)."
+  action: "Sprawdź poświadczenia i dostępność serwera; kolejna próba nastąpi automatycznie po przerwie."
+  action.en: "Check the credentials and the server availability; the next attempt will follow automatically after a pause."
+  source: "D4.16 pkt 3, SEC-24.4, BL-77 (budowa it. 97)"
+  since: "0.1"
+
+- code: KB-5106
+  name: RestoreTargetSpace
+  class: permanent
+  severity: error
+  message.pl: "Za mało wolnego miejsca w folderze docelowym na odtwarzane pliki."
+  message.en: "Not enough free space in the destination folder for the files to restore."
+  action: "Zwolnij miejsce albo wybierz inny folder lub mniejszy zakres."
+  action.en: "Free up space or choose another folder or a smaller scope."
+  source: "SCR-07, R2.8.1 (budowa it. 98)"
+  since: "0.1"
+
+- code: KB-6502
+  name: AuditSchemaChanged
+  class: security
+  severity: critical
+  message.pl: "Schemat dziennika audytu został zmieniony poza programem."
+  message.en: "The audit log schema was changed outside the program."
+  action: "Zgłoś incydent bezpieczeństwa; zachowaj kopię katalogu."
+  action.en: "Report a security incident; keep a copy of the catalog."
+  source: "RD-51, D9.9 (budowa it. 99)"
+  since: "0.1"
+
+- code: KB-6503
+  name: AuditAnchorMismatch
+  class: security
+  severity: critical
+  message.pl: "Dziennik audytu nie zgadza się z kotwicą."
+  message.en: "The audit log does not match an anchor."
+  action: "Zgłoś incydent bezpieczeństwa; porównaj z kotwicą z raportu dziennego."
+  action.en: "Report a security incident; compare with the anchor from the daily report."
+  source: "D9.9 (budowa it. 99)"
+  since: "0.1"
+
+- code: KB-1406
+  name: VssSnapshotFailed
+  class: transient
+  severity: error
+  message.pl: "Nie udało się utworzyć migawki VSS — kopia bez migawki niemożliwa."
+  message.en: "The VSS snapshot could not be created — backup without a snapshot is not possible."
+  action: "Sprawdź usługę Kopiowanie woluminów w tle i dziennik zdarzeń; ponów kopię."
+  action.en: "Check the Volume Shadow Copy service and the event log; retry the backup."
+  source: "D2.8, D3.6, SP-01 (budowa it. 103)"
+  since: "0.1"
+
+- code: KB-7008
+  name: WorkerStartBlocked
+  class: permanent
+  severity: error
+  message.pl: "Start procesu pomocniczego Kobian.Worker został zablokowany przez politykę systemu."
+  message.en: "Starting the Kobian.Worker helper process was blocked by a system policy."
+  action: "Dodaj regułę wydawcy dla Kobian (WDAC/AppLocker/ASR) — dokumentacja administratora."
+  action.en: "Add a publisher rule for Kobian (WDAC/AppLocker/ASR) - see the administrator documentation."
+  source: "R2.2, PM-12, SP-16"
+  since: "0.1"
+
+- code: KB-7014
+  name: WorkerProtocolViolation
+  class: security
+  severity: error
+  message.pl: "Proces pomocniczy zwrócił niepoprawną odpowiedź — proces zakończony."
+  message.en: "The helper process returned an invalid response — process terminated."
+  action: "Zgłoś błąd; sprawdź integralność instalacji."
+  action.en: "Report the bug; check the installation integrity."
+  source: "D2.8 (budowa it. 103)"
+  since: "0.1"
+
+- code: KB-7015
+  name: WorkerSignatureInvalid
+  class: security
+  severity: critical
+  message.pl: "Plik procesu pomocniczego Kobian.Worker nie ma ważnego podpisu — uruchomienie wstrzymane."
+  message.en: "The Kobian.Worker helper file has no valid signature — start refused."
+  action: "Zainstaluj ponownie Kobian Backup z oficjalnego instalatora; zgłoś incydent."
+  action.en: "Reinstall Kobian Backup from the official installer; report an incident."
+  source: "SEC-2.7, D2.8 (budowa it. 106)"
+  since: "0.1"
+
+- code: KB-7016
+  name: WorkerStartFailed
+  class: permanent
+  severity: error
+  message.pl: "Nie udało się uruchomić procesu pomocniczego Kobian.Worker."
+  message.en: "The Kobian.Worker helper process could not be started."
+  action: "Sprawdź instalację (plik Kobian.Worker.exe obok usługi) i dziennik zdarzeń."
+  action.en: "Check the installation (Kobian.Worker.exe next to the service) and the event log."
+  source: "D2.8 (budowa it. 106)"
+  since: "0.1"
+
+- code: KB-1505
+  name: IndexRecoveredFromPacks
+  class: integrity
+  severity: warning
+  message.pl: "Indeks kopii był niedostępny — bloki odnalezione w indeksie odtworzonym z plików danych."
+  message.en: "The backup index was unavailable — blocks were found in an index rebuilt from data files."
+  action: "Uruchom kobian check --repair i sprawdź kopię; wykonaj nową kopię pełną."
+  action.en: "Run kobian check --repair and check the backup; make a new full backup."
+  source: "D3.10, D8.10 (budowa it. 110)"
+  since: "0.1"
+
+- code: KB-6201
+  name: SmtpAuthRejected
+  class: permanent
+  severity: error
+  message.pl: "Serwer SMTP odrzucił uwierzytelnienie (np. 550 5.7.30 — Basic Auth wyłączony)."
+  message.en: "The SMTP server rejected authentication (e.g. 550 5.7.30 — Basic Auth disabled)."
+  action: "Sprawdź login i hasło w pliku smtp.credentials; dla Microsoft 365 użyj OAuth2."
+  action.en: "Check the login and password in the smtp.credentials file; for Microsoft 365 use OAuth2."
+  source: "R2.9.6, 9.6 (BL-45)"
+  since: "0.1"
+
+- code: KB-6203
+  name: EmailDeliveryFailed
+  class: transient
+  severity: warning
+  message.pl: "Nie udało się doręczyć powiadomienia e-mail."
+  message.en: "E-mail notification delivery failed."
+  action: "Sprawdź serwer SMTP, adresy odbiorców i dziennik audytu."
+  action.en: "Check the SMTP server, the recipient addresses and the audit log."
+  source: "R2.9.6, D9.10 (BL-45)"
+  since: "0.1"
+
+- code: KB-6204
+  name: SmtpConfigInvalid
+  class: permanent
+  severity: error
+  message.pl: "Konfiguracja powiadomień e-mail jest niepoprawna."
+  message.en: "The e-mail notification configuration is invalid."
+  action: "Popraw zmienne KOBIAN_SMTP_* i plik smtp.credentials."
+  action.en: "Fix the KOBIAN_SMTP_* variables and the smtp.credentials file."
+  source: "9.6 (BL-45)"
+  since: "0.1"
+
+- code: KB-6205
+  name: EmailAddressInvalid
+  class: security
+  severity: error
+  message.pl: "Adres e-mail jest niepoprawny lub niebezpieczny."
+  message.en: "The e-mail address is invalid or unsafe."
+  action: "Podaj pojedynczy adres w postaci nazwa@domena, bez znaków sterujących."
+  action.en: "Provide a single address in the form name@domain, without control characters."
+  source: "SEC-9.1, CVE-2026-30227 (BL-45)"
+  since: "0.1"
+
+- code: KB-6206
+  name: SmtpTlsFailed
+  class: security
+  severity: error
+  message.pl: "Nie udało się nawiązać szyfrowanego połączenia z serwerem SMTP (TLS lub certyfikat)."
+  message.en: "Could not establish an encrypted connection to the SMTP server (TLS or certificate)."
+  action: "Sprawdź certyfikat serwera i obsługę STARTTLS/TLS."
+  action.en: "Check the server certificate and STARTTLS/TLS support."
+  source: "9.6, SEC-9.1 (BL-45)"
+  since: "0.1"
+
+- code: KB-6207
+  name: SmtpInsecureEnabled
+  class: security
+  severity: warning
+  message.pl: "Powiadomienia e-mail są wysyłane bez szyfrowania (jawne SMTP)."
+  message.en: "E-mail notifications are sent without encryption (plain SMTP)."
+  action: "Włącz STARTTLS lub TLS na serwerze i usuń KOBIAN_SMTP_INSECURE."
+  action.en: "Enable STARTTLS or TLS on the server and remove KOBIAN_SMTP_INSECURE."
+  source: "9.6 (BL-45)"
+  since: "0.1"
+
+- code: KB-2109
+  name: TlsIdentityMismatch
+  class: security
+  severity: critical
+  message.pl: "Certyfikat serwera FTPS jest niezaufany albo jego klucz (SPKI) nie zgadza się z przypiętym."
+  message.en: "The FTPS server certificate is untrusted or its key (SPKI) does not match the pinned one."
+  action: "Zweryfikuj odcisk SPKI serwera poza pasmem i zatwierdź go w konfiguracji celu albo użyj certyfikatu z zaufanego urzędu."
+  action.en: "Verify the server SPKI fingerprint out of band and approve it in the destination settings, or use a certificate from a trusted authority."
+  source: "D4.8, D4.11, BL-34"
+  since: "0.1"
+
+- code: KB-2110
+  name: FtpsNotSupported
+  class: permanent
+  severity: error
+  message.pl: "Serwer FTP nie obsługuje szyfrowania FTPS (odmowa AUTH TLS)."
+  message.en: "The FTP server does not support FTPS encryption (AUTH TLS refused)."
+  action: "Włącz FTPS (TLS) na serwerze albo użyj celu SFTP."
+  action.en: "Enable FTPS (TLS) on the server or use an SFTP destination."
+  source: "D4.3, D4.8, BL-34"
+  since: "0.1"
+
+- code: KB-2115
+  name: InsecureTransportNotConfirmed
+  class: security
+  severity: error
+  message.pl: "Cel FTP bez szyfrowania wymaga jawnego potwierdzenia — połączenie odrzucone."
+  message.en: "An unencrypted FTP destination requires explicit confirmation — connection refused."
+  action: "Użyj FTPS albo SFTP; jawny FTP tylko z flagą niezabezpieczonego połączenia (hasło leci otwartym tekstem)."
+  action.en: "Use FTPS or SFTP; plain FTP only with the insecure-connection flag (the password is sent in clear text)."
+  source: "D4.3, BL-34 (budowa)"
+  since: "0.1"
+
+- code: KB-2141
+  name: ServerIdentityNotPending
+  class: permanent
+  severity: error
+  message.pl: "Ten odcisk nie czeka na zatwierdzenie dla tego celu (zatwierdzić można tylko odcisk przedstawiony przez serwer i oczekujący)."
+  message.en: "This fingerprint is not awaiting approval for this destination (only a fingerprint presented by the server and still pending can be approved)."
+  action: "Sprawdź listę: kobian destinations identity list — i skopiuj dokładny odcisk ze stanu pending."
+  action.en: "Check the list: kobian destinations identity list - and copy the exact fingerprint from the pending state."
+  source: "D4.11, SEC-14.5, budowa it. 121"
+  since: "0.1"
+
+- code: KB-2142
+  name: ServerIdentityApprovalExpired
+  class: permanent
+  severity: warning
+  message.pl: "Oczekiwanie na zatwierdzenie tożsamości serwera wygasło (24 h)."
+  message.en: "The server identity approval request has expired (24 h)."
+  action: "Połącz się z celem ponownie (sprawdzenie celu albo uruchomienie zadania), zweryfikuj odcisk poza pasmem i zatwierdź go w ciągu 24 h."
+  action.en: "Connect to the destination again (destination check or a job run), verify the fingerprint out of band and approve it within 24 h."
+  source: "D4.11, budowa it. 121"
+  since: "0.1"
+
+- code: KB-2143
+  name: ServerIdentityPinLimit
+  class: permanent
+  severity: error
+  message.pl: "Cel ma już maksymalną liczbę zatwierdzonych kluczy serwera (4)."
+  message.en: "The destination already has the maximum number of approved server keys (4)."
+  action: "Zatwierdź nowy klucz z opcją zastąp (--replace) albo usuń zbędny cel."
+  action.en: "Approve the new key with the replace option (--replace) or remove the unneeded destination."
+  source: "D4.11, AC-12.2, budowa it. 121"
+  since: "0.1"
+
+- code: KB-0120
+  name: ImportFormatInvalid
+  class: permanent
+  severity: error
+  message.pl: "Plik importu zadań nie jest zgodny ze schematem kobian-export v1 — nic nie zaimportowano."
+  message.en: "The job import file does not match the kobian-export v1 schema — nothing was imported."
+  action: "Popraw plik wg listy błędów (ścieżka JSON + powód) albo wyeksportuj go ponownie."
+  action.en: "Fix the file according to the error list (JSON path + reason) or export it again."
+  source: "US-29, SEC-6.7, BL-47 (budowa)"
+  since: "0.1"
+
+- code: KB-0121
+  name: ImportTooLarge
+  class: permanent
+  severity: error
+  message.pl: "Plik importu zadań przekracza limit rozmiaru, głębokości lub liczby zadań."
+  message.en: "The job import file exceeds the size, depth or job count limit."
+  action: "Podziel eksport (kobian export --job ...) i importuj częściami."
+  action.en: "Split the export (kobian export --job ...) and import it in parts."
+  source: "US-29, SEC-6.7, BL-47 (budowa), SEC-3.3"
+  since: "0.1"
+
+- code: KB-0122
+  name: ImportContainsSecret
+  class: security
+  severity: error
+  message.pl: "Plik zadań zawiera wartość wyglądającą na sekret — odrzucono."
+  message.en: "The job file contains a value that looks like a secret — rejected."
+  action: "Usuń hasła i klucze z pliku; poświadczenia podaje się tylko jako secretRef (file:nazwa) w magazynie sekretów Agenta."
+  action.en: "Remove passwords and keys from the file; credentials are given only as secretRef (file:name) in the Agent secret store."
+  source: "US-29, SEC-6.7, BL-47 (budowa), AC-01.3"
+  since: "0.1"
+
+- code: KB-0123
+  name: ImportActionsRejected
+  class: security
+  severity: error
+  message.pl: "Plik zadań zawiera skrypty lub akcje (pre/post, runSql) — import ich nie przyjmuje."
+  message.en: "The job file contains scripts or actions (pre/post, runSql) — import does not accept them."
+  action: "Usuń akcje z pliku; skrypty konfiguruje Administrator w programie po imporcie."
+  action.en: "Remove the actions from the file; scripts are configured by the administrator in the program after import."
+  source: "US-29, SEC-6.7, BL-47 (budowa), AS-02"
+  since: "0.1"
+
+- code: KB-0124
+  name: ImportNameConflict
+  class: permanent
+  severity: error
+  message.pl: "Zadanie o tej nazwie już istnieje z inną definicją — nic nie zaimportowano."
+  message.en: "A job with this name already exists with a different definition — nothing was imported."
+  action: "Wybierz sposób rozwiązania konfliktu: pomiń, nadpisz albo zmień nazwę (--on-conflict skip|overwrite|rename)."
+  action.en: "Choose how to resolve the conflict: skip, overwrite or rename (--on-conflict skip|overwrite|rename)."
+  source: "US-29, SEC-6.7, BL-47 (budowa)"
+  since: "0.1"
+
+- code: KB-1604
+  name: IndexConsolidationIncomplete
+  class: transient
+  severity: warning
+  message.pl: "Konsolidacja indeksów nie została zakończona; repozytorium pozostaje czytelne i kompletne."
+  message.en: "Index consolidation did not complete; the repository remains readable and complete."
+  action: "Nic nie trzeba robić: kolejne porządkowanie ponowi konsolidację. Jeśli się powtarza, uruchom kobian check."
+  action.en: "Nothing to do: the next pruning will repeat the consolidation. If it repeats, run kobian check."
+  source: "D3.16, PM-17, BL-25 (budowa)"
+  since: "0.1"
+
+- code: KB-1510
+  name: VerifyScheduledFailed
+  class: integrity
+  severity: critical
+  message.pl: "Okresowa weryfikacja repozytorium (V3) wykryła uszkodzone lub brakujące dane kopii."
+  message.en: "Periodic repository verification (V3) found damaged or missing backup data."
+  action: "Uruchom kobian check --repair dla zadania; następna kopia zadania będzie pełna; sprawdź nośnik lub serwer docelowy i odtwarzaj z innej kopii (replika/USB)."
+  action.en: "Run kobian check --repair for the job; the next backup of the job will be full; check the medium or the destination server and restore from another copy (replica/USB)."
+  source: "3.7 V3, BL-26, D3.14, A04 (budowa: V3 z harmonogramu)"
+  since: "0.1"
+
+- code: KB-1511
+  name: VerifySnapshotMissing
+  class: integrity
+  severity: critical
+  message.pl: "Kopia zapisana w katalogu nie istnieje w repozytorium na celu (podłączono inny nośnik albo dane usunięto)."
+  message.en: "A backup recorded in the catalog does not exist in the repository on the destination (a different medium is attached or data was deleted)."
+  action: "Sprawdź, czy podłączono właściwy nośnik/udział; jeśli dane usunięto — wykonaj kopię pełną i odtwarzaj z innej kopii (replika/USB)."
+  action.en: "Check that the right medium/share is attached; if the data was deleted, make a full backup and restore from another copy (replica/USB)."
+  source: "3.7 V3, D3.14, A04 (budowa: V3 z harmonogramu)"
+  since: "0.1"
+
+- code: KB-6208
+  name: OAuth2TokenRejected
+  class: permanent
+  severity: error
+  message.pl: "Serwer tożsamości Microsoft odrzucił pobranie tokenu OAuth2 dla powiadomień e-mail."
+  message.en: "The identity provider rejected the OAuth2 token request for e-mail notifications."
+  action: "Sprawdź identyfikator dzierżawy, identyfikator aplikacji i sekret w smtp.oauth oraz uprawnienia SMTP.SendAsApp aplikacji."
+  action.en: "Check the tenant id, application id and the secret in smtp.oauth, and the application's SMTP.SendAsApp permission."
+  source: "BL-45, 9.6 (budowa it. 129)"
+  since: "0.1"
+
+- code: KB-6209
+  name: OAuth2ConfigInvalid
+  class: permanent
+  severity: error
+  message.pl: "Konfiguracja uwierzytelnienia OAuth2 dla e-mail jest niepoprawna."
+  message.en: "The OAuth2 authentication configuration for e-mail is invalid."
+  action: "Popraw zmienne KOBIAN_SMTP_OAUTH_* i plik smtp.oauth."
+  action.en: "Fix the KOBIAN_SMTP_OAUTH_* variables and the smtp.oauth file."
+  source: "BL-45, 9.6 (budowa it. 129)"
+  since: "0.1"

@@ -1,0 +1,241 @@
+<!-- Style komponentów Kobian (R2.6.3). Kolory wyłącznie z tokenów (Tokens.axaml). -->
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="using:Kobian.UI.Controls">
+  <Styles.Resources>
+    <!-- Akcent kontrolek Fluent z tokenu (przegląd zrzutów it. 59: CheckBox miał systemowy niebieski). -->
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillChecked" Color="{DynamicResource Kb.Color.Accent}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" Color="{DynamicResource Kb.Color.Accent}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPressed" Color="{DynamicResource Kb.Color.Accent}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPointerOver" Color="{DynamicResource Kb.Color.Accent}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPressed" Color="{DynamicResource Kb.Color.Accent}" />
+    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="{DynamicResource Kb.Color.Accent}" />
+    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundChecked" Color="{DynamicResource Kb.Color.AccentText}" />
+    <ControlTheme x:Key="{x:Type c:ProtectionBadge}" TargetType="c:ProtectionBadge">
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Name="PART_Root" CornerRadius="{StaticResource Kb.Radius.Pill}" Padding="4,4,12,4" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Border Name="PART_Disc" Width="22" Height="22" CornerRadius="11">
+                <PathIcon Name="PART_Icon" Width="14" Height="14" Foreground="White" />
+              </Border>
+              <TextBlock Name="PART_Text" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="{StaticResource Kb.Font.Caption}"
+                         Text="{Binding DisplayText, RelativeSource={RelativeSource TemplatedParent}}" />
+            </StackPanel>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:protected">
+        <Style Selector="^ /template/ Border#PART_Root"><Setter Property="Background" Value="{DynamicResource Kb.Brush.Protected.Bg}" /></Style>
+        <Style Selector="^ /template/ Border#PART_Disc"><Setter Property="Background" Value="{DynamicResource Kb.Brush.Protected.Solid}" /></Style>
+        <Style Selector="^ /template/ PathIcon#PART_Icon"><Setter Property="Data" Value="{StaticResource Kb.Icon.Protected}" /></Style>
+        <Style Selector="^ /template/ TextBlock#PART_Text"><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Protected.Text}" /></Style>
+      </Style>
+      <Style Selector="^:warning">
+        <Style Selector="^ /template/ Border#PART_Root"><Setter Property="Background" Value="{DynamicResource Kb.Brush.Warning.Bg}" /></Style>
+        <Style Selector="^ /template/ Border#PART_Disc"><Setter Property="Background" Value="{DynamicResource Kb.Brush.Warning.Solid}" /></Style>
+        <Style Selector="^ /template/ PathIcon#PART_Icon"><Setter Property="Data" Value="{StaticResource Kb.Icon.Warning}" /></Style>
+        <Style Selector="^ /template/ TextBlock#PART_Text"><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Warning.Text}" /></Style>
+      </Style>
+      <Style Selector="^:atrisk">
+        <Style Selector="^ /template/ Border#PART_Root"><Setter Property="Background" Value="{DynamicResource Kb.Brush.AtRisk.Bg}" /></Style>
+        <Style Selector="^ /template/ Border#PART_Disc"><Setter Property="Background" Value="{DynamicResource Kb.Brush.AtRisk.Solid}" /></Style>
+        <Style Selector="^ /template/ PathIcon#PART_Icon"><Setter Property="Data" Value="{StaticResource Kb.Icon.AtRisk}" /></Style>
+        <Style Selector="^ /template/ TextBlock#PART_Text"><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.AtRisk.Text}" /></Style>
+      </Style>
+      <Style Selector="^:paused">
+        <Style Selector="^ /template/ Border#PART_Root"><Setter Property="Background" Value="{DynamicResource Kb.Brush.Paused.Bg}" /></Style>
+        <Style Selector="^ /template/ Border#PART_Disc"><Setter Property="Background" Value="{DynamicResource Kb.Brush.Paused.Solid}" /></Style>
+        <Style Selector="^ /template/ PathIcon#PART_Icon"><Setter Property="Data" Value="{StaticResource Kb.Icon.Paused}" /></Style>
+        <Style Selector="^ /template/ TextBlock#PART_Text"><Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Paused.Text}" /></Style>
+      </Style>
+      <Style Selector="^.large">
+        <Style Selector="^ /template/ Border#PART_Disc"><Setter Property="Width" Value="40" /><Setter Property="Height" Value="40" /><Setter Property="CornerRadius" Value="20" /></Style>
+        <Style Selector="^ /template/ PathIcon#PART_Icon"><Setter Property="Width" Value="24" /><Setter Property="Height" Value="24" /></Style>
+        <Style Selector="^ /template/ TextBlock#PART_Text"><Setter Property="FontSize" Value="{StaticResource Kb.Font.Body}" /></Style>
+        <Style Selector="^ /template/ Border#PART_Root"><Setter Property="Padding" Value="6,6,16,6" /></Style>
+      </Style>
+    </ControlTheme>
+  </Styles.Resources>
+
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Surface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Kb.Brush.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource Kb.Radius.Card}" />
+    <Setter Property="Padding" Value="20" />
+  </Style>
+  <Style Selector="TextBlock.display">
+    <Setter Property="FontSize" Value="{StaticResource Kb.Font.Display}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Text}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.title">
+    <Setter Property="FontSize" Value="{StaticResource Kb.Font.Title}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Text}" />
+  </Style>
+  <Style Selector="TextBlock.body">
+    <Setter Property="FontSize" Value="{StaticResource Kb.Font.Body}" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Text}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.muted">
+    <Setter Property="FontSize" Value="{StaticResource Kb.Font.Caption}" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.TextMuted}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.label">
+    <Setter Property="FontSize" Value="{StaticResource Kb.Font.Caption}" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.TextMuted}" />
+    <Setter Property="FontWeight" Value="Medium" />
+  </Style>
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Accent}" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.AccentText}" />
+    <Setter Property="CornerRadius" Value="{StaticResource Kb.Radius.Control}" />
+    <Setter Property="Padding" Value="16,9" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Accent}" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.AccentText}" />
+    <Setter Property="Opacity" Value="0.92" />
+  </Style>
+  <Style Selector="Button.secondary">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Accent}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Kb.Brush.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource Kb.Radius.Control}" />
+    <Setter Property="Padding" Value="12,6" />
+  </Style>
+  <Style Selector="ProgressBar.space">
+    <Setter Property="Height" Value="8" />
+    <Setter Property="MinHeight" Value="8" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Sunken}" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Accent}" />
+  </Style>
+  <Style Selector="ProgressBar.space.low">
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Warning.Solid}" />
+  </Style>
+  <Style Selector="TextBlock.lowtext">
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Warning.Text}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <!-- Kod KB / skrót ID: czcionka o stałej szerokości na zagłębionym tle (SCR-02, SCR-10). -->
+  <Style Selector="Border.code">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Sunken}" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="6,2" />
+  </Style>
+  <Style Selector="TextBox.mono">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontFamily" Value="Consolas, Cascadia Mono, monospace" />
+  </Style>
+  <Style Selector="TextBlock.mono">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontFamily" Value="Consolas, Cascadia Mono, monospace" />
+  </Style>
+  <Style Selector="Border.code > TextBlock">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontFamily" Value="Consolas, Cascadia Mono, monospace" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.TextMuted}" />
+  </Style>
+  <!-- Pigułka trybu kopii: pełna wyróżniona, przyrostowa neutralna (tekst, nie tylko kolor — WCAG 1.4.1). -->
+  <Style Selector="Border.pill">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Sunken}" />
+    <Setter Property="CornerRadius" Value="{StaticResource Kb.Radius.Pill}" />
+    <Setter Property="Padding" Value="10,3" />
+  </Style>
+  <Style Selector="Border.pill > TextBlock">
+    <Setter Property="FontSize" Value="{StaticResource Kb.Font.Caption}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.TextMuted}" />
+  </Style>
+  <Style Selector="Border.pill.full">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Protected.Bg}" />
+  </Style>
+  <Style Selector="Border.pill.full > TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Protected.Text}" />
+  </Style>
+  <!-- Wynik uruchomienia bez kopii (SCR-10, BL-60): nieudane = Zagrożone, ostrzeżenie/pominięte = Ostrzeżenie; tekst pigułki niesie znaczenie. -->
+  <Style Selector="Border.pill.failed">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.AtRisk.Bg}" />
+  </Style>
+  <Style Selector="Border.pill.failed > TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.AtRisk.Text}" />
+  </Style>
+  <Style Selector="Border.pill.warning">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Warning.Bg}" />
+  </Style>
+  <Style Selector="Border.pill.warning > TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Warning.Text}" />
+  </Style>
+  <Style Selector="Border.histrow">
+    <Setter Property="Padding" Value="20,12" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Kb.Brush.Border}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
+  <!-- Komunikat wyniku akcji: potwierdzenie (Chronione) albo błąd KB (Zagrożone). -->
+  <Style Selector="Border.notice">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Protected.Bg}" />
+    <Setter Property="CornerRadius" Value="{StaticResource Kb.Radius.Control}" />
+    <Setter Property="Padding" Value="16,10" />
+  </Style>
+  <Style Selector="Border.notice > TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Protected.Text}" />
+  </Style>
+  <!-- Informacja (np. podgląd retencji) — neutralna, nie „sukces”: kolor statusu zarezerwowany dla stanu ochrony. -->
+  <Style Selector="Border.notice.info">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Sunken}" />
+  </Style>
+  <Style Selector="Border.notice.info > TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Text}" />
+  </Style>
+  <!-- it. 98: ostrzeżenie (pominięcia w podglądzie odtworzenia) — kolory stanu „Uwaga”; potomne TextBlock (lista ścieżek w StackPanel). -->
+  <Style Selector="Border.notice.warning">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Warning.Bg}" />
+  </Style>
+  <Style Selector="Border.notice.warning TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Warning.Text}" />
+  </Style>
+  <Style Selector="Border.notice.error">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.AtRisk.Bg}" />
+  </Style>
+  <Style Selector="Border.notice.error > TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.AtRisk.Text}" />
+  </Style>
+  <!-- Segmenty filtra (ListBox poziomy): zaznaczony = powierzchnia z obramowaniem, reszta tekst wyciszony. -->
+  <Style Selector="ListBox.segmented">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Sunken}" />
+    <Setter Property="CornerRadius" Value="{StaticResource Kb.Radius.Control}" />
+    <Setter Property="Padding" Value="4" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+  </Style>
+  <Style Selector="ListBox.segmented ListBoxItem">
+    <Setter Property="Padding" Value="14,6" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.TextMuted}" />
+    <Setter Property="FontSize" Value="{StaticResource Kb.Font.Caption}" />
+  </Style>
+  <Style Selector="ListBox.segmented ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Surface}" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Text}" />
+  </Style>
+  <Style Selector="ListBox.segmented ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Kb.Brush.Surface}" />
+    <Setter Property="Foreground" Value="{DynamicResource Kb.Brush.Text}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Kb.Brush.Border}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="ListBox.segmented ListBoxItem:selected">
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Button:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource Kb.Brush.Accent}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+</Styles>

@@ -1,0 +1,14 @@
+{
+  "id": "insert-gt",
+  "version": 1,
+  "priority": 50,
+  "status": "confirmed",
+  "match": { "allTables": ["dbo.dok__Dokument", "dbo.dok_Pozycja", "dbo.tw__Towar", "dbo.kh__Kontrahent", "dbo.adr__Ewid"], "anyTables": null },
+  "consistencyGroup": "single",
+  "controlQueries": [
+    { "id": "gt-dok", "sql": "SELECT dok_Typ, COUNT(*) AS n, MAX(dok_DataWyst) AS last FROM dok__Dokument WHERE dok_Status <> 3 GROUP BY dok_Typ", "tolerance": "range" },
+    { "id": "gt-tw", "sql": "SELECT COUNT(*) AS n FROM tw__Towar", "tolerance": "range" },
+    { "id": "gt-kh", "sql": "SELECT COUNT(*) AS n FROM kh__Kontrahent", "tolerance": "range" }
+  ],
+  "restoreNotesKey": "Erp_InsertGt_RestoreNotes"
+}
