@@ -369,7 +369,8 @@ public sealed class CatalogJobService
         lease.StartAutoRenew();
         await using var session = await factory.OpenAsync(def.ToDestination(destId), CredentialRole.Backup, ct).ConfigureAwait(false);
         var (mode, parent, baseline, parentSnapshot) = await PlanBaselineAsync(job.Id, repoHex, session, keys, ct).ConfigureAwait(false);
-        var mainUploader = new VerifiedUploader(session);
+        // Zerwane połączenie w trakcie wysyłki packa → ponowienie na świeżej sesji (do 4 prób, narastające opóźnienie) zamiast porażki całego przebiegu.
+        await using var mainUploader = new VerifiedUploader(session) { Reopen = ct2 => factory.OpenAsync(def.ToDestination(destId), CredentialRole.Backup, ct2) };
         await using var uploads = await OpenUploadSessionsAsync(factory, def.ToDestination(destId), session, mainUploader, ct).ConfigureAwait(false);
         var pipeline = new BackupPipeline(keys, mainUploader) { PackUploaders = uploads.Uploaders, Parallelism = uploads.Aimd };
         BackupResult result;
@@ -442,12 +443,13 @@ public sealed class CatalogJobService
             }
         }
         if (result.SnapId is null) return (result.ToJobOutcome(), result.Stats);
-        var snap = await MetadataStore.LoadSnapshotAsync(session, keys, result.SnapId, ct).ConfigureAwait(false);
+        var current = mainUploader.Session; // po zerwaniu połączenia w trakcie kopii — sesja otwarta ponownie, nie pierwotna
+        var snap = await MetadataStore.LoadSnapshotAsync(current, keys, result.SnapId, ct).ConfigureAwait(false);
         await InsertSnapshotAsync(snap, repoHex, job.Id, ct).ConfigureAwait(false);
 
         // 3.7 + D3.14: V2 nowego snapshotu po commit, na tej samej sesji (Backup — tylko odczyt). Brak V2 = Failed; snapshot zostaje w katalogu jako „suspect”
         // (nie jest bazą przyrostu — następna kopia pełna, PlanBaselineAsync) i nie liczy się do RPO. Alert A04 = RunFinishedEvent z kodem KB-15xx (rola 9).
-        var v2 = await new RepoChecker(session, keys).CheckSnapshotAsync(result.SnapId, ct).ConfigureAwait(false);
+        var v2 = await new RepoChecker(current, keys).CheckSnapshotAsync(result.SnapId, ct).ConfigureAwait(false);
         var snapHex = Convert.ToHexStringLower(result.SnapId);
         await MarkVerifiedAsync(snapHex, v2.Status == CheckStatus.Succeeded, ct).ConfigureAwait(false);
         if (v2.Status == CheckStatus.Succeeded && contentRead) await RecordContentReadAsync(job.Id, ct).ConfigureAwait(false);
@@ -490,7 +492,7 @@ public sealed class CatalogJobService
                     break;
                 }
                 extra.Add(s);
-                uploaders.Add(new VerifiedUploader(s));
+                uploaders.Add(new VerifiedUploader(s) { Reopen = ct2 => factory.OpenAsync(dest, CredentialRole.Backup, ct2) });
             }
         }
         catch
@@ -513,6 +515,7 @@ public sealed class CatalogJobService
 
         public async ValueTask DisposeAsync()
         {
+            foreach (var u in uploaders) await u.DisposeAsync().ConfigureAwait(false); // sesje otwarte ponownie po zerwaniu
             foreach (var s in extra)
             {
 #pragma warning disable CA1031 // zamknięcie sesji dodatkowej nie może przesłonić wyniku kopii
