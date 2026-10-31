@@ -5,16 +5,17 @@ namespace Kobian.Agent.Jobs;
 /// <summary>
 /// Po uruchomieniu (kopia, odtwarzanie, weryfikacja) usługa trzyma bufory packów, tablicę dedup i cache indeksów w stercie — bez sprzątania proces zostaje
 /// przy ~120–190 MB prywatnej pamięci przez godziny (pomiar tools/perf: 78 MB w spoczynku). Jedno kompaktujące sprzątanie (z LOH) kończy to w ułamku sekundy.
-/// Sygnałem jest rozmiar sterty zarządzanej po przebiegu, nie ilość przeczytanych danych: przyrost bez zmian czyta „1,2 GB” logicznie, a prawie nic nie alokuje.
+/// Sygnałem jest pamięć ZATWIERDZONA przez GC po przebiegu (to ona zostaje w RSS, nawet gdy sterta jest pusta), nie ilość przeczytanych danych:
+/// przyrost bez zmian czyta „1,2 GB” logicznie, a prawie nic nie alokuje.
 /// </summary>
 public static class MemoryTrim
 {
-    /// <summary>Od takiej sterty zarządzanej (bajty) po przebiegu robimy sprzątanie; w spoczynku Agent ma ~20–30 MB sterty.</summary>
-    public const long HeapThresholdBytes = 64L << 20;
+    /// <summary>Od takiej pamięci zatwierdzonej przez GC (bajty) po przebiegu robimy sprzątanie; w spoczynku Agent ma ~10–20 MB.</summary>
+    public const long HeapThresholdBytes = 32L << 20;
 
     private static long _lastTicks;
 
-    public static bool ShouldTrim(long managedHeapBytes) => managedHeapBytes >= HeapThresholdBytes;
+    public static bool ShouldTrim(long committedBytes) => committedBytes >= HeapThresholdBytes;
 
     /// <summary>Sprzątanie z kompaktowaniem LOH; najwyżej cztery razy na sekundę (równoległe zakończenia przebiegów nie kolejkują sprzątań).</summary>
     public static bool TrimNow(long nowTicks)
@@ -27,11 +28,11 @@ public static class MemoryTrim
         return true;
     }
 
-    /// <summary>Po przebiegu: sprzątanie, gdy sterta jest duża.</summary>
+    /// <summary>Po przebiegu: sprzątanie, gdy GC trzyma dużo pamięci.</summary>
     public static void AfterRun()
     {
         var before = GC.GetTotalMemory(false);
-        var did = ShouldTrim(before) && TrimNow(Environment.TickCount64 * TimeSpan.TicksPerMillisecond);
+        var did = ShouldTrim(GC.GetGCMemoryInfo().TotalCommittedBytes) && TrimNow(Environment.TickCount64 * TimeSpan.TicksPerMillisecond);
         if (Environment.GetEnvironmentVariable("KOBIAN_MEM_LOG") == "1")
         {
             var i = GC.GetGCMemoryInfo();
